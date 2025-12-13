@@ -30,8 +30,8 @@ const Prayer: React.FC = () => {
         {/* Header */}
         <header className="flex items-center justify-between py-2 animate-fade-in">
           <div>
-            <h1 className="text-xl font-bold text-primary-foreground">Prayer Times</h1>
-            <div className="flex items-center gap-1 text-primary-foreground/70">
+            <h1 className="text-xl font-bold text-gradient-gold">Prayer Times</h1>
+            <div className="flex items-center gap-1 text-gradient-gold opacity-80">
               <MapPin className="w-3 h-3" />
               <span className="text-xs">New York, USA</span>
             </div>
@@ -95,7 +95,7 @@ const Prayer: React.FC = () => {
 
         {/* Prayer List */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-primary-foreground/90">All Prayers</h3>
+          <h3 className="text-sm font-semibold text-gradient-gold">All Prayers</h3>
           {prayers.map((prayer, index) => {
             const isPrayed = prayedList.includes(prayer.name);
             
