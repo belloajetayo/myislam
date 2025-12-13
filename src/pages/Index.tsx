@@ -1,13 +1,48 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from 'react';
+import MobileLayout from '@/components/layout/MobileLayout';
+import QiblahCompass from '@/components/home/QiblahCompass';
+import AIAssistant from '@/components/home/AIAssistant';
+import PrayerCalendar from '@/components/home/PrayerCalendar';
+import QuickShortcuts from '@/components/home/QuickShortcuts';
+import ProgressTracker from '@/components/home/ProgressTracker';
+import { Bell, User } from 'lucide-react';
 
-const Index = () => {
+const Index: React.FC = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <MobileLayout>
+      <div className="p-4 space-y-4">
+        {/* Header */}
+        <header className="flex items-center justify-between py-2 animate-fade-in">
+          <QiblahCompass />
+          
+          <div className="text-center">
+            <h1 className="text-lg font-bold text-primary-foreground">My Islam</h1>
+            <p className="text-xs text-primary-foreground/70">Assalamu Alaikum</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10 hover:scale-105 transition-transform">
+              <Bell className="w-5 h-5 text-primary-foreground" />
+            </button>
+            <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10 hover:scale-105 transition-transform">
+              <User className="w-5 h-5 text-primary-foreground" />
+            </button>
+          </div>
+        </header>
+
+        {/* Quick Shortcuts */}
+        <QuickShortcuts />
+
+        {/* AI Assistant */}
+        <AIAssistant />
+
+        {/* Progress Tracker */}
+        <ProgressTracker />
+
+        {/* Prayer Calendar */}
+        <PrayerCalendar />
       </div>
-    </div>
+    </MobileLayout>
   );
 };
 
