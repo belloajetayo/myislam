@@ -27,8 +27,8 @@ const Quran: React.FC = () => {
       <div className="p-4 space-y-4">
         {/* Header */}
         <header className="text-center py-2 animate-fade-in">
-          <h1 className="text-xl font-bold text-primary-foreground">Qur'an & Dua</h1>
-          <p className="text-xs text-primary-foreground/70">Read, Listen & Reflect</p>
+          <h1 className="text-xl font-bold text-gradient-gold">Qur'an & Dua</h1>
+          <p className="text-xs text-gradient-gold opacity-80">Read, Listen & Reflect</p>
         </header>
 
         {/* Search */}
@@ -90,7 +90,7 @@ const Quran: React.FC = () => {
 
             {/* Surah List */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-primary-foreground/90">Surahs</h3>
+              <h3 className="text-sm font-semibold text-gradient-gold">Surahs</h3>
               {surahs.map((surah, index) => (
                 <button
                   key={surah.number}
@@ -122,7 +122,7 @@ const Quran: React.FC = () => {
           <>
             {/* Dua Categories */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-primary-foreground/90">Daily Duas</h3>
+              <h3 className="text-sm font-semibold text-gradient-gold">Daily Duas</h3>
               {duas.map((dua, index) => (
                 <button
                   key={index}

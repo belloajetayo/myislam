@@ -18,8 +18,8 @@ const Qiblah: React.FC = () => {
       <div className="p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
         {/* Header */}
         <header className="text-center mb-8 animate-fade-in">
-          <h1 className="text-2xl font-bold text-primary-foreground">Qiblah Direction</h1>
-          <div className="flex items-center justify-center gap-1 text-primary-foreground/70 mt-1">
+          <h1 className="text-2xl font-bold text-gradient-gold">Qiblah Direction</h1>
+          <div className="flex items-center justify-center gap-1 text-gradient-gold opacity-80 mt-1">
             <MapPin className="w-4 h-4" />
             <span className="text-sm">New York, USA</span>
           </div>
@@ -99,7 +99,7 @@ const Qiblah: React.FC = () => {
         </button>
 
         {/* Instructions */}
-        <p className="mt-6 text-xs text-primary-foreground/60 text-center max-w-xs animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <p className="mt-6 text-xs text-gradient-gold opacity-70 text-center max-w-xs animate-fade-in" style={{ animationDelay: '0.2s' }}>
           Hold your device flat and point the arrow towards the Kaaba symbol. 
           Move away from magnetic interference for accuracy.
         </p>

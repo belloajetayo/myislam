@@ -80,8 +80,8 @@ const Community: React.FC = () => {
       <div className="p-4 space-y-4">
         {/* Header */}
         <header className="text-center py-2 animate-fade-in">
-          <h1 className="text-xl font-bold text-primary-foreground">Community</h1>
-          <p className="text-xs text-primary-foreground/70">Islamic Content & Livestreams</p>
+          <h1 className="text-xl font-bold text-gradient-gold">Community</h1>
+          <p className="text-xs text-gradient-gold opacity-80">Islamic Content & Livestreams</p>
         </header>
 
         {/* Tabs */}
@@ -112,10 +112,10 @@ const Community: React.FC = () => {
             <div className="gradient-accent rounded-3xl p-4 shadow-glow animate-slide-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-                <span className="text-primary-foreground font-medium text-sm">Live Now</span>
+                <span className="text-gradient-gold font-medium text-sm">Live Now</span>
               </div>
-              <h3 className="text-lg font-bold text-primary-foreground mb-1">Friday Jummah Prayer</h3>
-              <p className="text-primary-foreground/80 text-sm mb-3">Masjid Al-Haram, Makkah</p>
+              <h3 className="text-lg font-bold text-gradient-gold mb-1">Friday Jummah Prayer</h3>
+              <p className="text-gradient-gold opacity-80 text-sm mb-3">Masjid Al-Haram, Makkah</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Eye className="w-4 h-4 text-primary-foreground/70" />
@@ -128,24 +128,38 @@ const Community: React.FC = () => {
               </div>
             </div>
 
-            {/* Other Livestreams */}
-            <h3 className="text-sm font-semibold text-primary-foreground/90">Other Streams</h3>
+            {/* Other Livestreams - Facebook Feed Style */}
+            <h3 className="text-sm font-semibold text-gradient-gold">Other Streams</h3>
             {livestreams.map((stream, index) => (
               <div
                 key={index}
-                className="glass rounded-2xl p-4 border border-primary/10 flex gap-4 animate-slide-up"
+                className="glass rounded-3xl overflow-hidden border border-primary/10 animate-slide-up"
                 style={{ animationDelay: `${0.15 + index * 0.05}s` }}
               >
-                <div className="w-20 h-14 gradient-primary rounded-xl flex items-center justify-center text-2xl shadow-soft">
-                  {stream.thumbnail}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-foreground text-sm line-clamp-2">{stream.title}</h4>
-                  <p className="text-xs text-muted-foreground mt-1">{stream.channel}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                    <span className="text-xs text-destructive">{stream.viewers} watching</span>
+                {/* Video Thumbnail - Full Width */}
+                <div className="w-full aspect-video gradient-primary flex items-center justify-center relative">
+                  <span className="text-6xl">{stream.thumbnail}</span>
+                  {/* Play Button Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors cursor-pointer">
+                    <div className="w-16 h-16 rounded-full bg-primary-foreground/30 backdrop-blur-sm flex items-center justify-center">
+                      <Play className="w-8 h-8 text-primary-foreground fill-primary-foreground ml-1" />
+                    </div>
                   </div>
+                  {/* Live Badge */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-destructive px-2 py-1 rounded-lg">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    <span className="text-xs font-medium text-white">LIVE</span>
+                  </div>
+                  {/* Viewers */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg">
+                    <Eye className="w-3 h-3 text-white" />
+                    <span className="text-xs text-white">{stream.viewers}</span>
+                  </div>
+                </div>
+                {/* Stream Info */}
+                <div className="p-4">
+                  <h4 className="font-semibold text-foreground text-base">{stream.title}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">{stream.channel}</p>
                 </div>
               </div>
             ))}
@@ -154,7 +168,7 @@ const Community: React.FC = () => {
 
         {activeTab === 'videos' && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-primary-foreground/90">Popular Videos</h3>
+            <h3 className="text-sm font-semibold text-gradient-gold">Popular Videos</h3>
             {videos.map((video, index) => (
               <div
                 key={index}
@@ -187,7 +201,7 @@ const Community: React.FC = () => {
 
         {activeTab === 'channels' && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-primary-foreground/90">Popular Scholars</h3>
+            <h3 className="text-sm font-semibold text-gradient-gold">Popular Scholars</h3>
             {channels.map((channel, index) => (
               <div
                 key={index}
