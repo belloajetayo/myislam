@@ -16,8 +16,8 @@ const Index: React.FC = () => {
           <QiblahCompass />
           
           <div className="text-center">
-            <h1 className="text-lg font-bold text-primary-foreground">My Islam</h1>
-            <p className="text-xs text-primary-foreground/70">Assalamu Alaikum</p>
+            <h1 className="text-xl font-bold text-gradient-gold">My Islam</h1>
+            <p className="text-xs text-gradient-gold opacity-80">Assalamu Alaikum</p>
           </div>
           
           <div className="flex items-center gap-2">
