@@ -14,7 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      fasting_logs: {
+        Row: {
+          completed: boolean
+          created_at: string
+          fast_date: string
+          fast_type: string
+          id: string
+          iftar_time: string | null
+          notes: string | null
+          suhoor_time: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          fast_date: string
+          fast_type?: string
+          id?: string
+          iftar_time?: string | null
+          notes?: string | null
+          suhoor_time?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          fast_date?: string
+          fast_type?: string
+          id?: string
+          iftar_time?: string | null
+          notes?: string | null
+          suhoor_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prayer_logs: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          prayer_date: string
+          prayer_name: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prayer_date?: string
+          prayer_name: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prayer_date?: string
+          prayer_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          latitude: number | null
+          location_city: string | null
+          location_country: string | null
+          longitude: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          latitude?: number | null
+          location_city?: string | null
+          location_country?: string | null
+          longitude?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          latitude?: number | null
+          location_city?: string | null
+          location_country?: string | null
+          longitude?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quran_progress: {
+        Row: {
+          ayah_number: number
+          created_at: string
+          id: string
+          last_read_at: string
+          surah_number: number
+          user_id: string
+        }
+        Insert: {
+          ayah_number: number
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          surah_number: number
+          user_id: string
+        }
+        Update: {
+          ayah_number?: number
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          surah_number?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      zakat_records: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          paid_date: string
+          recipient: string | null
+          user_id: string
+          zakat_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_date?: string
+          recipient?: string | null
+          user_id: string
+          zakat_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          paid_date?: string
+          recipient?: string | null
+          user_id?: string
+          zakat_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
