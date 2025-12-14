@@ -8,6 +8,10 @@ import Prayer from "./pages/Prayer";
 import Qiblah from "./pages/Qiblah";
 import Quran from "./pages/Quran";
 import Community from "./pages/Community";
+import Auth from "./pages/Auth";
+import Zakat from "./pages/Zakat";
+import Fasting from "./pages/Fasting";
+import Hajj from "./pages/Hajj";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +28,10 @@ const App = () => (
           <Route path="/qiblah" element={<Qiblah />} />
           <Route path="/quran" element={<Quran />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/zakat" element={<Zakat />} />
+          <Route path="/fasting" element={<Fasting />} />
+          <Route path="/hajj" element={<Hajj />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,132 @@
+import { useState, useEffect } from 'react';
+
+interface PrayerTimes {
+  Fajr: string;
+  Sunrise: string;
+  Dhuhr: string;
+  Asr: string;
+  Maghrib: string;
+  Isha: string;
+}
+
+interface LocationData {
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+}
+
+export function usePrayerTimes() {
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [location, setLocation] = useState<LocationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPrayer, setCurrentPrayer] = useState<string>('');
+  const [nextPrayer, setNextPrayer] = useState<string>('');
+
+  useEffect(() => {
+    const fetchPrayerTimes = async (lat: number, lon: number) => {
+      try {
+        // Get location name
+        const geoResponse = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+        );
+        const geoData = await geoResponse.json();
+        
+        setLocation({
+          city: geoData.city || geoData.locality || 'Unknown',
+          country: geoData.countryName || 'Unknown',
+          latitude: lat,
+          longitude: lon,
+        });
+
+        // Get prayer times
+        const date = new Date();
+        const response = await fetch(
+          `https://api.aladhan.com/v1/timings/${Math.floor(date.getTime() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`
+        );
+        const data = await response.json();
+
+        if (data.code === 200) {
+          const timings = data.data.timings;
+          setPrayerTimes({
+            Fajr: timings.Fajr,
+            Sunrise: timings.Sunrise,
+            Dhuhr: timings.Dhuhr,
+            Asr: timings.Asr,
+            Maghrib: timings.Maghrib,
+            Isha: timings.Isha,
+          });
+        }
+      } catch (err) {
+        setError('Failed to fetch prayer times');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Get user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
+        },
+        () => {
+          // Default to Makkah if location denied
+          fetchPrayerTimes(21.4225, 39.8262);
+        }
+      );
+    } else {
+      fetchPrayerTimes(21.4225, 39.8262);
+    }
+  }, []);
+
+  // Calculate current and next prayer
+  useEffect(() => {
+    if (!prayerTimes) return;
+
+    const updateCurrentPrayer = () => {
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+
+      const parseTime = (time: string) => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      const prayers = [
+        { name: 'Fajr', time: parseTime(prayerTimes.Fajr) },
+        { name: 'Sunrise', time: parseTime(prayerTimes.Sunrise) },
+        { name: 'Dhuhr', time: parseTime(prayerTimes.Dhuhr) },
+        { name: 'Asr', time: parseTime(prayerTimes.Asr) },
+        { name: 'Maghrib', time: parseTime(prayerTimes.Maghrib) },
+        { name: 'Isha', time: parseTime(prayerTimes.Isha) },
+      ];
+
+      let current = 'Isha';
+      let next = 'Fajr';
+
+      for (let i = 0; i < prayers.length; i++) {
+        if (currentTime < prayers[i].time) {
+          next = prayers[i].name;
+          current = i === 0 ? 'Isha' : prayers[i - 1].name;
+          break;
+        }
+        if (i === prayers.length - 1) {
+          current = 'Isha';
+          next = 'Fajr';
+        }
+      }
+
+      setCurrentPrayer(current);
+      setNextPrayer(next);
+    };
+
+    updateCurrentPrayer();
+    const interval = setInterval(updateCurrentPrayer, 60000);
+    return () => clearInterval(interval);
+  }, [prayerTimes]);
+
+  return { prayerTimes, location, loading, error, currentPrayer, nextPrayer };
+}
