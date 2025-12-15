@@ -72,7 +72,7 @@ const Zakat: React.FC = () => {
               <p className="text-xs text-primary-foreground/70">Third Pillar of Islam</p>
             </div>
           </div>
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             Zakat is an obligatory form of charity requiring Muslims to give 2.5% of their qualifying wealth annually to those in need. It purifies wealth and helps create a more equitable society.
           </p>
         </div>
@@ -183,8 +183,8 @@ const Zakat: React.FC = () => {
                   <CheckCircle className="w-3 h-3 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-primary-foreground">{recipient.title}</h4>
-                  <p className="text-xs text-primary-foreground/60">{recipient.description}</p>
+                  <h4 className="text-sm font-semibold text-foreground">{recipient.title}</h4>
+                  <p className="text-xs text-muted-foreground">{recipient.description}</p>
                 </div>
               </div>
             ))}
@@ -197,7 +197,7 @@ const Zakat: React.FC = () => {
             <Info className="w-5 h-5 text-islamic-gold" />
             <h3 className="font-semibold text-gradient-gold">Important Notes</h3>
           </div>
-          <ul className="space-y-2 text-sm text-primary-foreground/80">
+          <ul className="space-y-2 text-sm text-foreground">
             <li>• Zakat is due once your wealth reaches the Nisab threshold</li>
             <li>• The Nisab is equivalent to 85 grams of gold or 595 grams of silver</li>
             <li>• Calculate Zakat on a lunar year (354 days) basis</li>
