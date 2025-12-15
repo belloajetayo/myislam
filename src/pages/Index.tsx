@@ -5,7 +5,6 @@ import AIAssistant from '@/components/home/AIAssistant';
 import PrayerCalendar from '@/components/home/PrayerCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
-import SocialStories from '@/components/home/SocialStories';
 import { Bell, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,9 +64,6 @@ const Index: React.FC = () => {
             )}
           </div>
         </header>
-
-        {/* Social Stories */}
-        <SocialStories />
 
         {/* Quick Shortcuts */}
         <QuickShortcuts />
