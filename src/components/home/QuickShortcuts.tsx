@@ -15,7 +15,7 @@ const QuickShortcuts: React.FC = () => {
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-      <h3 className="text-sm font-semibold text-gradient-gold mb-3">Pillars of Islam</h3>
+      <h3 className="text-sm font-semibold mb-3 bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Pillars of Islam</h3>
       <div className="grid grid-cols-5 gap-2">
         {shortcuts.map((shortcut, index) => (
           <button

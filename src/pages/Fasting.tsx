@@ -59,7 +59,7 @@ const Fasting: React.FC = () => {
     'Giving charity',
     'Making dhikr',
     'Helping others',
-    'Breaking someone's fast',
+    "Breaking someone's fast",
   ];
 
   return (
