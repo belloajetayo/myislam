@@ -5,6 +5,7 @@ import AIAssistant from '@/components/home/AIAssistant';
 import PrayerCalendar from '@/components/home/PrayerCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
+import DailyReminders from '@/components/home/DailyReminders';
 import { Bell, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +71,9 @@ const Index: React.FC = () => {
 
         {/* AI Assistant */}
         <AIAssistant />
+
+        {/* Daily Reminders */}
+        <DailyReminders />
 
         {/* Progress Tracker */}
         <ProgressTracker />
