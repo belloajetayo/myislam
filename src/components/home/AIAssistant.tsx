@@ -57,10 +57,10 @@ const AIAssistant: React.FC = () => {
       {/* Chat Display */}
       <div 
         ref={chatRef}
-        className="bg-muted/30 rounded-2xl p-3 mb-3 min-h-[100px] max-h-[200px] overflow-y-auto space-y-3"
+        className="bg-card/80 rounded-2xl p-3 mb-3 min-h-[100px] max-h-[200px] overflow-y-auto space-y-3"
       >
         {messages.length === 0 ? (
-          <p className="text-sm text-primary-foreground/80">
+          <p className="text-sm text-foreground">
             Assalamu Alaikum! 🌙 I'm here to help you on your spiritual journey. 
             Ask me about prayers, Qur'an, or any Islamic guidance.
           </p>
@@ -72,8 +72,8 @@ const AIAssistant: React.FC = () => {
             >
               <div className={`max-w-[85%] p-2.5 rounded-2xl text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-primary/20 text-primary-foreground ml-4' 
-                  : 'bg-muted/50 text-primary-foreground/90 mr-4'
+                  ? 'bg-primary text-primary-foreground ml-4' 
+                  : 'bg-muted text-foreground mr-4'
               }`}>
                 {msg.content}
               </div>
@@ -82,11 +82,11 @@ const AIAssistant: React.FC = () => {
         )}
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex justify-start">
-            <div className="bg-muted/50 p-2.5 rounded-2xl">
+            <div className="bg-muted p-2.5 rounded-2xl">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
