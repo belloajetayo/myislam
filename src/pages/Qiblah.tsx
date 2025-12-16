@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Navigation, MapPin, RotateCcw } from 'lucide-react';
+import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, X } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const KAABA_COORDS = { lat: 21.4225, lng: 39.8262 };
 
@@ -14,6 +21,7 @@ const Qiblah: React.FC = () => {
   const [calibrating, setCalibrating] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState('Locating...');
+  const [showInfo, setShowInfo] = useState(false);
 
   // Calculate Qiblah direction from user location to Kaaba
   const calculateQiblahDirection = (lat: number, lng: number) => {
@@ -165,6 +173,15 @@ const Qiblah: React.FC = () => {
     }, 2000);
   };
 
+  const openMosqueSearch = () => {
+    if (userLocation) {
+      const url = `https://www.google.com/maps/search/mosque+near+me/@${userLocation.lat},${userLocation.lng},14z`;
+      window.open(url, '_blank');
+    } else {
+      window.open('https://www.google.com/maps/search/mosque+near+me', '_blank');
+    }
+  };
+
   return (
     <MobileLayout>
       <div className="relative min-h-[calc(100vh-80px)]">
@@ -176,14 +193,69 @@ const Qiblah: React.FC = () => {
         
         {/* Content */}
         <div className="relative z-20 p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
-          {/* Header */}
-          <header className="text-center mb-6 animate-fade-in">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Qiblah Direction</h1>
+          {/* Header with Info Button */}
+          <header className="text-center mb-4 animate-fade-in w-full">
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Qiblah Direction</h1>
+              <Dialog open={showInfo} onOpenChange={setShowInfo}>
+                <DialogTrigger asChild>
+                  <button className="p-1.5 rounded-full bg-primary/20 hover:bg-primary/30 transition-colors">
+                    <Info className="w-4 h-4 text-primary-foreground" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="glass border-primary/20 max-w-sm mx-4">
+                  <DialogHeader>
+                    <DialogTitle className="bg-gradient-to-r from-amber-400 to-purple-500 bg-clip-text text-transparent">
+                      Finding Qiblah - Hadith Guidance
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm text-primary-foreground/90">
+                    <div className="p-3 bg-primary/10 rounded-xl">
+                      <p className="font-semibold text-amber-400 mb-1">From the Sunnah:</p>
+                      <p className="italic">"The Prophet ﷺ said: 'What is between the East and West is Qiblah.'"</p>
+                      <p className="text-xs text-primary-foreground/60 mt-1">— Sunan Ibn Majah</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-semibold text-amber-400">How to find Qiblah:</p>
+                      <ul className="list-disc list-inside space-y-1 text-primary-foreground/80">
+                        <li>Face the sunrise direction (East) in the morning</li>
+                        <li>Face the sunset direction (West) in the evening</li>
+                        <li>Use the compass direction shown above</li>
+                        <li>Ask local Muslims for the direction</li>
+                        <li>Look for the Mihrab (niche) in any mosque</li>
+                      </ul>
+                    </div>
+                    <div className="p-3 bg-primary/10 rounded-xl">
+                      <p className="italic text-primary-foreground/80">"Allah does not burden a soul beyond that it can bear."</p>
+                      <p className="text-xs text-primary-foreground/60 mt-1">— Quran 2:286</p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="flex items-center justify-center gap-1 text-primary-foreground/90 mt-1">
               <MapPin className="w-4 h-4" />
               <span className="text-sm">{locationName}</span>
             </div>
           </header>
+
+          {/* Sun Direction Indicators */}
+          <div className="flex justify-between w-full max-w-xs mb-4 animate-fade-in">
+            <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 border border-amber-500/30">
+              <Sunrise className="w-5 h-5 text-amber-400" />
+              <div className="text-xs">
+                <p className="text-primary-foreground/60">Sunrise</p>
+                <p className="font-semibold text-amber-400">East (90°)</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 border border-orange-500/30">
+              <Sunset className="w-5 h-5 text-orange-400" />
+              <div className="text-xs">
+                <p className="text-primary-foreground/60">Sunset</p>
+                <p className="font-semibold text-orange-400">West (270°)</p>
+              </div>
+            </div>
+          </div>
 
           {/* Compass Container */}
           <div className="relative animate-scale-in">
@@ -241,7 +313,7 @@ const Qiblah: React.FC = () => {
           </div>
 
           {/* Direction Info */}
-          <div className="mt-6 text-center glass rounded-3xl p-4 w-full max-w-xs shadow-card border border-primary/20 animate-slide-up backdrop-blur-md">
+          <div className="mt-4 text-center glass rounded-3xl p-4 w-full max-w-xs shadow-card border border-primary/20 animate-slide-up backdrop-blur-md">
             <p className="text-sm text-primary-foreground/80">Direction to Makkah</p>
             <p className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-purple-500 bg-clip-text text-transparent">{rotation}°</p>
             <p className="text-xs text-primary-foreground/60 mt-1">
@@ -249,16 +321,25 @@ const Qiblah: React.FC = () => {
             </p>
           </div>
 
-          {/* Calibrate Button */}
-          <button
-            onClick={handleCalibrate}
-            disabled={calibrating}
-            className="mt-4 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-purple-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform disabled:opacity-50 animate-slide-up"
-            style={{ animationDelay: '0.1s' }}
-          >
-            <RotateCcw className={`w-5 h-5 ${calibrating ? 'animate-spin' : ''}`} />
-            {calibrating ? 'Calibrating...' : 'Calibrate Compass'}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <button
+              onClick={handleCalibrate}
+              disabled={calibrating}
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-purple-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform disabled:opacity-50"
+            >
+              <RotateCcw className={`w-5 h-5 ${calibrating ? 'animate-spin' : ''}`} />
+              {calibrating ? 'Calibrating...' : 'Calibrate'}
+            </button>
+            
+            <button
+              onClick={openMosqueSearch}
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform"
+            >
+              <Building2 className="w-5 h-5" />
+              Mosque Near Me
+            </button>
+          </div>
 
           {/* Instructions */}
           <p className="mt-4 text-xs text-primary-foreground/70 text-center max-w-xs animate-fade-in backdrop-blur-sm bg-background/30 rounded-xl p-2" style={{ animationDelay: '0.2s' }}>
