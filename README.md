@@ -1,8 +1,8 @@
-# Welcome to your Lovable project
+# Welcome to your my Islam project
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**URL**: myislam.lovable.app
 
 ## How can I edit this code?
 
