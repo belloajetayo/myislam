@@ -15,19 +15,19 @@ const QuickShortcuts: React.FC = () => {
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-      <h3 className="text-sm font-semibold mb-3 text-gradient-gold drop-shadow-lg">Pillars of Islam</h3>
+      <h3 className="text-sm font-semibold mb-3 bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Pillars of Islam</h3>
       <div className="grid grid-cols-5 gap-2">
         {shortcuts.map((shortcut, index) => (
           <button
             key={index}
             onClick={() => navigate(shortcut.route)}
-            className="flex flex-col items-center gap-2 p-3 glass rounded-2xl border border-white/20 hover:scale-105 transition-all duration-300 group"
+            className="flex flex-col items-center gap-2 p-3 glass rounded-2xl border border-primary-foreground/10 hover:scale-105 transition-all duration-300 group"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${shortcut.color} flex items-center justify-center shadow-soft group-hover:shadow-glow transition-shadow`}>
               <shortcut.icon className="w-5 h-5 text-white" strokeWidth={2} />
             </div>
-            <span className="text-[10px] font-medium text-white drop-shadow-md">{shortcut.label}</span>
+            <span className="text-[10px] font-medium text-gradient-gold">{shortcut.label}</span>
           </button>
         ))}
       </div>

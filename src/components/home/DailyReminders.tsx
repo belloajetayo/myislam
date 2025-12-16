@@ -97,32 +97,32 @@ const DailyReminders: React.FC = () => {
   };
 
   return (
-    <div className="glass rounded-3xl p-4 shadow-card border border-white/20 animate-slide-up">
+    <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-slide-up">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 gradient-accent rounded-xl flex items-center justify-center">
-            <Lightbulb className="w-4 h-4 text-white" />
+            <Lightbulb className="w-4 h-4 text-primary-foreground" />
           </div>
-          <h3 className="font-semibold text-gradient-gold drop-shadow-lg text-sm">Daily Reminder</h3>
+          <h3 className="font-semibold text-gradient-gold text-sm">Daily Reminder</h3>
         </div>
         <button 
           onClick={nextReminder}
-          className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
         >
-          <RefreshCw className="w-4 h-4 text-white" />
+          <RefreshCw className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
       <div className={`transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-        <p className="text-sm text-white leading-relaxed mb-3">
+        <p className="text-sm text-foreground leading-relaxed mb-3">
           "{reminder.text}"
         </p>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-300">
+          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
             {getTypeIcon()}
             {getTypeLabel()}
           </span>
-          <span className="text-xs text-white/70">— {reminder.source}</span>
+          <span className="text-xs text-muted-foreground">— {reminder.source}</span>
         </div>
       </div>
     </div>

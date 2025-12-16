@@ -40,27 +40,27 @@ const Index: React.FC = () => {
           <QiblahCompass />
           
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gradient-gold drop-shadow-lg">My Islam</h1>
-            <p className="text-xs text-white/90 drop-shadow-md">Assalamu Alaikum</p>
+            <h1 className="text-xl font-bold text-gradient-gold">My Islam</h1>
+            <p className="text-xs text-gradient-gold opacity-80">Assalamu Alaikum</p>
           </div>
           
           <div className="flex items-center gap-2">
-            <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-white/20 hover:scale-105 transition-transform">
-              <Bell className="w-5 h-5 text-white" />
+            <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10 hover:scale-105 transition-transform">
+              <Bell className="w-5 h-5 text-primary-foreground" />
             </button>
             {user ? (
               <button 
                 onClick={handleLogout}
-                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-white/20 hover:scale-105 transition-transform"
+                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10 hover:scale-105 transition-transform"
               >
-                <LogOut className="w-5 h-5 text-white" />
+                <LogOut className="w-5 h-5 text-primary-foreground" />
               </button>
             ) : (
               <button 
                 onClick={() => navigate('/auth')}
-                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-white/20 hover:scale-105 transition-transform"
+                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10 hover:scale-105 transition-transform"
               >
-                <User className="w-5 h-5 text-white" />
+                <User className="w-5 h-5 text-primary-foreground" />
               </button>
             )}
           </div>

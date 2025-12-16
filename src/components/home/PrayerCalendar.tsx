@@ -59,38 +59,38 @@ const PrayerCalendar: React.FC = () => {
   };
 
   return (
-    <div className="glass rounded-3xl p-4 shadow-card border border-white/20 animate-slide-up">
+    <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-slide-up">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs text-white/60">{selectedDateOffset === 0 ? 'Today' : formatGregorianDate()}</p>
-          <h3 className="font-semibold text-white">{formatGregorianDate()}</h3>
+          <p className="text-xs text-muted-foreground">{selectedDateOffset === 0 ? 'Today' : formatGregorianDate()}</p>
+          <h3 className="font-semibold text-foreground">{formatGregorianDate()}</h3>
           {/* Hijri Date */}
           {dateInfo?.hijri && (
             <div className="flex items-center gap-1 mt-1">
-              <Moon className="w-3 h-3 text-amber-400" />
-              <p className="text-xs text-amber-400 font-medium">{formatHijriDate()}</p>
+              <Moon className="w-3 h-3 text-islamic-gold" />
+              <p className="text-xs text-islamic-gold font-medium">{formatHijriDate()}</p>
             </div>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setSelectedDateOffset(prev => prev - 1)}
-            className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-white" />
+            <ChevronLeft className="w-4 h-4 text-foreground" />
           </button>
           <button 
             onClick={() => setSelectedDateOffset(prev => prev + 1)}
-            className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
           >
-            <ChevronRight className="w-4 h-4 text-white" />
+            <ChevronRight className="w-4 h-4 text-foreground" />
           </button>
           <button 
             onClick={() => setSelectedDateOffset(0)}
             className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shadow-soft"
           >
-            <Calendar className="w-4 h-4 text-white" />
+            <Calendar className="w-4 h-4 text-primary-foreground" />
           </button>
         </div>
       </div>
@@ -112,14 +112,14 @@ const PrayerCalendar: React.FC = () => {
                 isSelected
                   ? 'gradient-primary shadow-soft'
                   : isToday
-                  ? 'ring-2 ring-amber-400/50'
-                  : 'hover:bg-white/20'
+                  ? 'ring-2 ring-primary/50'
+                  : 'hover:bg-muted/50'
               }`}
             >
-              <span className={`text-xs ${isSelected ? 'text-white' : 'text-white/60'}`}>
+              <span className={`text-xs ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                 {days[index]}
               </span>
-              <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-white'}`}>
+              <span className={`text-sm font-semibold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
                 {date.getDate()}
               </span>
             </button>
@@ -129,10 +129,10 @@ const PrayerCalendar: React.FC = () => {
 
       {/* Prayer Times */}
       <div className="space-y-2">
-        <h4 className="text-xs text-white/60 font-medium mb-2">Prayer Times</h4>
+        <h4 className="text-xs text-muted-foreground font-medium mb-2">Prayer Times</h4>
         {prayerLoading ? (
           <div className="flex items-center justify-center py-4">
-            <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           prayers.map((prayer, index) => (
@@ -142,27 +142,27 @@ const PrayerCalendar: React.FC = () => {
                 prayer.current
                   ? 'gradient-accent shadow-soft'
                   : prayer.passed
-                  ? 'bg-white/10'
-                  : 'bg-white/20 hover:bg-white/30'
+                  ? 'bg-muted/30'
+                  : 'bg-muted/50 hover:bg-muted'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${
-                  prayer.current ? 'bg-white animate-pulse' : prayer.passed ? 'bg-green-400' : 'bg-white/30'
+                  prayer.current ? 'bg-primary-foreground animate-pulse' : prayer.passed ? 'bg-islamic-green' : 'bg-muted-foreground/30'
                 }`} />
                 <span className={`font-medium text-sm ${
-                  prayer.current ? 'text-white' : prayer.passed ? 'text-white/50' : 'text-white'
+                  prayer.current ? 'text-primary-foreground' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
                 }`}>
                   {prayer.name}
                 </span>
                 {prayer.current && (
-                  <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-full">
                     Current
                   </span>
                 )}
               </div>
               <span className={`text-sm font-semibold ${
-                prayer.current ? 'text-white' : prayer.passed ? 'text-white/50' : 'text-white'
+                prayer.current ? 'text-primary-foreground' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
               }`}>
                 {prayer.time}
               </span>
