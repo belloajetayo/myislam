@@ -10,24 +10,24 @@ const ProgressTracker: React.FC = () => {
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-      <h3 className="text-sm font-semibold text-primary-foreground/90 mb-3">Today's Progress</h3>
+      <h3 className="text-sm font-semibold text-gradient-gold drop-shadow-lg mb-3">Today's Progress</h3>
       <div className="grid grid-cols-3 gap-3">
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="glass rounded-2xl p-3 border border-primary-foreground/10"
+            className="glass rounded-2xl p-3 border border-white/20"
           >
             <div className="flex items-center justify-between mb-2">
-              <stat.icon className="w-4 h-4 text-primary" />
-              <span className="text-lg font-bold text-foreground">{stat.value}</span>
+              <stat.icon className="w-4 h-4 text-amber-400" />
+              <span className="text-lg font-bold text-white">{stat.value}</span>
             </div>
-            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
               <div 
                 className="h-full gradient-accent rounded-full transition-all duration-1000"
                 style={{ width: `${stat.progress}%` }}
               />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">{stat.label}</p>
+            <p className="text-[10px] text-white/70 mt-1">{stat.label}</p>
           </div>
         ))}
       </div>
