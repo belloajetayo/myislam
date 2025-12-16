@@ -27,29 +27,29 @@ const AIAssistant: React.FC = () => {
   }, [messages]);
 
   return (
-    <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-fade-in">
+    <div className="glass rounded-3xl p-4 shadow-card border border-white/20 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 gradient-accent rounded-2xl flex items-center justify-center shadow-soft">
-          <Sparkles className="w-5 h-5 text-primary-foreground" />
+          <Sparkles className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-semibold text-gradient-gold text-sm">Islamic AI Assistant</h3>
-          <p className="text-xs text-primary-foreground/70">Ask me anything about Islam</p>
+          <h3 className="font-semibold text-gradient-gold drop-shadow-lg text-sm">Islamic AI Assistant</h3>
+          <p className="text-xs text-white/70">Ask me anything about Islam</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
             <button 
               onClick={clearMessages}
-              className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
               title="Clear chat"
             >
-              <Trash2 className="w-4 h-4 text-primary-foreground/60" />
+              <Trash2 className="w-4 h-4 text-white/60" />
             </button>
           )}
           <div className="flex items-center gap-1">
-            <span className="w-2 h-2 bg-islamic-green rounded-full animate-pulse" />
-            <span className="text-xs text-primary-foreground/70">Online</span>
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-xs text-white/70">Online</span>
           </div>
         </div>
       </div>
@@ -57,10 +57,10 @@ const AIAssistant: React.FC = () => {
       {/* Chat Display */}
       <div 
         ref={chatRef}
-        className="bg-muted/30 rounded-2xl p-3 mb-3 min-h-[100px] max-h-[200px] overflow-y-auto space-y-3"
+        className="bg-white/10 rounded-2xl p-3 mb-3 min-h-[100px] max-h-[200px] overflow-y-auto space-y-3"
       >
         {messages.length === 0 ? (
-          <p className="text-sm text-primary-foreground/80">
+          <p className="text-sm text-white/80">
             Assalamu Alaikum! 🌙 I'm here to help you on your spiritual journey. 
             Ask me about prayers, Qur'an, or any Islamic guidance.
           </p>
@@ -72,8 +72,8 @@ const AIAssistant: React.FC = () => {
             >
               <div className={`max-w-[85%] p-2.5 rounded-2xl text-sm ${
                 msg.role === 'user' 
-                  ? 'bg-primary/20 text-primary-foreground ml-4' 
-                  : 'bg-muted/50 text-primary-foreground/90 mr-4'
+                  ? 'bg-amber-500/30 text-white ml-4' 
+                  : 'bg-white/20 text-white mr-4'
               }`}>
                 {msg.content}
               </div>
@@ -82,11 +82,11 @@ const AIAssistant: React.FC = () => {
         )}
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
           <div className="flex justify-start">
-            <div className="bg-muted/50 p-2.5 rounded-2xl">
+            <div className="bg-white/20 p-2.5 rounded-2xl">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-primary-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ const AIAssistant: React.FC = () => {
             <button
               key={index}
               onClick={() => sendMessage(suggestion)}
-              className="flex-shrink-0 px-3 py-1.5 bg-primary/10 text-primary-foreground text-xs rounded-full hover:bg-primary/20 transition-colors border border-primary/20"
+              className="flex-shrink-0 px-3 py-1.5 bg-amber-500/20 text-white text-xs rounded-full hover:bg-amber-500/30 transition-colors border border-amber-500/30"
             >
               {suggestion}
             </button>
@@ -110,14 +110,14 @@ const AIAssistant: React.FC = () => {
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <div className="flex-1 flex items-center gap-2 bg-muted/30 rounded-2xl px-4 py-2.5 border border-primary-foreground/10">
+        <div className="flex-1 flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2.5 border border-white/20">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your question..."
             disabled={isLoading}
-            className="flex-1 bg-transparent text-sm text-primary-foreground placeholder:text-primary-foreground/50 outline-none"
+            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/50 outline-none"
           />
         </div>
         <button 
@@ -125,7 +125,7 @@ const AIAssistant: React.FC = () => {
           disabled={isLoading || !input.trim()}
           className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >
-          <Send className="w-4 h-4 text-primary-foreground" />
+          <Send className="w-4 h-4 text-white" />
         </button>
       </form>
     </div>
