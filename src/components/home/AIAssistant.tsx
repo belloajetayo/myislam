@@ -8,9 +8,9 @@ const AIAssistant: React.FC = () => {
   const chatRef = useRef<HTMLDivElement>(null);
 
   const suggestions = [
-    "What is today's Islamic wisdom?",
-    "Tell me about the 5 pillars",
-    "How to perform Wudu?",
+    "What does the Quran say about patience?",
+    "How can I improve my Salah?",
+    "Share a Hadith about kindness",
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,8 +34,8 @@ const AIAssistant: React.FC = () => {
           <Sparkles className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <h3 className="font-semibold text-gradient-gold text-sm">Islamic AI Assistant</h3>
-          <p className="text-xs text-primary-foreground/70">Ask me anything about Islam</p>
+          <h3 className="font-semibold text-gradient-gold text-sm">MY Islam App</h3>
+          <p className="text-xs text-primary-foreground/70">Your companion on the journey of faith</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           {messages.length > 0 && (
@@ -61,8 +61,8 @@ const AIAssistant: React.FC = () => {
       >
         {messages.length === 0 ? (
           <p className="text-sm text-foreground">
-            Assalamu Alaikum! 🌙 I'm here to help you on your spiritual journey. 
-            Ask me about prayers, Qur'an, or any Islamic guidance.
+            Assalamu Alaikum! 🌙 I'm MY Islam App, your dedicated companion on this beautiful journey of faith. 
+            Together, we can cultivate a deeper connection with our beliefs. How may I help you today?
           </p>
         ) : (
           messages.map((msg, index) => (
