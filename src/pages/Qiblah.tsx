@@ -22,6 +22,7 @@ const Qiblah: React.FC = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState('Locating...');
   const [showInfo, setShowInfo] = useState(false);
+  const [showMosqueMap, setShowMosqueMap] = useState(false);
 
   // Calculate Qiblah direction from user location to Kaaba
   const calculateQiblahDirection = (lat: number, lng: number) => {
@@ -173,13 +174,11 @@ const Qiblah: React.FC = () => {
     }, 2000);
   };
 
-  const openMosqueSearch = () => {
+  const getMosqueMapUrl = () => {
     if (userLocation) {
-      const url = `https://www.google.com/maps/search/mosque+near+me/@${userLocation.lat},${userLocation.lng},14z`;
-      window.open(url, '_blank');
-    } else {
-      window.open('https://www.google.com/maps/search/mosque+near+me', '_blank');
+      return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=mosque+near+me&center=${userLocation.lat},${userLocation.lng}&zoom=14`;
     }
+    return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=mosque+near+me&zoom=12`;
   };
 
   return (
@@ -333,13 +332,35 @@ const Qiblah: React.FC = () => {
             </button>
             
             <button
-              onClick={openMosqueSearch}
+              onClick={() => setShowMosqueMap(true)}
               className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform"
             >
               <Building2 className="w-5 h-5" />
               Mosque Near Me
             </button>
           </div>
+
+          {/* Mosque Map Dialog */}
+          <Dialog open={showMosqueMap} onOpenChange={setShowMosqueMap}>
+            <DialogContent className="max-w-lg w-[95vw] h-[70vh] p-0 overflow-hidden border-primary/20">
+              <DialogHeader className="p-4 pb-2">
+                <DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-emerald-500" />
+                  Mosques Near You
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 w-full h-full min-h-[50vh]">
+                <iframe
+                  src={getMosqueMapUrl()}
+                  className="w-full h-full border-0"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Mosques Near Me"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Instructions */}
           <p className="mt-4 text-xs text-primary-foreground/70 text-center max-w-xs animate-fade-in backdrop-blur-sm bg-background/30 rounded-xl p-2" style={{ animationDelay: '0.2s' }}>
