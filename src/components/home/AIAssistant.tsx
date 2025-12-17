@@ -110,22 +110,22 @@ const AIAssistant: React.FC = () => {
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <div className="flex-1 flex items-center gap-2 bg-muted/30 rounded-2xl px-4 py-2.5 border border-primary-foreground/10">
+        <div className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-2.5 border border-border">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your question..."
             disabled={isLoading}
-            className="flex-1 bg-transparent text-sm text-primary-foreground placeholder:text-primary-foreground/50 outline-none"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
         </div>
         <button 
           type="submit"
           disabled={isLoading || !input.trim()}
-          className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+          className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-soft hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >
-          <Send className="w-4 h-4 text-primary-foreground" />
+          <Send className="w-4 h-4 text-white" />
         </button>
       </form>
     </div>
