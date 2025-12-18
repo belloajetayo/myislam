@@ -103,6 +103,12 @@ export const duasCollection = [
         translation: 'How perfect Allah is and I praise Him.',
         reference: 'Muslim 4:2071',
         times: 100
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ',
+        translation: 'O Allah, I ask You for pardon and well-being in this life and the next.',
+        reference: 'Ibn Majah 2:332',
+        times: 1
       }
     ]
   },
@@ -122,6 +128,12 @@ export const duasCollection = [
         translation: 'O Allah, by Your leave we have reached the evening and by Your leave we have reached the morning, by Your leave we live and die and unto You is our return.',
         reference: 'At-Tirmidhi 5:466',
         times: 1
+      },
+      {
+        arabic: 'أَعُوذُ بِكَلِمَاتِ اللهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ',
+        translation: 'I take refuge in the perfect words of Allah from the evil of what He has created.',
+        reference: 'Muslim 4:2081',
+        times: 3
       }
     ]
   },
@@ -143,27 +155,34 @@ export const duasCollection = [
         times: 3
       },
       {
-        arabic: 'سُبْحَانَ اللهِ',
-        translation: 'How perfect Allah is.',
-        reference: 'Al-Bukhari, Muslim',
-        times: 33
-      },
-      {
-        arabic: 'الْحَمْدُ لِلَّهِ',
-        translation: 'All praise is for Allah.',
-        reference: 'Al-Bukhari, Muslim',
-        times: 33
-      },
-      {
-        arabic: 'اللهُ أَكْبَرُ',
-        translation: 'Allah is the greatest.',
-        reference: 'Al-Bukhari, Muslim',
-        times: 34
+        arabic: 'اللَّهُمَّ بِاسْمِكَ أَحْيَا وَأَمُوتُ',
+        translation: 'O Allah, in Your name I live and die.',
+        reference: 'Al-Bukhari',
+        times: 1
       }
     ]
   },
   {
     id: 4,
+    category: 'Waking Up',
+    categoryArabic: 'عند الاستيقاظ',
+    duas: [
+      {
+        arabic: 'الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ',
+        translation: 'All praise is for Allah who gave us life after having taken it from us and unto Him is the resurrection.',
+        reference: 'Al-Bukhari 11:113',
+        times: 1
+      },
+      {
+        arabic: 'لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',
+        translation: 'None has the right to be worshipped except Allah, alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent.',
+        reference: 'Al-Bukhari, Muslim',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 5,
     category: 'After Prayer',
     categoryArabic: 'بعد الصلاة',
     duas: [
@@ -188,7 +207,164 @@ export const duasCollection = [
     ]
   },
   {
-    id: 5,
+    id: 6,
+    category: 'Entering Mosque',
+    categoryArabic: 'دخول المسجد',
+    duas: [
+      {
+        arabic: 'أَعُوذُ بِاللهِ الْعَظِيمِ، وَبِوَجْهِهِ الْكَرِيمِ، وَسُلْطَانِهِ الْقَدِيمِ، مِنَ الشَّيْطَانِ الرَّجِيمِ',
+        translation: 'I take refuge with Allah, The Supreme and with His Noble Face, and His eternal authority from the accursed devil.',
+        reference: 'Abu Dawud',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ',
+        translation: 'O Allah, open the gates of Your mercy for me.',
+        reference: 'Muslim 1:494',
+        times: 1
+      },
+      {
+        arabic: 'بِسْمِ اللهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ',
+        translation: 'In the name of Allah, and prayers and peace be upon the Messenger of Allah.',
+        reference: 'Abu Dawud',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 7,
+    category: 'Leaving Mosque',
+    categoryArabic: 'الخروج من المسجد',
+    duas: [
+      {
+        arabic: 'بِسْمِ اللهِ وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللهِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ',
+        translation: 'In the name of Allah, and prayers and peace be upon the Messenger of Allah. O Allah, I ask You from Your favour.',
+        reference: 'Muslim 1:494',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ اعْصِمْنِي مِنَ الشَّيْطَانِ الرَّجِيمِ',
+        translation: 'O Allah, protect me from the accursed devil.',
+        reference: 'Ibn Majah',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 8,
+    category: 'Traveling',
+    categoryArabic: 'السفر',
+    duas: [
+      {
+        arabic: 'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ',
+        translation: 'How perfect He is, the One Who has placed this (transport) at our service, and we ourselves would not have been capable of that, and to our Lord is our final destiny.',
+        reference: 'Quran 43:13-14',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى',
+        translation: 'O Allah, we ask You on this our journey for goodness and piety, and for works that are pleasing to You.',
+        reference: 'Muslim 2:978',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَذَا، وَاطْوِ عَنَّا بُعْدَهُ',
+        translation: 'O Allah, make this journey easy for us, and make its distance short for us.',
+        reference: 'Muslim 2:978',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ أَنْتَ الصَّاحِبُ فِي السَّفَرِ، وَالْخَلِيفَةُ فِي الْأَهْلِ',
+        translation: 'O Allah, You are our Companion on the road and the One in Whose care we leave our family.',
+        reference: 'Muslim 2:978',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 9,
+    category: 'Returning from Travel',
+    categoryArabic: 'الرجوع من السفر',
+    duas: [
+      {
+        arabic: 'آيِبُونَ، تَائِبُونَ، عَابِدُونَ، لِرَبِّنَا حَامِدُونَ',
+        translation: 'We return, repent, worship and praise our Lord.',
+        reference: 'Al-Bukhari',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ الْمَوْلِجِ وَخَيْرَ الْمَخْرَجِ',
+        translation: 'O Allah, I ask You for the best entry and the best exit.',
+        reference: 'Abu Dawud',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 10,
+    category: 'Breaking Fast',
+    categoryArabic: 'عند الإفطار',
+    duas: [
+      {
+        arabic: 'ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللهُ',
+        translation: 'The thirst has gone and the veins are quenched, and reward is confirmed, if Allah wills.',
+        reference: 'Abu Dawud 2:306',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ لَكَ صُمْتُ وَعَلَى رِزْقِكَ أَفْطَرْتُ',
+        translation: 'O Allah, for You I have fasted and upon Your provision I have broken my fast.',
+        reference: 'Abu Dawud',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ أَنْ تَغْفِرَ لِي',
+        translation: 'O Allah, I ask You by Your mercy which envelops all things, that You forgive me.',
+        reference: 'Ibn Majah',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 11,
+    category: 'Before Eating',
+    categoryArabic: 'قبل الطعام',
+    duas: [
+      {
+        arabic: 'بِسْمِ اللهِ',
+        translation: 'In the name of Allah.',
+        reference: 'At-Tirmidhi, Abu Dawud',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ',
+        translation: 'O Allah, bless us in what You have provided for us and protect us from the punishment of the Fire.',
+        reference: 'Ibn As-Sunni',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 12,
+    category: 'After Eating',
+    categoryArabic: 'بعد الطعام',
+    duas: [
+      {
+        arabic: 'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ',
+        translation: 'All praise is for Allah who fed us and gave us drink, and made us Muslims.',
+        reference: 'Abu Dawud, At-Tirmidhi',
+        times: 1
+      },
+      {
+        arabic: 'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا، وَرَزَقَنِيهِ، مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ',
+        translation: 'All praise is for Allah who has fed me this and provided it for me without any might or power from myself.',
+        reference: 'Abu Dawud, At-Tirmidhi',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 13,
     category: 'Forgiveness',
     categoryArabic: 'الاستغفار',
     duas: [
@@ -203,17 +379,23 @@ export const duasCollection = [
         translation: 'Our Lord, we have wronged ourselves, and if You do not forgive us and have mercy upon us, we will surely be among the losers.',
         reference: 'Quran 7:23',
         times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ',
+        translation: 'O Allah, You are my Lord, none has the right to be worshipped except You, You created me and I am Your servant.',
+        reference: 'Al-Bukhari 7:150 (Sayyidul Istighfar)',
+        times: 1
       }
     ]
   },
   {
-    id: 6,
+    id: 14,
     category: 'Protection',
     categoryArabic: 'الحماية',
     duas: [
       {
         arabic: 'بِسْمِ اللهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ',
-        translation: 'In the name of Allah with whose name nothing is harmed on earth nor in the heavens and He is The All-Seeing, The All-Knowing.',
+        translation: 'In the name of Allah with whose name nothing is harmed on earth nor in the heavens and He is The All-Hearing, The All-Knowing.',
         reference: 'Abu Dawud 4:323, At-Tirmidhi 5:465',
         times: 3
       },
@@ -222,6 +404,120 @@ export const duasCollection = [
         translation: 'I take refuge in the perfect words of Allah from the evil of what He has created.',
         reference: 'Muslim 4:2081',
         times: 3
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ',
+        translation: 'O Allah, I take refuge in You from anxiety and sorrow, weakness and laziness.',
+        reference: 'Al-Bukhari 7:158',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 15,
+    category: 'Entering Home',
+    categoryArabic: 'دخول المنزل',
+    duas: [
+      {
+        arabic: 'بِسْمِ اللهِ وَلَجْنَا، وَبِسْمِ اللهِ خَرَجْنَا، وَعَلَى اللهِ رَبِّنَا تَوَكَّلْنَا',
+        translation: 'In the name of Allah we enter and in the name of Allah we leave, and upon our Lord we place our trust.',
+        reference: 'Abu Dawud 4:325',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 16,
+    category: 'Leaving Home',
+    categoryArabic: 'الخروج من المنزل',
+    duas: [
+      {
+        arabic: 'بِسْمِ اللهِ، تَوَكَّلْتُ عَلَى اللهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللهِ',
+        translation: 'In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah.',
+        reference: 'Abu Dawud 4:325, At-Tirmidhi 5:490',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ، أَوْ أَزِلَّ أَوْ أُزَلَّ',
+        translation: 'O Allah, I take refuge with You lest I should stray or be led astray, or slip or be tripped.',
+        reference: 'Abu Dawud, At-Tirmidhi, An-Nasai',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 17,
+    category: 'During Rain',
+    categoryArabic: 'عند نزول المطر',
+    duas: [
+      {
+        arabic: 'اللَّهُمَّ صَيِّبًا نَافِعًا',
+        translation: 'O Allah, may it be a beneficial rain.',
+        reference: 'Al-Bukhari',
+        times: 1
+      },
+      {
+        arabic: 'مُطِرْنَا بِفَضْلِ اللهِ وَرَحْمَتِهِ',
+        translation: 'We have been given rain by the grace and mercy of Allah.',
+        reference: 'Al-Bukhari, Muslim',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 18,
+    category: 'For Parents',
+    categoryArabic: 'للوالدين',
+    duas: [
+      {
+        arabic: 'رَبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ',
+        translation: 'Our Lord, forgive me and my parents and the believers the Day the account is established.',
+        reference: 'Quran 14:41',
+        times: 1
+      },
+      {
+        arabic: 'رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا',
+        translation: 'My Lord, have mercy upon them as they brought me up when I was small.',
+        reference: 'Quran 17:24',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 19,
+    category: 'For Guidance',
+    categoryArabic: 'للهداية',
+    duas: [
+      {
+        arabic: 'اللَّهُمَّ اهْدِنِي وَسَدِّدْنِي',
+        translation: 'O Allah, guide me and keep me on the right path.',
+        reference: 'Muslim 4:2090',
+        times: 1
+      },
+      {
+        arabic: 'رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِنْ لَدُنْكَ رَحْمَةً',
+        translation: 'Our Lord, let not our hearts deviate after You have guided us and grant us from Yourself mercy.',
+        reference: 'Quran 3:8',
+        times: 1
+      }
+    ]
+  },
+  {
+    id: 20,
+    category: 'For Knowledge',
+    categoryArabic: 'للعلم',
+    duas: [
+      {
+        arabic: 'رَبِّ زِدْنِي عِلْمًا',
+        translation: 'My Lord, increase me in knowledge.',
+        reference: 'Quran 20:114',
+        times: 1
+      },
+      {
+        arabic: 'اللَّهُمَّ انْفَعْنِي بِمَا عَلَّمْتَنِي، وَعَلِّمْنِي مَا يَنْفَعُنِي، وَزِدْنِي عِلْمًا',
+        translation: 'O Allah, benefit me with what You have taught me, teach me what will benefit me, and increase me in knowledge.',
+        reference: 'At-Tirmidhi, Ibn Majah',
+        times: 1
       }
     ]
   }
