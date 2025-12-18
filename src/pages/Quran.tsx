@@ -99,7 +99,7 @@ const hadithCollection = [
   }
 ];
 
-// Stories of the Prophets
+// Stories of the Prophets - Detailed with video embeds
 const prophetStories = [
   {
     id: 1,
@@ -107,8 +107,29 @@ const prophetStories = [
     title: "The First Human",
     arabicName: "آدم عليه السلام",
     summary: "Adam was the first human created by Allah from clay. He was given knowledge of all things and made vicegerent on Earth. His story teaches us about free will, repentance, and Allah's mercy.",
-    keyLessons: ["Importance of repentance (Tawbah)", "Dangers of arrogance (from Iblis)", "Allah's infinite mercy"],
-    quranicReference: "Surah Al-Baqarah 2:30-39",
+    fullStory: `Prophet Adam (peace be upon him) holds the unique distinction of being the first human created by Allah. His creation was unlike any other - Allah formed him from clay, shaping him with His own hands, and then breathed into him from His spirit.
+
+Allah taught Adam the names of all things, a knowledge that even the angels did not possess. When Allah commanded the angels to prostrate before Adam, they all complied except for Iblis (Satan), who refused out of arrogance, claiming he was better because he was created from fire while Adam was created from clay.
+
+Adam and his wife Hawwa (Eve) were placed in Paradise and given permission to enjoy all its bounties except for one tree. However, Iblis deceived them, and they ate from the forbidden tree. Immediately, they felt shame and sought to cover themselves.
+
+Rather than making excuses, Adam and Hawwa turned to Allah in sincere repentance, saying: "Our Lord, we have wronged ourselves, and if You do not forgive us and have mercy upon us, we will surely be among the losers." (Quran 7:23)
+
+Allah accepted their repentance and sent them to Earth as a test, promising guidance for humanity. Adam became the first prophet, teaching his children about Allah and how to worship Him.`,
+    keyLessons: [
+      "Importance of repentance (Tawbah) - Allah forgives those who sincerely repent",
+      "Dangers of arrogance - Iblis fell from grace due to pride",
+      "Allah's infinite mercy - He forgave Adam despite his mistake",
+      "Knowledge is a blessing - Adam was honored with knowledge of names",
+      "Satan is our enemy - We must be vigilant against his whispers"
+    ],
+    quranicReferences: [
+      "Surah Al-Baqarah 2:30-39",
+      "Surah Al-A'raf 7:11-25",
+      "Surah Ta-Ha 20:115-123",
+      "Surah Sad 38:71-85"
+    ],
+    videoId: "4_F6Y5I-h4s",
     image: "🌍"
   },
   {
@@ -117,18 +138,62 @@ const prophetStories = [
     title: "The Patient Preacher",
     arabicName: "نوح عليه السلام",
     summary: "Prophet Nuh called his people to worship Allah alone for 950 years. Despite facing rejection, he remained steadfast. He built the Ark by Allah's command to save the believers from the great flood.",
-    keyLessons: ["Patience in dawah", "Trusting Allah's plan", "Family bonds vs faith"],
-    quranicReference: "Surah Nuh 71:1-28",
+    fullStory: `Prophet Nuh (Noah, peace be upon him) was sent to a people who had abandoned the worship of Allah and turned to idol worship. For an astounding 950 years, Nuh tirelessly called his people to Islam, using every method possible - speaking to them day and night, publicly and privately.
+
+Despite his unwavering efforts, only a handful believed in him. His own wife and one of his sons rejected his message. The disbelievers mocked him, saying only the poor and weak followed him, and demanded he drive them away.
+
+When Allah informed Nuh that no more would believe, He commanded him to build an ark far from any sea. The disbelievers ridiculed him as he constructed the massive ship, but Nuh persevered. When the ark was complete, Allah commanded him to load it with pairs of every animal species and the believers.
+
+Then the great flood came - water burst forth from the earth and poured down from the sky. Nuh called out to his disbelieving son to board the ark, but he refused, thinking he could escape to a mountain. The waves swept him away.
+
+After the flood subsided, the ark rested on Mount Judi. Nuh and the believers descended to repopulate the earth with worshippers of Allah. The entire episode serves as a powerful reminder of Allah's punishment for the arrogant and His salvation for the faithful.`,
+    keyLessons: [
+      "Patience in dawah - 950 years of persistent calling",
+      "Trusting Allah's plan even when results seem absent",
+      "Faith over family ties when they oppose truth",
+      "Obedience to Allah even in the face of ridicule",
+      "Allah's punishment is certain for the arrogant"
+    ],
+    quranicReferences: [
+      "Surah Nuh 71:1-28 (Entire surah)",
+      "Surah Hud 11:25-49",
+      "Surah Al-Mu'minun 23:23-30",
+      "Surah Al-Qamar 54:9-17"
+    ],
+    videoId: "HL6-F7Y5FQc",
     image: "🚢"
   },
   {
     id: 3,
     name: "Ibrahim (إبراهيم)",
-    title: "The Friend of Allah",
+    title: "The Friend of Allah (Khalilullah)",
     arabicName: "إبراهيم عليه السلام",
     summary: "Ibrahim is known as Khalilullah (Friend of Allah). He was tested with building the Kaaba, sacrificing his son, and being thrown into fire. His unwavering faith made him a model for all believers.",
-    keyLessons: ["Complete submission to Allah", "Rejecting idol worship", "Trust during extreme trials"],
-    quranicReference: "Surah Ibrahim 14:35-41",
+    fullStory: `Prophet Ibrahim (Abraham, peace be upon him) is one of the greatest prophets and is called "Khalilullah" - the Friend of Allah. His life was a series of incredible tests, each of which he passed with unwavering faith.
+
+As a young man, Ibrahim recognized through reason that the idols his father carved could not be gods. He looked at the stars, moon, and sun, but realized they all set - none could be the true Lord. He declared his devotion to Allah alone.
+
+To prove the powerlessness of idols, Ibrahim smashed them all except the largest, then told his people to ask the big idol what happened. When they realized their foolishness, instead of accepting the truth, they built a massive fire and threw Ibrahim into it. But Allah commanded the fire: "O fire, be coolness and safety upon Ibrahim." (Quran 21:69)
+
+Later, Ibrahim was tested with the command to leave his wife Hajar and infant son Ismail in the barren desert of Mecca. Trusting Allah completely, Hajar ran between the hills of Safa and Marwa searching for water until the well of Zamzam miraculously sprang forth.
+
+The greatest test came when Ibrahim was commanded in a dream to sacrifice his beloved son Ismail. Both father and son submitted to Allah's command. As Ibrahim was about to make the sacrifice, Allah ransomed Ismail with a ram from Paradise. This event is commemorated annually during Eid al-Adha.
+
+Ibrahim and Ismail later built the Kaaba, the first house of worship for Allah, and prayed for the coming of Prophet Muhammad (peace be upon him) from their descendants.`,
+    keyLessons: [
+      "Complete submission (Islam) to Allah's will",
+      "Using intellect to recognize the truth",
+      "Rejecting idol worship despite social pressure",
+      "Trust in Allah during extreme trials",
+      "The reward of sacrifice in Allah's path"
+    ],
+    quranicReferences: [
+      "Surah Al-Baqarah 2:124-131",
+      "Surah Ibrahim 14:35-41",
+      "Surah As-Saffat 37:83-111",
+      "Surah Al-Anbiya 21:51-73"
+    ],
+    videoId: "GiSrI-X0mxE",
     image: "🕋"
   },
   {
@@ -137,38 +202,133 @@ const prophetStories = [
     title: "The Patient & Beautiful",
     arabicName: "يوسف عليه السلام",
     summary: "Yusuf's story is called 'the best of stories' in the Quran. From being thrown in a well by his brothers, to imprisonment, to becoming Egypt's treasurer, his journey shows Allah's perfect planning.",
-    keyLessons: ["Patience through injustice", "Chastity and moral integrity", "Forgiveness of those who wrong us"],
-    quranicReference: "Surah Yusuf 12:1-111",
+    fullStory: `The story of Prophet Yusuf (Joseph, peace be upon him) is called "Ahsan al-Qasas" (the best of stories) by Allah Himself. It is a remarkable tale of jealousy, patience, temptation, and ultimate triumph through faith.
+
+Yusuf was blessed with exceptional beauty and was beloved by his father Ya'qub (Jacob). As a child, he had a dream of eleven stars, the sun, and the moon prostrating to him. His jealous brothers, feeling neglected, plotted against him. They threw him into a well and told their father a wolf had eaten him.
+
+Yusuf was rescued by a caravan and sold as a slave in Egypt to a powerful minister. He grew into a handsome young man, and the minister's wife attempted to seduce him. Yusuf firmly refused, saying: "Indeed, my Lord has made good my residence. Indeed, wrongdoers will not succeed." (Quran 12:23)
+
+Despite his innocence, Yusuf was imprisoned for years. In prison, he interpreted dreams and gained a reputation for wisdom. When the king had a troubling dream that none could interpret, Yusuf correctly explained it as a prophecy of seven years of plenty followed by seven years of famine.
+
+The king, impressed, appointed Yusuf as treasurer of Egypt. During the famine, his brothers came seeking grain, not recognizing him. After testing them and finding they had reformed, Yusuf revealed himself and forgave them completely. He brought his entire family to Egypt, fulfilling the dream from his childhood as they all bowed before him in respect.
+
+Yusuf's story ends with his beautiful prayer: "My Lord, You have given me authority and taught me the interpretation of dreams. Creator of the heavens and earth, You are my protector in this world and the Hereafter. Cause me to die a Muslim and join me with the righteous." (Quran 12:101)`,
+    keyLessons: [
+      "Patience through injustice brings ultimate reward",
+      "Maintaining chastity in the face of temptation",
+      "Forgiveness of those who wronged us",
+      "Dreams can be messages from Allah",
+      "Allah's plan is always perfect, even when we can't see it"
+    ],
+    quranicReferences: [
+      "Surah Yusuf 12:1-111 (Entire surah)",
+      "Surah Al-An'am 6:84",
+      "Surah Ghafir 40:34"
+    ],
+    videoId: "GPT3L3mrNJc",
     image: "⭐"
   },
   {
     id: 5,
     name: "Musa (موسى)",
-    title: "The Speaker with Allah",
+    title: "The Speaker with Allah (Kalimullah)",
     arabicName: "موسى عليه السلام",
     summary: "Musa is mentioned more than any other prophet in the Quran. His mission to free Bani Israel from Pharaoh, receiving the Torah, and his conversations with Allah are central to his story.",
-    keyLessons: ["Standing against tyranny", "Trusting Allah in difficulty", "Humility despite greatness"],
-    quranicReference: "Surah Al-Qasas 28:1-46",
+    fullStory: `Prophet Musa (Moses, peace be upon him) is the most frequently mentioned prophet in the Quran, with his story spanning multiple surahs. He is known as "Kalimullah" - the one who spoke directly with Allah.
+
+Musa was born during a time when Pharaoh was killing all newborn Israelite boys. To save him, his mother placed baby Musa in a basket and set it adrift on the Nile. By Allah's decree, he was found by Pharaoh's wife, who raised him in the palace. Allah reunited Musa with his mother as his wet nurse.
+
+As a young man, Musa accidentally killed an Egyptian while defending an Israelite. Fearing punishment, he fled to Midian, where he married the daughter of Prophet Shu'ayb and worked as a shepherd for ten years.
+
+On his return to Egypt, Allah called to Musa from a burning bush at Mount Tur, appointing him as a prophet and granting him miraculous signs - his staff turning into a serpent and his hand glowing white. Allah commanded him to confront Pharaoh and free the Israelites.
+
+With his brother Harun (Aaron) as his helper, Musa delivered Allah's message to Pharaoh. Despite witnessing nine miraculous signs, Pharaoh's heart remained hardened. Finally, Allah commanded Musa to lead the Israelites out of Egypt. When they reached the sea with Pharaoh's army behind them, Allah parted the waters, allowing them to cross safely while Pharaoh and his army were drowned.
+
+At Mount Sinai, Allah gave Musa the Torah and spoke to him directly. However, the Israelites repeatedly tested Musa's patience - worshipping a golden calf, complaining about food, and refusing to enter the Holy Land. Musa led them for forty years in the desert before his death.`,
+    keyLessons: [
+      "Standing against tyranny and oppression",
+      "Trust in Allah during impossible situations",
+      "Humility despite being chosen for greatness",
+      "Patience with difficult people",
+      "The importance of brotherhood and support (Harun)"
+    ],
+    quranicReferences: [
+      "Surah Al-Baqarah 2:49-61",
+      "Surah Al-A'raf 7:103-162",
+      "Surah Ta-Ha 20:9-98",
+      "Surah Al-Qasas 28:1-46",
+      "Surah Al-Kahf 18:60-82"
+    ],
+    videoId: "BhnRnKvqN1g",
     image: "📜"
   },
   {
     id: 6,
     name: "Isa (عيسى)",
-    title: "The Messiah",
+    title: "The Messiah (Al-Masih)",
     arabicName: "عيسى عليه السلام",
     summary: "Isa was born miraculously to Maryam without a father. He performed miracles by Allah's permission, including healing the sick and raising the dead. He was raised to heaven and will return.",
-    keyLessons: ["Miracles are by Allah's will", "Speaking truth to power", "Devotion to worship"],
-    quranicReference: "Surah Al-Imran 3:45-55",
+    fullStory: `Prophet Isa (Jesus, peace be upon him) holds a unique position among the prophets. He was born miraculously to Maryam (Mary) without a father, and his birth itself was a sign from Allah to humanity.
+
+Maryam was a pious woman dedicated to worship in the Temple. The angel Jibril (Gabriel) appeared to her with news that she would have a son. She was bewildered, asking how this could be when no man had touched her. Jibril explained that this was easy for Allah, who simply says "Be" and it is.
+
+When Maryam gave birth under a palm tree, she was distressed about how to face her people. The newborn Isa spoke miraculously from the cradle, defending his mother's honor and declaring: "Indeed, I am the servant of Allah. He has given me the Scripture and made me a prophet." (Quran 19:30)
+
+As an adult, Isa was sent specifically to the Children of Israel. Allah granted him remarkable miracles: he healed the blind and the lepers, raised the dead to life, and created a bird from clay that came alive by Allah's permission. He emphasized that all these were done "by Allah's permission," never claiming divinity for himself.
+
+Isa's message was to worship Allah alone and follow the Torah with some modifications. However, most rejected him. A small group of disciples (Al-Hawariyyun) believed and supported him.
+
+When his enemies plotted to kill him, Allah saved Isa by raising him to heaven alive. Another person was made to resemble him and was crucified instead. Isa will return before the Day of Judgment to establish justice, defeat the Dajjal (Antichrist), and confirm the message of Prophet Muhammad (peace be upon him).`,
+    keyLessons: [
+      "Miracles are only by Allah's permission",
+      "Speaking truth despite opposition",
+      "Complete devotion to worship",
+      "Isa is a prophet, not divine - he worshipped Allah",
+      "Patience in the face of rejection"
+    ],
+    quranicReferences: [
+      "Surah Al-Imran 3:42-60",
+      "Surah Maryam 19:16-36",
+      "Surah Al-Ma'idah 5:110-120",
+      "Surah An-Nisa 4:157-159"
+    ],
+    videoId: "fq5eR9dHMTI",
     image: "✨"
   },
   {
     id: 7,
     name: "Muhammad (محمد)",
-    title: "The Final Messenger",
+    title: "The Final Messenger ﷺ",
     arabicName: "محمد ﷺ",
     summary: "The seal of all prophets, sent as a mercy to all worlds. His life exemplifies the perfect implementation of Islam - from his trustworthiness before prophethood to establishing the final message.",
-    keyLessons: ["Mercy and compassion", "Perseverance in hardship", "Perfect balance in life"],
-    quranicReference: "Surah Al-Ahzab 33:21",
+    fullStory: `Prophet Muhammad (peace be upon him) is the final messenger of Allah, sent as "a mercy to all the worlds" (Quran 21:107). His life is the most documented of any prophet, serving as a perfect example for humanity.
+
+Born in Mecca around 570 CE, Muhammad was orphaned young - his father died before his birth and his mother passed when he was six. He was raised first by his grandfather and then his uncle Abu Talib. Even before prophethood, he was known as "Al-Amin" (the Trustworthy) and "As-Sadiq" (the Truthful).
+
+At age 40, while meditating in Cave Hira, the angel Jibril appeared with the first revelation: "Read in the name of your Lord who created." This began 23 years of divine revelation that would become the Quran.
+
+The early years of prophethood in Mecca were marked by persecution. The Prophet and his followers were boycotted, tortured, and killed for their faith. After the deaths of his beloved wife Khadijah and uncle Abu Talib, the Prophet experienced the miraculous Night Journey (Isra) to Jerusalem and Ascension (Mi'raj) to the heavens, where the five daily prayers were prescribed.
+
+In 622 CE, the Prophet migrated to Medina, establishing the first Islamic state. Here, he built a model society based on justice, brotherhood, and worship of Allah alone. Despite facing multiple battles and assassination attempts, Islam spread throughout Arabia.
+
+In 632 CE, the Prophet performed his Farewell Pilgrimage, delivering his famous sermon emphasizing equality, justice, and the completion of the religion. Shortly after, he passed away at age 63, leaving behind the Quran and his Sunnah as guides for humanity until the Day of Judgment.
+
+His life encompassed every human role - husband, father, statesman, judge, military leader, and devoted worshipper - providing guidance for every aspect of life.`,
+    keyLessons: [
+      "Mercy and compassion in all dealings",
+      "Perseverance through extreme hardship",
+      "Perfect balance between worship and worldly life",
+      "Truthfulness and trustworthiness before and after prophethood",
+      "Justice and equality regardless of status"
+    ],
+    quranicReferences: [
+      "Surah Al-Ahzab 33:21",
+      "Surah Al-Anbiya 21:107",
+      "Surah Al-Fath 48:29",
+      "Surah At-Tawbah 9:128",
+      "Surah Al-Qalam 68:4"
+    ],
+    videoId: "0hqCArn3K-Y",
     image: "🌙"
   }
 ];
@@ -404,6 +564,25 @@ const Quran: React.FC = () => {
                 </div>
               </div>
 
+              {/* Video Section */}
+              {selectedProphet.videoId && (
+                <div className="glass rounded-2xl p-4 border border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-indigo-500/5">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Play className="w-4 h-4 text-purple-500" />
+                    Watch the Story
+                  </h3>
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://www.youtube.com/embed/${selectedProphet.videoId}`}
+                      title={`Story of ${selectedProphet.name}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Story Summary */}
               <div className="glass rounded-2xl p-5 border border-primary/10">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -413,6 +592,19 @@ const Quran: React.FC = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed">{selectedProphet.summary}</p>
               </div>
 
+              {/* Full Story */}
+              {selectedProphet.fullStory && (
+                <div className="glass rounded-2xl p-5 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <ScrollText className="w-4 h-4 text-amber-600" />
+                    The Complete Story
+                  </h3>
+                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {selectedProphet.fullStory}
+                  </div>
+                </div>
+              )}
+
               {/* Key Lessons */}
               <div className="glass rounded-2xl p-5 border border-primary/10">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -421,8 +613,8 @@ const Quran: React.FC = () => {
                 </h3>
                 <div className="space-y-2">
                   {selectedProphet.keyLessons.map((lesson, index) => (
-                    <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-amber-500/10">
-                      <span className="w-6 h-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-xs text-white font-bold">
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10">
+                      <span className="w-6 h-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-xs text-white font-bold flex-shrink-0 mt-0.5">
                         {index + 1}
                       </span>
                       <span className="text-sm text-foreground">{lesson}</span>
@@ -431,13 +623,20 @@ const Quran: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quranic Reference */}
+              {/* Quranic References */}
               <div className="glass rounded-2xl p-5 border border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
-                <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-green-600" />
-                  Quranic Reference
+                  Quranic References
                 </h3>
-                <p className="text-sm text-green-700 dark:text-green-400 font-medium">{selectedProphet.quranicReference}</p>
+                <div className="space-y-2">
+                  {selectedProphet.quranicReferences.map((ref, index) => (
+                    <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-green-500/10">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-sm text-green-700 dark:text-green-400 font-medium">{ref}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </ScrollArea>
@@ -476,9 +675,9 @@ const Quran: React.FC = () => {
         <div className="glass rounded-2xl p-1 flex border border-primary/10 animate-slide-up overflow-x-auto" style={{ animationDelay: '0.1s' }}>
           {[
             { key: 'quran', label: "Qur'an", icon: BookOpen },
+            { key: 'dua', label: 'Dua', icon: Star },
             { key: 'hadith', label: 'Hadith', icon: ScrollText },
             { key: 'prophets', label: 'Prophets', icon: Users },
-            { key: 'dua', label: 'Dua', icon: Star },
           ].map((tab) => (
             <button
               key={tab.key}
