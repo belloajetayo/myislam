@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft } from 'lucide-react';
+import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQuranData, duasCollection, SurahDetail } from '@/hooks/useQuranData';
+import { useQuranData, duasCollection, SurahDetail, AudioEdition } from '@/hooks/useQuranData';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Hadith Collection
 const hadithCollection = [
@@ -345,7 +346,19 @@ const Quran: React.FC = () => {
   const [loadingSurah, setLoadingSurah] = useState(false);
   const [bookmarkedSurahs, setBookmarkedSurahs] = useState<number[]>([36, 67, 112]);
   
-  const { surahs, loading, error, fetchSurahDetail } = useQuranData();
+  // Audio player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentAyah, setCurrentAyah] = useState<number>(0);
+  const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
+  const [showTransliteration, setShowTransliteration] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const { surahs, loading, error, fetchSurahDetail, audioEditions } = useQuranData();
+
+  // Popular reciters for easy access
+  const popularReciters = audioEditions.filter(e => 
+    ['ar.alafasy', 'ar.abdurrahmaansudais', 'ar.minshawi', 'ar.husary', 'ar.abdulbasitmurattal'].includes(e.identifier)
+  );
 
   const filteredSurahs = surahs.filter(surah => 
     surah.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -370,12 +383,67 @@ const Quran: React.FC = () => {
 
   const handleSurahClick = async (surahNumber: number) => {
     setLoadingSurah(true);
-    const detail = await fetchSurahDetail(surahNumber);
+    setCurrentAyah(0);
+    setIsPlaying(false);
+    const detail = await fetchSurahDetail(surahNumber, selectedReciter);
     if (detail) {
       setSelectedSurah(detail);
     }
     setLoadingSurah(false);
   };
+
+  const playAyah = (ayahIndex: number) => {
+    if (selectedSurah && selectedSurah.ayahs[ayahIndex]?.audio) {
+      if (audioRef.current) {
+        audioRef.current.src = selectedSurah.ayahs[ayahIndex].audio!;
+        audioRef.current.play();
+        setCurrentAyah(ayahIndex);
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        if (selectedSurah && selectedSurah.ayahs[currentAyah]?.audio) {
+          audioRef.current.src = selectedSurah.ayahs[currentAyah].audio!;
+          audioRef.current.play();
+          setIsPlaying(true);
+        }
+      }
+    }
+  };
+
+  const playNext = () => {
+    if (selectedSurah && currentAyah < selectedSurah.ayahs.length - 1) {
+      playAyah(currentAyah + 1);
+    }
+  };
+
+  const playPrevious = () => {
+    if (currentAyah > 0) {
+      playAyah(currentAyah - 1);
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      const handleEnded = () => {
+        if (selectedSurah && currentAyah < selectedSurah.ayahs.length - 1) {
+          playAyah(currentAyah + 1);
+        } else {
+          setIsPlaying(false);
+        }
+      };
+      audio.addEventListener('ended', handleEnded);
+      return () => audio.removeEventListener('ended', handleEnded);
+    }
+  }, [currentAyah, selectedSurah]);
 
   const toggleBookmark = (surahNumber: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -386,14 +454,21 @@ const Quran: React.FC = () => {
     );
   };
 
-  // Surah Detail View
+  // Surah Detail View with Audio
   if (selectedSurah) {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full">
+          {/* Hidden audio element */}
+          <audio ref={audioRef} className="hidden" />
+          
           <header className="p-4 flex items-center gap-4 border-b border-primary/10">
             <button 
-              onClick={() => setSelectedSurah(null)}
+              onClick={() => {
+                setSelectedSurah(null);
+                setIsPlaying(false);
+                if (audioRef.current) audioRef.current.pause();
+              }}
               className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
@@ -409,6 +484,70 @@ const Quran: React.FC = () => {
             </div>
           </header>
 
+          {/* Audio Controls */}
+          <div className="p-3 border-b border-primary/10 bg-gradient-to-r from-primary/5 to-accent/5">
+            <div className="flex items-center gap-3 mb-2">
+              <button
+                onClick={playPrevious}
+                disabled={currentAyah === 0}
+                className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center disabled:opacity-50"
+              >
+                <SkipBack className="w-4 h-4 text-primary" />
+              </button>
+              <button
+                onClick={togglePlayPause}
+                className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-soft"
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-primary-foreground" />
+                ) : (
+                  <Play className="w-5 h-5 text-primary-foreground fill-primary-foreground ml-0.5" />
+                )}
+              </button>
+              <button
+                onClick={playNext}
+                disabled={currentAyah >= selectedSurah.ayahs.length - 1}
+                className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center disabled:opacity-50"
+              >
+                <SkipForward className="w-4 h-4 text-primary" />
+              </button>
+              <div className="flex-1 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Ayah {currentAyah + 1} of {selectedSurah.ayahs.length}
+                </p>
+              </div>
+              <Select value={selectedReciter} onValueChange={async (value) => {
+                setSelectedReciter(value);
+                if (selectedSurah) {
+                  const detail = await fetchSurahDetail(selectedSurah.number, value);
+                  if (detail) setSelectedSurah(detail);
+                }
+              }}>
+                <SelectTrigger className="w-auto h-8 text-xs border-primary/20">
+                  <Volume2 className="w-3 h-3 mr-1" />
+                  <SelectValue placeholder="Reciter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(popularReciters.length > 0 ? popularReciters : audioEditions.slice(0, 5)).map((edition) => (
+                    <SelectItem key={edition.identifier} value={edition.identifier} className="text-xs">
+                      {edition.englishName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowTransliteration(!showTransliteration)}
+                className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                  showTransliteration ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                }`}
+              >
+                Transliteration
+              </button>
+            </div>
+          </div>
+
           {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
             <div className="p-4 text-center border-b border-primary/10">
               <p className="font-arabic text-2xl text-foreground">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
@@ -419,15 +558,43 @@ const Quran: React.FC = () => {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6 pb-8">
               {selectedSurah.ayahs.map((ayah, index) => (
-                <div key={ayah.number} className="glass rounded-2xl p-4 border border-primary/10">
+                <div 
+                  key={ayah.number} 
+                  className={`glass rounded-2xl p-4 border transition-all ${
+                    currentAyah === index && isPlaying 
+                      ? 'border-primary bg-primary/5 shadow-lg' 
+                      : 'border-primary/10'
+                  }`}
+                >
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary-foreground">{ayah.numberInSurah}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary-foreground">{ayah.numberInSurah}</span>
+                      </div>
+                      <button
+                        onClick={() => playAyah(index)}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                          currentAyah === index && isPlaying
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-primary/10 text-primary hover:bg-primary/20'
+                        }`}
+                      >
+                        {currentAyah === index && isPlaying ? (
+                          <Pause className="w-3 h-3" />
+                        ) : (
+                          <Play className="w-3 h-3 ml-0.5" />
+                        )}
+                      </button>
                     </div>
                     <p className="font-arabic text-xl text-foreground text-right flex-1 leading-loose">
                       {ayah.text}
                     </p>
                   </div>
+                  {showTransliteration && selectedSurah.transliteration[index] && (
+                    <p className="text-sm text-primary/80 pl-11 leading-relaxed mb-2 italic">
+                      {selectedSurah.transliteration[index].text}
+                    </p>
+                  )}
                   {selectedSurah.translation[index] && (
                     <p className="text-sm text-muted-foreground pl-11 leading-relaxed">
                       {selectedSurah.translation[index].text}
@@ -745,12 +912,12 @@ const Quran: React.FC = () => {
                   <h3 className="text-sm font-semibold text-gradient-gold">All Surahs</h3>
                   <span className="text-xs text-muted-foreground">{filteredSurahs.length} surahs</span>
                 </div>
-                {filteredSurahs.slice(0, 20).map((surah, index) => (
+                {filteredSurahs.map((surah, index) => (
                   <button
                     key={surah.number}
                     onClick={() => handleSurahClick(surah.number)}
                     className="w-full glass rounded-2xl p-4 border border-primary/10 flex items-center gap-4 hover:shadow-soft transition-all duration-300 animate-slide-up"
-                    style={{ animationDelay: `${0.2 + index * 0.03}s` }}
+                    style={{ animationDelay: `${0.1 + Math.min(index, 10) * 0.02}s` }}
                   >
                     <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft">
                       <span className="text-sm font-bold text-primary-foreground">{surah.number}</span>
