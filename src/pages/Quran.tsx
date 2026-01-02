@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users } from 'lucide-react';
+import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useQuranData, duasCollection, SurahDetail } from '@/hooks/useQuranData';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -334,6 +335,7 @@ His life encompassed every human role - husband, father, statesman, judge, milit
 ];
 
 const Quran: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'quran' | 'dua' | 'hadith' | 'prophets'>('quran');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSurah, setSelectedSurah] = useState<SurahDetail | null>(null);
@@ -649,9 +651,17 @@ const Quran: React.FC = () => {
     <MobileLayout>
       <div className="p-4 space-y-4">
         {/* Header */}
-        <header className="text-center py-2 animate-fade-in">
-          <h1 className="text-xl font-bold text-gradient-gold">Iman & Knowledge</h1>
-          <p className="text-xs text-gradient-gold opacity-80">Quran • Hadith • Prophets • Dua</p>
+        <header className="flex items-center gap-4 py-2 animate-fade-in">
+          <button 
+            onClick={() => navigate('/')}
+            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+          >
+            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gradient-gold">Iman & Knowledge</h1>
+            <p className="text-xs text-gradient-gold opacity-80">Quran • Hadith • Prophets • Dua</p>
+          </div>
         </header>
 
         {/* Search */}

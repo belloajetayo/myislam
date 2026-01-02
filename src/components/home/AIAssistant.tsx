@@ -103,7 +103,7 @@ const AIAssistant: React.FC = () => {
       {/* Input */}
       <div className="p-4 border-t border-border/50">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-2 bg-background rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all">
+          <div className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-sm">
             <input
               type="text"
               value={input}

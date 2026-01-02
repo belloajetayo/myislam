@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, X } from 'lucide-react';
+import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, X, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,7 @@ import {
 const KAABA_COORDS = { lat: 21.4225, lng: 39.8262 };
 
 const Qiblah: React.FC = () => {
+  const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [rotation, setRotation] = useState(135);
@@ -192,11 +194,19 @@ const Qiblah: React.FC = () => {
         
         {/* Content */}
         <div className="relative z-20 p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
-          {/* Header with Info Button */}
-          <header className="text-center mb-4 animate-fade-in w-full">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Qiblah Direction</h1>
-              <Dialog open={showInfo} onOpenChange={setShowInfo}>
+          {/* Header with Back Button */}
+          <header className="w-full mb-4 animate-fade-in">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => navigate('/')}
+                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+              >
+                <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+              </button>
+              <div className="flex-1 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 bg-clip-text text-transparent">Qiblah Direction</h1>
+                  <Dialog open={showInfo} onOpenChange={setShowInfo}>
                 <DialogTrigger asChild>
                   <button className="p-1.5 rounded-full bg-primary/20 hover:bg-primary/30 transition-colors">
                     <Info className="w-4 h-4 text-primary-foreground" />
@@ -230,11 +240,14 @@ const Qiblah: React.FC = () => {
                     </div>
                   </div>
                 </DialogContent>
-              </Dialog>
-            </div>
-            <div className="flex items-center justify-center gap-1 text-primary-foreground/90 mt-1">
-              <MapPin className="w-4 h-4" />
-              <span className="text-sm">{locationName}</span>
+                </Dialog>
+                </div>
+                <div className="flex items-center justify-center gap-1 text-primary-foreground/90 mt-1">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm">{locationName}</span>
+                </div>
+              </div>
+              <div className="w-10" /> {/* Spacer for alignment */}
             </div>
           </header>
 

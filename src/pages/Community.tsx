@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Play, Radio, Users, ExternalLink, Heart, Eye, Clock } from 'lucide-react';
+import { Play, Radio, Users, ExternalLink, Heart, Eye, Clock, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const channels = [
   {
@@ -73,15 +74,24 @@ const videos = [
 ];
 
 const Community: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'live' | 'videos' | 'channels'>('live');
 
   return (
     <MobileLayout>
       <div className="p-4 space-y-4">
         {/* Header */}
-        <header className="text-center py-2 animate-fade-in">
-          <h1 className="text-xl font-bold text-gradient-gold">Community</h1>
-          <p className="text-xs text-gradient-gold opacity-80">Islamic Content & Livestreams</p>
+        <header className="flex items-center gap-4 py-2 animate-fade-in">
+          <button 
+            onClick={() => navigate('/')}
+            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+          >
+            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gradient-gold">Community</h1>
+            <p className="text-xs text-gradient-gold opacity-80">Islamic Content & Livestreams</p>
+          </div>
         </header>
 
         {/* Tabs */}
