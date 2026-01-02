@@ -15,6 +15,7 @@ export interface Ayah {
   numberInSurah: number;
   juz: number;
   page: number;
+  audio?: string;
 }
 
 export interface SurahDetail {
@@ -25,22 +26,44 @@ export interface SurahDetail {
   revelationType: string;
   ayahs: Ayah[];
   translation: { number: number; text: string; numberInSurah: number }[];
+  transliteration: { number: number; text: string; numberInSurah: number }[];
+}
+
+export interface AudioEdition {
+  identifier: string;
+  name: string;
+  englishName: string;
+  format: string;
+  type: string;
 }
 
 export const useQuranData = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [audioEditions, setAudioEditions] = useState<AudioEdition[]>([]);
 
   useEffect(() => {
-    const fetchSurahs = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('https://api.alquran.cloud/v1/surah');
-        const data = await response.json();
-        if (data.code === 200) {
-          setSurahs(data.data);
+        const [surahsRes, audioRes] = await Promise.all([
+          fetch('https://api.alquran.cloud/v1/surah'),
+          fetch('https://api.alquran.cloud/v1/edition?format=audio')
+        ]);
+        
+        const [surahsData, audioData] = await Promise.all([
+          surahsRes.json(),
+          audioRes.json()
+        ]);
+        
+        if (surahsData.code === 200) {
+          setSurahs(surahsData.data);
         } else {
           setError('Failed to fetch Quran data');
+        }
+        
+        if (audioData.code === 200) {
+          setAudioEditions(audioData.data);
         }
       } catch (err) {
         setError('Error loading Quran data');
@@ -49,25 +72,37 @@ export const useQuranData = () => {
       }
     };
 
-    fetchSurahs();
+    fetchData();
   }, []);
 
-  const fetchSurahDetail = async (surahNumber: number): Promise<SurahDetail | null> => {
+  const fetchSurahDetail = async (surahNumber: number, audioEdition: string = 'ar.alafasy'): Promise<SurahDetail | null> => {
     try {
-      const [arabicRes, translationRes] = await Promise.all([
+      const [arabicRes, translationRes, transliterationRes, audioRes] = await Promise.all([
         fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`),
-        fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.asad`)
+        fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.asad`),
+        fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.transliteration`),
+        fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${audioEdition}`)
       ]);
       
-      const [arabicData, translationData] = await Promise.all([
+      const [arabicData, translationData, transliterationData, audioData] = await Promise.all([
         arabicRes.json(),
-        translationRes.json()
+        translationRes.json(),
+        transliterationRes.json(),
+        audioRes.json()
       ]);
 
       if (arabicData.code === 200 && translationData.code === 200) {
+        // Merge audio URLs into arabic ayahs
+        const ayahsWithAudio = arabicData.data.ayahs.map((ayah: Ayah, index: number) => ({
+          ...ayah,
+          audio: audioData.code === 200 ? audioData.data.ayahs[index]?.audio : undefined
+        }));
+
         return {
           ...arabicData.data,
-          translation: translationData.data.ayahs
+          ayahs: ayahsWithAudio,
+          translation: translationData.data.ayahs,
+          transliteration: transliterationData.code === 200 ? transliterationData.data.ayahs : []
         };
       }
       return null;
@@ -76,7 +111,23 @@ export const useQuranData = () => {
     }
   };
 
-  return { surahs, loading, error, fetchSurahDetail };
+  const fetchSurahAudio = async (surahNumber: number, edition: string = 'ar.alafasy') => {
+    try {
+      const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${edition}`);
+      const data = await response.json();
+      if (data.code === 200) {
+        return data.data.ayahs.map((ayah: any) => ({
+          number: ayah.numberInSurah,
+          audio: ayah.audio
+        }));
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  };
+
+  return { surahs, loading, error, fetchSurahDetail, audioEditions, fetchSurahAudio };
 };
 
 // Comprehensive Duas collection
