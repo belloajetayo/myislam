@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ChevronLeft, ChevronRight, MapPin, Bell, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Bell, Check, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const prayers = [
   { name: 'Fajr', time: '5:23 AM', arabic: 'الفجر', color: 'from-indigo-500 to-purple-600' },
@@ -15,6 +16,7 @@ const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const dates = [8, 9, 10, 11, 12, 13, 14];
 
 const Prayer: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(12);
   const [prayedList, setPrayedList] = useState<string[]>(['Fajr', 'Sunrise', 'Dhuhr']);
 
@@ -28,8 +30,14 @@ const Prayer: React.FC = () => {
     <MobileLayout>
       <div className="p-4 space-y-4">
         {/* Header */}
-        <header className="flex items-center justify-between py-2 animate-fade-in">
-          <div>
+        <header className="flex items-center gap-4 py-2 animate-fade-in">
+          <button 
+            onClick={() => navigate('/')}
+            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+          >
+            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+          </button>
+          <div className="flex-1">
             <h1 className="text-xl font-bold text-gradient-gold">Prayer Times</h1>
             <div className="flex items-center gap-1 text-gradient-gold opacity-80">
               <MapPin className="w-3 h-3" />
