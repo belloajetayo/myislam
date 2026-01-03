@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack, WifiOff, BookText } from 'lucide-react';
+import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack, WifiOff, BookText, Download, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useQuranData, duasCollection, SurahDetail, AudioEdition } from '@/hooks/useQuranData';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -346,6 +347,8 @@ const Quran: React.FC = () => {
   const [selectedProphet, setSelectedProphet] = useState<typeof prophetStories[0] | null>(null);
   const [loadingSurah, setLoadingSurah] = useState(false);
   const [bookmarkedSurahs, setBookmarkedSurahs] = useState<number[]>([36, 67, 112]);
+  const [downloadingSurah, setDownloadingSurah] = useState<number | null>(null);
+  const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>([]);
   
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -356,6 +359,41 @@ const Quran: React.FC = () => {
   const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
   
   const { surahs, loading, error, fetchSurahDetail, audioEditions, isOffline, getCachedSurahCount } = useQuranData();
+
+  // Check which surahs are already cached
+  useEffect(() => {
+    const checkCachedSurahs = () => {
+      const cached: number[] = [];
+      for (let i = 1; i <= 114; i++) {
+        const key = `quran_cache_surah_${i}_ar.alafasy`;
+        if (localStorage.getItem(key)) {
+          cached.push(i);
+        }
+      }
+      setDownloadedSurahs(cached);
+    };
+    checkCachedSurahs();
+  }, []);
+
+  const handleDownloadSurah = async (surahNumber: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (downloadedSurahs.includes(surahNumber) || downloadingSurah === surahNumber) return;
+    
+    setDownloadingSurah(surahNumber);
+    try {
+      const detail = await fetchSurahDetail(surahNumber, selectedReciter);
+      if (detail) {
+        setDownloadedSurahs(prev => [...prev, surahNumber]);
+        toast.success(`Surah ${surahNumber} downloaded for offline reading`);
+      } else {
+        toast.error('Failed to download surah');
+      }
+    } catch (err) {
+      toast.error('Failed to download surah');
+    } finally {
+      setDownloadingSurah(null);
+    }
+  };
 
   // Popular reciters for easy access
   const popularReciters = audioEditions.filter(e => 
@@ -969,7 +1007,11 @@ const Quran: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gradient-gold">All Surahs</h3>
-                  <span className="text-xs text-muted-foreground">{filteredSurahs.length} surahs</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{downloadedSurahs.length} cached</span>
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <span className="text-xs text-muted-foreground">{filteredSurahs.length} surahs</span>
+                  </div>
                 </div>
                 {filteredSurahs.map((surah, index) => (
                   <button
@@ -991,6 +1033,27 @@ const Quran: React.FC = () => {
                       <p className="text-xs text-muted-foreground">{surah.numberOfAyahs} verses • {surah.revelationType}</p>
                     </div>
                     <p className="font-arabic text-lg text-foreground">{surah.name}</p>
+                    {/* Download button */}
+                    <button
+                      onClick={(e) => handleDownloadSurah(surah.number, e)}
+                      disabled={downloadedSurahs.includes(surah.number) || downloadingSurah === surah.number}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        downloadedSurahs.includes(surah.number)
+                          ? 'bg-green-500/20 text-green-600'
+                          : downloadingSurah === surah.number
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary'
+                      }`}
+                      title={downloadedSurahs.includes(surah.number) ? 'Downloaded for offline' : 'Download for offline'}
+                    >
+                      {downloadingSurah === surah.number ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : downloadedSurahs.includes(surah.number) ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </button>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </button>
                 ))}

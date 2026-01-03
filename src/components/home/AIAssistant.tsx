@@ -103,20 +103,28 @@ const AIAssistant: React.FC = () => {
       {/* Input */}
       <div className="p-4 border-t border-border/50">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-sm">
+          <div className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-sm min-h-[48px]">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about Islam..."
               disabled={isLoading}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full min-w-0 appearance-none"
+              style={{ 
+                WebkitAppearance: 'none',
+                fontSize: '16px' // Prevents iOS zoom on focus
+              }}
             />
           </div>
           <button 
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="w-11 h-11 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="w-11 h-11 flex-shrink-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
