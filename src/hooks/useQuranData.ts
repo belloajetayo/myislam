@@ -37,14 +37,96 @@ export interface AudioEdition {
   type: string;
 }
 
+const CACHE_PREFIX = 'quran_cache_';
+const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+const getCachedData = <T>(key: string): T | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_PREFIX + key);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_EXPIRY) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.error('Cache read error:', e);
+  }
+  return null;
+};
+
+const setCachedData = <T>(key: string, data: T): void => {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.error('Cache write error:', e);
+  }
+};
+
 export const useQuranData = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [audioEditions, setAudioEditions] = useState<AudioEdition[]>([]);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
+      // Try cache first
+      const cachedSurahs = getCachedData<Surah[]>('surahs');
+      const cachedAudioEditions = getCachedData<AudioEdition[]>('audioEditions');
+
+      if (cachedSurahs) {
+        setSurahs(cachedSurahs);
+        if (cachedAudioEditions) setAudioEditions(cachedAudioEditions);
+        setLoading(false);
+        
+        // If online, refresh in background
+        if (!isOffline) {
+          try {
+            const [surahsRes, audioRes] = await Promise.all([
+              fetch('https://api.alquran.cloud/v1/surah'),
+              fetch('https://api.alquran.cloud/v1/edition?format=audio')
+            ]);
+            const [surahsData, audioData] = await Promise.all([
+              surahsRes.json(),
+              audioRes.json()
+            ]);
+            if (surahsData.code === 200) {
+              setSurahs(surahsData.data);
+              setCachedData('surahs', surahsData.data);
+            }
+            if (audioData.code === 200) {
+              setAudioEditions(audioData.data);
+              setCachedData('audioEditions', audioData.data);
+            }
+          } catch (err) {
+            // Silently fail, we have cache
+          }
+        }
+        return;
+      }
+
+      if (isOffline) {
+        setError('You are offline and no cached data is available');
+        setLoading(false);
+        return;
+      }
+
       try {
         const [surahsRes, audioRes] = await Promise.all([
           fetch('https://api.alquran.cloud/v1/surah'),
@@ -58,12 +140,14 @@ export const useQuranData = () => {
         
         if (surahsData.code === 200) {
           setSurahs(surahsData.data);
+          setCachedData('surahs', surahsData.data);
         } else {
           setError('Failed to fetch Quran data');
         }
         
         if (audioData.code === 200) {
           setAudioEditions(audioData.data);
+          setCachedData('audioEditions', audioData.data);
         }
       } catch (err) {
         setError('Error loading Quran data');
@@ -73,9 +157,28 @@ export const useQuranData = () => {
     };
 
     fetchData();
-  }, []);
+  }, [isOffline]);
 
   const fetchSurahDetail = async (surahNumber: number, audioEdition: string = 'ar.alafasy'): Promise<SurahDetail | null> => {
+    const cacheKey = `surah_${surahNumber}_${audioEdition}`;
+    const cached = getCachedData<SurahDetail>(cacheKey);
+    
+    if (cached) {
+      // If online, refresh in background
+      if (!isOffline) {
+        fetchAndCacheSurahDetail(surahNumber, audioEdition, cacheKey);
+      }
+      return cached;
+    }
+
+    if (isOffline) {
+      return null;
+    }
+
+    return fetchAndCacheSurahDetail(surahNumber, audioEdition, cacheKey);
+  };
+
+  const fetchAndCacheSurahDetail = async (surahNumber: number, audioEdition: string, cacheKey: string): Promise<SurahDetail | null> => {
     try {
       const [arabicRes, translationRes, transliterationRes, audioRes] = await Promise.all([
         fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`),
@@ -92,18 +195,20 @@ export const useQuranData = () => {
       ]);
 
       if (arabicData.code === 200 && translationData.code === 200) {
-        // Merge audio URLs into arabic ayahs
         const ayahsWithAudio = arabicData.data.ayahs.map((ayah: Ayah, index: number) => ({
           ...ayah,
           audio: audioData.code === 200 ? audioData.data.ayahs[index]?.audio : undefined
         }));
 
-        return {
+        const surahDetail: SurahDetail = {
           ...arabicData.data,
           ayahs: ayahsWithAudio,
           translation: translationData.data.ayahs,
           transliteration: transliterationData.code === 200 ? transliterationData.data.ayahs : []
         };
+
+        setCachedData(cacheKey, surahDetail);
+        return surahDetail;
       }
       return null;
     } catch (err) {
@@ -112,14 +217,22 @@ export const useQuranData = () => {
   };
 
   const fetchSurahAudio = async (surahNumber: number, edition: string = 'ar.alafasy') => {
+    const cacheKey = `audio_${surahNumber}_${edition}`;
+    const cached = getCachedData<{ number: number; audio: string }[]>(cacheKey);
+    
+    if (cached) return cached;
+    if (isOffline) return null;
+
     try {
       const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${edition}`);
       const data = await response.json();
       if (data.code === 200) {
-        return data.data.ayahs.map((ayah: any) => ({
+        const audioData = data.data.ayahs.map((ayah: any) => ({
           number: ayah.numberInSurah,
           audio: ayah.audio
         }));
+        setCachedData(cacheKey, audioData);
+        return audioData;
       }
       return null;
     } catch (err) {
@@ -127,7 +240,18 @@ export const useQuranData = () => {
     }
   };
 
-  return { surahs, loading, error, fetchSurahDetail, audioEditions, fetchSurahAudio };
+  const getCachedSurahCount = (): number => {
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(CACHE_PREFIX + 'surah_')) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  return { surahs, loading, error, fetchSurahDetail, audioEditions, fetchSurahAudio, isOffline, getCachedSurahCount };
 };
 
 // Comprehensive Duas collection
