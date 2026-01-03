@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack } from 'lucide-react';
+import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack, WifiOff, BookText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuranData, duasCollection, SurahDetail, AudioEdition } from '@/hooks/useQuranData';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 // Hadith Collection
 const hadithCollection = [
@@ -352,8 +353,9 @@ const Quran: React.FC = () => {
   const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
   const [showTransliteration, setShowTransliteration] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
   
-  const { surahs, loading, error, fetchSurahDetail, audioEditions } = useQuranData();
+  const { surahs, loading, error, fetchSurahDetail, audioEditions, isOffline, getCachedSurahCount } = useQuranData();
 
   // Popular reciters for easy access
   const popularReciters = audioEditions.filter(e => 
@@ -536,74 +538,125 @@ const Quran: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => setShowTransliteration(!showTransliteration)}
-                className={`text-xs px-3 py-1 rounded-full transition-colors ${
-                  showTransliteration ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                onClick={() => setArabicOnlyMode(!arabicOnlyMode)}
+                className={`text-xs px-3 py-1 rounded-full transition-colors flex items-center gap-1 ${
+                  arabicOnlyMode ? 'bg-emerald-600 text-white' : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-400'
                 }`}
               >
-                Transliteration
+                <BookText className="w-3 h-3" />
+                Mushaf
               </button>
+              {!arabicOnlyMode && (
+                <button
+                  onClick={() => setShowTransliteration(!showTransliteration)}
+                  className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                    showTransliteration ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                  }`}
+                >
+                  Transliteration
+                </button>
+              )}
             </div>
           </div>
 
-          {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
-            <div className="p-4 text-center border-b border-primary/10">
-              <p className="font-arabic text-2xl text-foreground">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-              <p className="text-sm text-muted-foreground mt-1">In the name of Allah, the Most Gracious, the Most Merciful</p>
-            </div>
-          )}
-
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-6 pb-8">
-              {selectedSurah.ayahs.map((ayah, index) => (
-                <div 
-                  key={ayah.number} 
-                  className={`glass rounded-2xl p-4 border transition-all ${
-                    currentAyah === index && isPlaying 
-                      ? 'border-primary bg-primary/5 shadow-lg' 
-                      : 'border-primary/10'
-                  }`}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-primary-foreground">{ayah.numberInSurah}</span>
-                      </div>
-                      <button
-                        onClick={() => playAyah(index)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                          currentAyah === index && isPlaying
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-primary/10 text-primary hover:bg-primary/20'
-                        }`}
-                      >
-                        {currentAyah === index && isPlaying ? (
-                          <Pause className="w-3 h-3" />
-                        ) : (
-                          <Play className="w-3 h-3 ml-0.5" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="font-arabic text-xl text-foreground text-right flex-1 leading-loose">
-                      {ayah.text}
-                    </p>
-                  </div>
-                  {showTransliteration && selectedSurah.transliteration[index] && (
-                    <p className="text-sm text-primary/80 pl-11 leading-relaxed mb-2 italic">
-                      {selectedSurah.transliteration[index].text}
-                    </p>
-                  )}
-                  {selectedSurah.translation[index] && (
-                    <p className="text-sm text-muted-foreground pl-11 leading-relaxed">
-                      {selectedSurah.translation[index].text}
-                    </p>
-                  )}
+          {/* Arabic-Only Mushaf Mode */}
+          {arabicOnlyMode ? (
+            <>
+              {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
+                <div className="p-6 text-center border-b border-primary/10 bg-gradient-to-b from-amber-50/50 to-transparent dark:from-amber-900/10">
+                  <p className="font-arabic text-3xl text-foreground leading-relaxed">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              )}
+              <ScrollArea className="flex-1">
+                <div className="p-6 pb-12 bg-gradient-to-b from-amber-50/30 to-transparent dark:from-amber-900/5">
+                  {/* Surah Name Header */}
+                  <div className="text-center mb-8">
+                    <p className="font-arabic text-4xl text-foreground mb-2">{selectedSurah.name}</p>
+                    <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent mx-auto" />
+                  </div>
+                  
+                  {/* Continuous Arabic Text - Like a real Mushaf */}
+                  <div className="font-arabic text-2xl md:text-3xl text-foreground text-right leading-[2.5] tracking-wide">
+                    {selectedSurah.ayahs.map((ayah, index) => (
+                      <span 
+                        key={ayah.number}
+                        className={`cursor-pointer hover:text-primary transition-colors ${
+                          currentAyah === index && isPlaying ? 'text-primary bg-primary/10 rounded px-1' : ''
+                        }`}
+                        onClick={() => playAyah(index)}
+                      >
+                        {ayah.text}
+                        <span className="inline-flex items-center justify-center w-8 h-8 mx-1 text-sm bg-primary/10 rounded-full text-primary font-sans">
+                          {ayah.numberInSurah}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            </>
+          ) : (
+            <>
+              {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
+                <div className="p-4 text-center border-b border-primary/10">
+                  <p className="font-arabic text-2xl text-foreground">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+                  <p className="text-sm text-muted-foreground mt-1">In the name of Allah, the Most Gracious, the Most Merciful</p>
+                </div>
+              )}
+
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-6 pb-8">
+                  {selectedSurah.ayahs.map((ayah, index) => (
+                    <div 
+                      key={ayah.number} 
+                      className={`glass rounded-2xl p-4 border transition-all ${
+                        currentAyah === index && isPlaying 
+                          ? 'border-primary bg-primary/5 shadow-lg' 
+                          : 'border-primary/10'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-primary-foreground">{ayah.numberInSurah}</span>
+                          </div>
+                          <button
+                            onClick={() => playAyah(index)}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                              currentAyah === index && isPlaying
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-primary/10 text-primary hover:bg-primary/20'
+                            }`}
+                          >
+                            {currentAyah === index && isPlaying ? (
+                              <Pause className="w-3 h-3" />
+                            ) : (
+                              <Play className="w-3 h-3 ml-0.5" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="font-arabic text-xl text-foreground text-right flex-1 leading-loose">
+                          {ayah.text}
+                        </p>
+                      </div>
+                      {showTransliteration && selectedSurah.transliteration[index] && (
+                        <p className="text-sm text-primary/80 pl-11 leading-relaxed mb-2 italic">
+                          {selectedSurah.transliteration[index].text}
+                        </p>
+                      )}
+                      {selectedSurah.translation[index] && (
+                        <p className="text-sm text-muted-foreground pl-11 leading-relaxed">
+                          {selectedSurah.translation[index].text}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
+          )}
         </div>
       </MobileLayout>
     );
@@ -829,6 +882,12 @@ const Quran: React.FC = () => {
             <h1 className="text-xl font-bold text-gradient-gold">Iman & Knowledge</h1>
             <p className="text-xs text-gradient-gold opacity-80">Quran • Hadith • Prophets • Dua</p>
           </div>
+          {isOffline && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <WifiOff className="w-3 h-3" />
+              <span className="text-xs font-medium">Offline</span>
+            </div>
+          )}
         </header>
 
         {/* Search */}
