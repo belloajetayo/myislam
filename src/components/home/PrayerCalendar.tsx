@@ -7,6 +7,7 @@ const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const PrayerCalendar: React.FC = () => {
   const [selectedDateOffset, setSelectedDateOffset] = useState(0);
+  const [weekHijriDates, setWeekHijriDates] = useState<{ [key: string]: number }>({});
   const { dateInfo, loading: hijriLoading, fetchDateInfo } = useHijriDate();
   const { prayerTimes, currentPrayer, loading: prayerLoading } = usePrayerTimes();
 
@@ -19,6 +20,30 @@ const PrayerCalendar: React.FC = () => {
     date.setDate(today.getDate() - currentDayIndex + i);
     return date;
   });
+
+  // Fetch Hijri dates for the week
+  useEffect(() => {
+    const fetchWeekHijri = async () => {
+      const hijriDates: { [key: string]: number } = {};
+      for (const date of weekDates) {
+        const dateStr = date.toDateString();
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        try {
+          const response = await fetch(`https://api.aladhan.com/v1/gpiToH/${day}-${month}-${year}`);
+          const data = await response.json();
+          if (data.code === 200) {
+            hijriDates[dateStr] = parseInt(data.data.hijri.day);
+          }
+        } catch (error) {
+          console.error('Error fetching Hijri date:', error);
+        }
+      }
+      setWeekHijriDates(hijriDates);
+    };
+    fetchWeekHijri();
+  }, []);
 
   const selectedDate = new Date(today);
   selectedDate.setDate(today.getDate() + selectedDateOffset);
@@ -122,6 +147,11 @@ const PrayerCalendar: React.FC = () => {
               <span className={`text-sm font-semibold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
                 {date.getDate()}
               </span>
+              {weekHijriDates[date.toDateString()] && (
+                <span className={`text-[10px] ${isSelected ? 'text-primary-foreground/80' : 'text-islamic-gold'}`}>
+                  {weekHijriDates[date.toDateString()]}
+                </span>
+              )}
             </button>
           );
         })}
