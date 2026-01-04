@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Search, BookOpen, Bookmark, Play, ChevronRight, Star, ChevronLeft, Loader2, X, Moon, ScrollText, Users, ArrowLeft, Pause, Volume2, SkipForward, SkipBack, WifiOff, BookText, Download, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { useQuranData, duasCollection, SurahDetail, AudioEdition } from '@/hooks
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 
 // Hadith Collection
 const hadithCollection = [
@@ -432,6 +433,68 @@ const Quran: React.FC = () => {
     setLoadingSurah(false);
   };
 
+  // Swipe navigation for Surah
+  const goToNextSurah = useCallback(async () => {
+    if (selectedSurah && selectedSurah.number < 114) {
+      const nextNumber = selectedSurah.number + 1;
+      setLoadingSurah(true);
+      setCurrentAyah(0);
+      setIsPlaying(false);
+      if (audioRef.current) audioRef.current.pause();
+      const detail = await fetchSurahDetail(nextNumber, selectedReciter);
+      if (detail) setSelectedSurah(detail);
+      setLoadingSurah(false);
+      toast.success(`Surah ${nextNumber}`);
+    }
+  }, [selectedSurah, selectedReciter, fetchSurahDetail]);
+
+  const goToPreviousSurah = useCallback(async () => {
+    if (selectedSurah && selectedSurah.number > 1) {
+      const prevNumber = selectedSurah.number - 1;
+      setLoadingSurah(true);
+      setCurrentAyah(0);
+      setIsPlaying(false);
+      if (audioRef.current) audioRef.current.pause();
+      const detail = await fetchSurahDetail(prevNumber, selectedReciter);
+      if (detail) setSelectedSurah(detail);
+      setLoadingSurah(false);
+      toast.success(`Surah ${prevNumber}`);
+    }
+  }, [selectedSurah, selectedReciter, fetchSurahDetail]);
+
+  const { swipeHandlers: surahSwipeHandlers } = useSwipeNavigation({
+    onSwipeLeft: goToNextSurah,
+    onSwipeRight: goToPreviousSurah,
+    minSwipeDistance: 80
+  });
+
+  // Swipe navigation for Dua
+  const goToNextDua = useCallback(() => {
+    if (selectedDuaCategory) {
+      const currentIndex = duasCollection.findIndex(d => d.id === selectedDuaCategory.id);
+      if (currentIndex < duasCollection.length - 1) {
+        setSelectedDuaCategory(duasCollection[currentIndex + 1]);
+        toast.success(duasCollection[currentIndex + 1].category);
+      }
+    }
+  }, [selectedDuaCategory]);
+
+  const goToPreviousDua = useCallback(() => {
+    if (selectedDuaCategory) {
+      const currentIndex = duasCollection.findIndex(d => d.id === selectedDuaCategory.id);
+      if (currentIndex > 0) {
+        setSelectedDuaCategory(duasCollection[currentIndex - 1]);
+        toast.success(duasCollection[currentIndex - 1].category);
+      }
+    }
+  }, [selectedDuaCategory]);
+
+  const { swipeHandlers: duaSwipeHandlers } = useSwipeNavigation({
+    onSwipeLeft: goToNextDua,
+    onSwipeRight: goToPreviousDua,
+    minSwipeDistance: 80
+  });
+
   const playAyah = (ayahIndex: number) => {
     if (selectedSurah && selectedSurah.ayahs[ayahIndex]?.audio) {
       if (audioRef.current) {
@@ -498,29 +561,30 @@ const Quran: React.FC = () => {
   if (selectedSurah) {
     return (
       <MobileLayout showNav={false}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full" {...surahSwipeHandlers}>
           {/* Hidden audio element */}
           <audio ref={audioRef} className="hidden" />
           
-          <header className="p-4 flex items-center gap-4 border-b border-primary/10">
+          <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button 
               onClick={() => {
                 setSelectedSurah(null);
                 setIsPlaying(false);
                 if (audioRef.current) audioRef.current.pause();
               }}
-              className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
             </button>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-gradient-gold">{selectedSurah.englishName}</h1>
-              <p className="text-xs text-primary-foreground/70">
+              <p className="text-xs text-muted-foreground">
                 {selectedSurah.englishNameTranslation} • {selectedSurah.ayahs.length} verses
               </p>
             </div>
-            <div className="text-right">
+            <div className="text-right flex items-center gap-2">
               <p className="font-arabic text-xl text-foreground">{selectedSurah.name}</p>
+              <span className="text-xs text-muted-foreground">({selectedSurah.number}/114)</span>
             </div>
           </header>
 
@@ -702,21 +766,25 @@ const Quran: React.FC = () => {
 
   // Dua Detail View
   if (selectedDuaCategory) {
+    const currentDuaIndex = duasCollection.findIndex(d => d.id === selectedDuaCategory.id);
     return (
       <MobileLayout showNav={false}>
-        <div className="flex flex-col h-full">
-          <header className="p-4 flex items-center gap-4 border-b border-primary/10">
+        <div className="flex flex-col h-full" {...duaSwipeHandlers}>
+          <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button 
               onClick={() => setSelectedDuaCategory(null)}
-              className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
             </button>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-gradient-gold">{selectedDuaCategory.category}</h1>
-              <p className="text-xs text-primary-foreground/70">{selectedDuaCategory.duas.length} duas</p>
+              <p className="text-xs text-muted-foreground">{selectedDuaCategory.duas.length} duas</p>
             </div>
-            <p className="font-arabic text-xl text-foreground">{selectedDuaCategory.categoryArabic}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-arabic text-xl text-foreground">{selectedDuaCategory.categoryArabic}</p>
+              <span className="text-xs text-muted-foreground">({currentDuaIndex + 1}/{duasCollection.length})</span>
+            </div>
           </header>
 
           <ScrollArea className="flex-1 p-4">
@@ -753,16 +821,16 @@ const Quran: React.FC = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full">
-          <header className="p-4 flex items-center gap-4 border-b border-primary/10">
+          <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button 
               onClick={() => setSelectedHadithCategory(null)}
-              className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
             </button>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-gradient-gold">{selectedHadithCategory.category}</h1>
-              <p className="text-xs text-primary-foreground/70">{selectedHadithCategory.hadiths.length} hadiths</p>
+              <p className="text-xs text-muted-foreground">{selectedHadithCategory.hadiths.length} hadiths</p>
             </div>
             <p className="font-arabic text-xl text-foreground">{selectedHadithCategory.categoryArabic}</p>
           </header>
@@ -798,16 +866,16 @@ const Quran: React.FC = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full">
-          <header className="p-4 flex items-center gap-4 border-b border-primary/10">
+          <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button 
               onClick={() => setSelectedProphet(null)}
-              className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
             </button>
             <div className="flex-1">
               <h1 className="text-lg font-bold text-gradient-gold">{selectedProphet.name}</h1>
-              <p className="text-xs text-primary-foreground/70">{selectedProphet.title}</p>
+              <p className="text-xs text-muted-foreground">{selectedProphet.title}</p>
             </div>
             <p className="font-arabic text-xl text-foreground">{selectedProphet.arabicName}</p>
           </header>
