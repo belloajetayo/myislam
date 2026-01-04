@@ -103,8 +103,15 @@ const AIAssistant: React.FC = () => {
       {/* Input */}
       <div className="p-4 border-t border-border/50">
         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-sm min-h-[48px]">
+          <div 
+            className="flex-1 flex items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-border focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-sm min-h-[52px] cursor-text"
+            onClick={() => {
+              const inputEl = document.getElementById('ai-chat-input');
+              if (inputEl) inputEl.focus();
+            }}
+          >
             <input
+              id="ai-chat-input"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -114,10 +121,13 @@ const AIAssistant: React.FC = () => {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full min-w-0 appearance-none"
+              enterKeyHint="send"
+              className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none w-full min-w-0 appearance-none touch-manipulation"
               style={{ 
                 WebkitAppearance: 'none',
-                fontSize: '16px' // Prevents iOS zoom on focus
+                fontSize: '16px',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
               }}
             />
           </div>

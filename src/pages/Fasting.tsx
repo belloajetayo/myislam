@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ArrowLeft, Moon, Sun, Clock, Calendar, CheckCircle, Info, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Clock, Calendar, CheckCircle, Info, UtensilsCrossed, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,16 +66,16 @@ const Fasting: React.FC = () => {
     <MobileLayout showNav={false}>
       <div className="p-4 space-y-6">
         {/* Header */}
-        <header className="flex items-center gap-4 py-2">
+        <header className="sticky top-0 z-10 flex items-center gap-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 px-4 -mt-4 mb-2">
           <button 
             onClick={() => navigate('/')}
-            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
           >
             <ArrowLeft className="w-5 h-5 text-primary-foreground" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gradient-gold">Sawm (Fasting)</h1>
-            <p className="text-sm text-primary-foreground/70">Fourth Pillar of Islam</p>
+            <p className="text-sm text-muted-foreground">Fourth Pillar of Islam</p>
           </div>
         </header>
 
@@ -117,6 +117,18 @@ const Fasting: React.FC = () => {
               </>
             )}
           </Button>
+
+          {/* myRamadan Integration Link */}
+          <a 
+            href="https://myramadan.lovable.app" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-full mt-3 py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
+          >
+            <Calendar className="w-4 h-4" />
+            Open myRamadan Daily Tracker
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
 
         {/* How to Fast Guide */}
@@ -127,8 +139,8 @@ const Fasting: React.FC = () => {
               <div key={index} className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
                 <span className="text-2xl">{step.icon}</span>
                 <div>
-                  <h4 className="text-sm font-semibold text-primary-foreground">{step.title}</h4>
-                  <p className="text-xs text-primary-foreground/60">{step.description}</p>
+                  <h4 className="text-sm font-semibold text-foreground">{step.title}</h4>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -144,7 +156,7 @@ const Fasting: React.FC = () => {
             </div>
             <ul className="space-y-2">
               {rewardedActions.map((action, index) => (
-                <li key={index} className="text-xs text-primary-foreground/80 flex items-center gap-2">
+                <li key={index} className="text-xs text-foreground flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   {action}
                 </li>
@@ -158,7 +170,7 @@ const Fasting: React.FC = () => {
             </div>
             <ul className="space-y-2">
               {thingsToAvoid.map((item, index) => (
-                <li key={index} className="text-xs text-primary-foreground/80 flex items-center gap-2">
+                <li key={index} className="text-xs text-foreground flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                   {item}
                 </li>
@@ -172,16 +184,16 @@ const Fasting: React.FC = () => {
           <h3 className="text-lg font-bold text-gradient-gold mb-4">Types of Fasting</h3>
           <div className="space-y-3">
             <div className="p-3 bg-primary/5 rounded-xl">
-              <h4 className="text-sm font-semibold text-primary-foreground">Ramadan (Obligatory)</h4>
-              <p className="text-xs text-primary-foreground/60">Required for all able Muslims during the month of Ramadan</p>
+              <h4 className="text-sm font-semibold text-foreground">Ramadan (Obligatory)</h4>
+              <p className="text-xs text-muted-foreground">Required for all able Muslims during the month of Ramadan</p>
             </div>
             <div className="p-3 bg-primary/5 rounded-xl">
-              <h4 className="text-sm font-semibold text-primary-foreground">Voluntary Fasting (Sunnah)</h4>
-              <p className="text-xs text-primary-foreground/60">Mondays & Thursdays, White Days (13th, 14th, 15th), Ashura, Arafah</p>
+              <h4 className="text-sm font-semibold text-foreground">Voluntary Fasting (Sunnah)</h4>
+              <p className="text-xs text-muted-foreground">Mondays & Thursdays, White Days (13th, 14th, 15th), Ashura, Arafah</p>
             </div>
             <div className="p-3 bg-primary/5 rounded-xl">
-              <h4 className="text-sm font-semibold text-primary-foreground">Makeup Fasts (Qada)</h4>
-              <p className="text-xs text-primary-foreground/60">Making up missed Ramadan fasts before next Ramadan</p>
+              <h4 className="text-sm font-semibold text-foreground">Makeup Fasts (Qada)</h4>
+              <p className="text-xs text-muted-foreground">Making up missed Ramadan fasts before next Ramadan</p>
             </div>
           </div>
         </div>
@@ -192,10 +204,10 @@ const Fasting: React.FC = () => {
             <Info className="w-5 h-5 text-islamic-gold" />
             <h3 className="font-semibold text-gradient-gold">Virtues of Fasting</h3>
           </div>
-          <p className="text-sm text-primary-foreground/80 leading-relaxed mb-3">
+          <p className="text-sm text-foreground leading-relaxed mb-3">
             The Prophet ﷺ said: "Whoever fasts Ramadan with faith and seeking reward, his previous sins will be forgiven." (Bukhari & Muslim)
           </p>
-          <p className="text-sm text-primary-foreground/80 leading-relaxed">
+          <p className="text-sm text-foreground leading-relaxed">
             "Fasting is a shield; so when one of you is fasting, he should neither indulge in obscene language nor raise his voice. If someone attacks him or insults him, let him say: 'I am fasting.'" (Bukhari)
           </p>
         </div>
