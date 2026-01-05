@@ -85,19 +85,11 @@ const PrayerCalendar: React.FC = () => {
 
   return (
     <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-slide-up">
-      {/* Header */}
+      {/* Header with Navigation */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-muted-foreground">{selectedDateOffset === 0 ? 'Today' : formatGregorianDate()}</p>
-          <h3 className="font-semibold text-foreground">{formatGregorianDate()}</h3>
-          {/* Hijri Date */}
-          {dateInfo?.hijri && (
-            <div className="flex items-center gap-1 mt-1">
-              <Moon className="w-3 h-3 text-islamic-gold" />
-              <p className="text-xs text-islamic-gold font-medium">{formatHijriDate()}</p>
-            </div>
-          )}
-        </div>
+        <p className="text-sm text-muted-foreground font-medium">
+          {selectedDateOffset === 0 ? 'Today' : 'Selected Date'}
+        </p>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setSelectedDateOffset(prev => prev - 1)}
@@ -117,6 +109,43 @@ const PrayerCalendar: React.FC = () => {
           >
             <Calendar className="w-4 h-4 text-primary-foreground" />
           </button>
+        </div>
+      </div>
+
+      {/* Dual Calendar Display */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {/* Gregorian Calendar Card */}
+        <div className="bg-muted/50 rounded-2xl p-3 border border-border/50">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Gregorian</span>
+          </div>
+          <p className="text-lg font-bold text-foreground">{selectedDate.getDate()}</p>
+          <p className="text-xs text-muted-foreground">
+            {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+
+        {/* Hijri Calendar Card */}
+        <div className="bg-islamic-gold/10 rounded-2xl p-3 border border-islamic-gold/30">
+          <div className="flex items-center gap-2 mb-1">
+            <Moon className="w-4 h-4 text-islamic-gold" />
+            <span className="text-[10px] text-islamic-gold uppercase tracking-wider">Hijri</span>
+          </div>
+          {hijriLoading ? (
+            <div className="flex items-center justify-center py-2">
+              <div className="w-4 h-4 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : dateInfo?.hijri ? (
+            <>
+              <p className="text-lg font-bold text-foreground">{dateInfo.hijri.day}</p>
+              <p className="text-xs text-islamic-gold">
+                {dateInfo.hijri.month.en} {dateInfo.hijri.year} AH
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">Loading...</p>
+          )}
         </div>
       </div>
 
