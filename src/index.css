@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Scheherazade+New:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,60 +6,63 @@
 
 @layer base {
   :root {
-    /* Sky blue to purple gradient theme */
-    --background: 220 60% 98%;
-    --foreground: 240 20% 15%;
+    /* Refined Islamic theme - warm gold with deep purples */
+    --background: 40 30% 98%;
+    --foreground: 240 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 20% 15%;
+    --card-foreground: 240 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 20% 15%;
+    --popover-foreground: 240 20% 12%;
 
-    /* Primary: Sky Blue */
-    --primary: 210 100% 60%;
+    /* Primary: Rich Gold */
+    --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Purple */
-    --secondary: 270 60% 60%;
+    /* Secondary: Deep Purple */
+    --secondary: 270 50% 45%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 15% 45%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 240 10% 40%;
 
-    --accent: 200 80% 65%;
+    --accent: 180 50% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 210 100% 60%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 38 92% 50%;
 
     --radius: 1rem;
 
     /* Custom Islamic theme colors */
-    --islamic-gold: 45 90% 55%;
-    --islamic-green: 150 60% 40%;
-    --islamic-sky: 210 100% 60%;
-    --islamic-purple: 270 60% 55%;
-    --islamic-light: 220 60% 97%;
+    --islamic-gold: 38 92% 50%;
+    --islamic-green: 160 70% 35%;
+    --islamic-sky: 200 80% 55%;
+    --islamic-purple: 270 50% 50%;
+    --islamic-light: 40 30% 96%;
+    --islamic-cream: 40 40% 95%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(210 100% 65%) 0%, hsl(270 60% 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100% / 0.9) 0%, hsl(0 0% 100% / 0.7) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(210 100% 70% / 0.3) 0%, hsl(270 60% 65% / 0.3) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(200 80% 60%) 0%, hsl(270 70% 65%) 100%);
+    /* Enhanced Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(38 92% 55%) 0%, hsl(28 90% 48%) 50%, hsl(270 50% 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(40 20% 98%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(38 92% 55% / 0.15) 0%, hsl(270 50% 50% / 0.1) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(160 70% 40%) 0%, hsl(180 60% 45%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(38 92% 60%) 0%, hsl(20 90% 55%) 100%);
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -2px hsl(270 60% 60% / 0.15);
-    --shadow-card: 0 8px 32px -4px hsl(210 100% 60% / 0.12);
-    --shadow-glow: 0 0 40px hsl(210 100% 60% / 0.25);
+    /* Enhanced Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(38 92% 50% / 0.2);
+    --shadow-card: 0 8px 40px -8px hsl(270 50% 50% / 0.15);
+    --shadow-glow: 0 0 60px hsl(38 92% 55% / 0.3);
+    --shadow-elevated: 0 20px 50px -15px hsl(240 20% 10% / 0.15);
 
     /* Typography */
     --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-arabic: 'Amiri', serif;
+    --font-arabic: 'Scheherazade New', 'Amiri', serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -72,33 +75,38 @@
   }
 
   .dark {
-    --background: 240 20% 8%;
-    --foreground: 220 20% 95%;
+    --background: 240 15% 6%;
+    --foreground: 40 20% 95%;
 
-    --card: 240 15% 12%;
-    --card-foreground: 220 20% 95%;
+    --card: 240 12% 10%;
+    --card-foreground: 40 20% 95%;
 
-    --popover: 240 15% 12%;
-    --popover-foreground: 220 20% 95%;
+    --popover: 240 12% 10%;
+    --popover-foreground: 40 20% 95%;
 
-    --primary: 210 100% 65%;
-    --primary-foreground: 240 20% 10%;
+    --primary: 38 92% 55%;
+    --primary-foreground: 240 15% 8%;
 
-    --secondary: 270 60% 65%;
+    --secondary: 270 50% 60%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 15% 18%;
-    --muted-foreground: 220 15% 60%;
+    --muted: 240 12% 15%;
+    --muted-foreground: 40 15% 55%;
 
-    --accent: 200 80% 60%;
+    --accent: 180 50% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 20%;
-    --input: 240 15% 20%;
-    --ring: 210 100% 65%;
+    --border: 240 12% 18%;
+    --input: 240 12% 18%;
+    --ring: 38 92% 55%;
+
+    --islamic-light: 240 12% 12%;
+    --islamic-cream: 240 12% 14%;
+
+    --gradient-hero: linear-gradient(180deg, hsl(38 92% 55% / 0.08) 0%, hsl(270 50% 50% / 0.05) 100%);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -143,6 +151,10 @@
     background: var(--gradient-accent);
   }
 
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -155,16 +167,24 @@
     box-shadow: var(--shadow-glow);
   }
 
-  .glass {
-    background: hsl(0 0% 100% / 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
   }
 
-  .glass-dark {
-    background: hsl(240 15% 15% / 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+  .glass {
+    background: hsl(0 0% 100% / 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .dark .glass {
+    background: hsl(240 12% 12% / 0.75);
+  }
+
+  .glass-subtle {
+    background: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   .text-gradient {
@@ -175,7 +195,7 @@
   }
 
   .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(45 100% 55%) 0%, hsl(35 100% 50%) 25%, hsl(280 70% 65%) 75%, hsl(270 70% 55%) 100%);
+    background: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(38 95% 45%) 30%, hsl(30 90% 50%) 70%, hsl(25 85% 48%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -192,19 +212,24 @@
 
   /* Islamic geometric pattern overlay */
   .islamic-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a227' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Decorative border */
+  .border-ornate {
+    border-image: linear-gradient(135deg, hsl(38 92% 55%), hsl(270 50% 50%), hsl(38 92% 55%)) 1;
   }
 }
 
 /* Smooth animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
 }
 
 @keyframes spin-slow {
@@ -217,25 +242,63 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(38 92% 55% / 0.3); }
+  50% { box-shadow: 0 0 40px hsl(38 92% 55% / 0.5); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .animate-float {
-  animation: float 3s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
 }
 
 .animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
+  animation: pulse-soft 3s ease-in-out infinite;
 }
 
 .animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
+  animation: spin-slow 12s linear infinite;
 }
 
 .animate-shimmer {
   background: linear-gradient(
     90deg,
     hsl(0 0% 100% / 0) 0%,
-    hsl(0 0% 100% / 0.3) 50%,
+    hsl(38 92% 55% / 0.2) 50%,
     hsl(0 0% 100% / 0) 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 3s infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Enhanced focus states */
+*:focus-visible {
+  outline: 2px solid hsl(38 92% 55%);
+  outline-offset: 2px;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
 }

@@ -84,150 +84,165 @@ const PrayerCalendar: React.FC = () => {
   };
 
   return (
-    <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-slide-up">
-      {/* Header with Navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground font-medium">
-          {selectedDateOffset === 0 ? 'Today' : 'Selected Date'}
-        </p>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setSelectedDateOffset(prev => prev - 1)}
-            className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-foreground" />
-          </button>
-          <button 
-            onClick={() => setSelectedDateOffset(prev => prev + 1)}
-            className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-foreground" />
-          </button>
-          <button 
-            onClick={() => setSelectedDateOffset(0)}
-            className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shadow-soft"
-          >
-            <Calendar className="w-4 h-4 text-primary-foreground" />
-          </button>
-        </div>
-      </div>
-
-      {/* Dual Calendar Display */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {/* Gregorian Calendar Card */}
-        <div className="bg-muted/50 rounded-2xl p-3 border border-border/50">
-          <div className="flex items-center gap-2 mb-1">
+    <div className="relative bg-card rounded-3xl p-5 shadow-card border border-border overflow-hidden animate-slide-up" style={{ animationDelay: '0.3s' }}>
+      {/* Decorative background */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 to-transparent rounded-full blur-2xl" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-islamic-gold/10 to-transparent rounded-full blur-xl" />
+      
+      <div className="relative">
+        {/* Header with Navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" />
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Gregorian</span>
+            <p className="text-sm font-semibold text-foreground">
+              {selectedDateOffset === 0 ? 'Today' : formatGregorianDate()}
+            </p>
           </div>
-          <p className="text-lg font-bold text-foreground">{selectedDate.getDate()}</p>
-          <p className="text-xs text-muted-foreground">
-            {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-
-        {/* Hijri Calendar Card */}
-        <div className="bg-islamic-gold/10 rounded-2xl p-3 border border-islamic-gold/30">
-          <div className="flex items-center gap-2 mb-1">
-            <Moon className="w-4 h-4 text-islamic-gold" />
-            <span className="text-[10px] text-islamic-gold uppercase tracking-wider">Hijri</span>
-          </div>
-          {hijriLoading ? (
-            <div className="flex items-center justify-center py-2">
-              <div className="w-4 h-4 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : dateInfo?.hijri ? (
-            <>
-              <p className="text-lg font-bold text-foreground">{dateInfo.hijri.day}</p>
-              <p className="text-xs text-islamic-gold">
-                {dateInfo.hijri.month.en} {dateInfo.hijri.year} AH
-              </p>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">Loading...</p>
-          )}
-        </div>
-      </div>
-
-      {/* Date Selector */}
-      <div className="flex justify-between mb-4">
-        {weekDates.map((date, index) => {
-          const isSelected = date.toDateString() === selectedDate.toDateString();
-          const isToday = date.toDateString() === today.toDateString();
-          
-          return (
-            <button
-              key={index}
-              onClick={() => {
-                const diff = Math.floor((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                setSelectedDateOffset(diff);
-              }}
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-2xl transition-all duration-300 ${
-                isSelected
-                  ? 'gradient-primary shadow-soft'
-                  : isToday
-                  ? 'ring-2 ring-primary/50'
-                  : 'hover:bg-muted/50'
-              }`}
+          <div className="flex items-center gap-1.5">
+            <button 
+              onClick={() => setSelectedDateOffset(prev => prev - 1)}
+              className="w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
             >
-              <span className={`text-xs ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
-                {days[index]}
-              </span>
-              <span className={`text-sm font-semibold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
-                {date.getDate()}
-              </span>
-              {weekHijriDates[date.toDateString()] && (
-                <span className={`text-[10px] ${isSelected ? 'text-primary-foreground/80' : 'text-islamic-gold'}`}>
-                  {weekHijriDates[date.toDateString()]}
-                </span>
-              )}
+              <ChevronLeft className="w-4 h-4 text-foreground" />
             </button>
-          );
-        })}
-      </div>
-
-      {/* Prayer Times */}
-      <div className="space-y-2">
-        <h4 className="text-xs text-muted-foreground font-medium mb-2">Prayer Times</h4>
-        {prayerLoading ? (
-          <div className="flex items-center justify-center py-4">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          prayers.map((prayer, index) => (
-            <div
-              key={index}
-              className={`flex items-center justify-between p-3 rounded-2xl transition-all duration-300 ${
-                prayer.current
-                  ? 'gradient-accent shadow-soft'
-                  : prayer.passed
-                  ? 'bg-muted/30'
-                  : 'bg-muted/50 hover:bg-muted'
-              }`}
+            <button 
+              onClick={() => setSelectedDateOffset(prev => prev + 1)}
+              className="w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${
-                  prayer.current ? 'bg-primary-foreground animate-pulse' : prayer.passed ? 'bg-islamic-green' : 'bg-muted-foreground/30'
-                }`} />
-                <span className={`font-medium text-sm ${
-                  prayer.current ? 'text-primary-foreground' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
-                }`}>
-                  {prayer.name}
+              <ChevronRight className="w-4 h-4 text-foreground" />
+            </button>
+            <button 
+              onClick={() => setSelectedDateOffset(0)}
+              className="w-8 h-8 rounded-xl gradient-warm flex items-center justify-center shadow-soft active:scale-95 transition-all"
+            >
+              <Calendar className="w-4 h-4 text-primary-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* Dual Calendar Display */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {/* Gregorian Calendar Card */}
+          <div className="bg-muted/40 rounded-2xl p-4 border border-border/50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Gregorian</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{selectedDate.getDate()}</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+
+          {/* Hijri Calendar Card */}
+          <div className="bg-gradient-to-br from-islamic-gold/15 to-islamic-gold/5 rounded-2xl p-4 border border-islamic-gold/25">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-lg bg-islamic-gold/20 flex items-center justify-center">
+                <Moon className="w-3.5 h-3.5 text-islamic-gold" />
+              </div>
+              <span className="text-[10px] text-islamic-gold uppercase tracking-wider font-semibold">Hijri</span>
+            </div>
+            {hijriLoading ? (
+              <div className="flex items-center py-2">
+                <div className="w-5 h-5 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : dateInfo?.hijri ? (
+              <>
+                <p className="text-2xl font-bold text-foreground">{dateInfo.hijri.day}</p>
+                <p className="text-xs text-islamic-gold font-medium">
+                  {dateInfo.hijri.month.en} {dateInfo.hijri.year}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">Loading...</p>
+            )}
+          </div>
+        </div>
+
+        {/* Week Date Selector */}
+        <div className="flex justify-between mb-5 bg-muted/30 rounded-2xl p-1.5">
+          {weekDates.map((date, index) => {
+            const isSelected = date.toDateString() === selectedDate.toDateString();
+            const isToday = date.toDateString() === today.toDateString();
+            
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  const diff = Math.floor((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                  setSelectedDateOffset(diff);
+                }}
+                className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-xl transition-all duration-300 ${
+                  isSelected
+                    ? 'gradient-warm shadow-soft'
+                    : isToday
+                    ? 'bg-primary/10 ring-1 ring-primary/30'
+                    : 'hover:bg-muted'
+                }`}
+              >
+                <span className={`text-[10px] font-medium ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                  {days[index]}
                 </span>
-                {prayer.current && (
-                  <span className="text-[10px] bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-full">
-                    Current
+                <span className={`text-sm font-bold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
+                  {date.getDate()}
+                </span>
+                {weekHijriDates[date.toDateString()] && (
+                  <span className={`text-[9px] font-medium ${isSelected ? 'text-primary-foreground/80' : 'text-islamic-gold'}`}>
+                    {weekHijriDates[date.toDateString()]}
                   </span>
                 )}
-              </div>
-              <span className={`text-sm font-semibold ${
-                prayer.current ? 'text-primary-foreground' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
-              }`}>
-                {prayer.time}
-              </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Prayer Times */}
+        <div className="space-y-2">
+          <h4 className="text-xs text-muted-foreground font-semibold mb-3 uppercase tracking-wider">Prayer Times</h4>
+          {prayerLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ))
-        )}
+          ) : (
+            <div className="space-y-2">
+              {prayers.map((prayer, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 ${
+                    prayer.current
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-soft'
+                      : prayer.passed
+                      ? 'bg-muted/30'
+                      : 'bg-muted/50 hover:bg-muted'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      prayer.current ? 'bg-white animate-pulse' : prayer.passed ? 'bg-islamic-green' : 'bg-muted-foreground/30'
+                    }`} />
+                    <span className={`font-semibold text-sm ${
+                      prayer.current ? 'text-white' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
+                    }`}>
+                      {prayer.name}
+                    </span>
+                    {prayer.current && (
+                      <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-sm font-bold ${
+                    prayer.current ? 'text-white' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
+                  }`}>
+                    {prayer.time}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
