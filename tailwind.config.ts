@@ -57,6 +57,7 @@ export default {
           sky: "hsl(var(--islamic-sky))",
           purple: "hsl(var(--islamic-purple))",
           light: "hsl(var(--islamic-light))",
+          cream: "hsl(var(--islamic-cream))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -80,6 +81,7 @@ export default {
         soft: "var(--shadow-soft)",
         card: "var(--shadow-card)",
         glow: "var(--shadow-glow)",
+        elevated: "var(--shadow-elevated)",
       },
       keyframes: {
         "accordion-down": {

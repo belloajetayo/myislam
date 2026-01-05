@@ -97,32 +97,41 @@ const DailyReminders: React.FC = () => {
   };
 
   return (
-    <div className="glass rounded-3xl p-4 shadow-card border border-primary/10 animate-slide-up">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 gradient-accent rounded-xl flex items-center justify-center">
-            <Lightbulb className="w-4 h-4 text-primary-foreground" />
+    <div className="relative bg-card rounded-3xl p-5 shadow-card border border-border overflow-hidden animate-slide-up" style={{ animationDelay: '0.15s' }}>
+      {/* Decorative background */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl" />
+      <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full blur-xl" />
+      
+      <div className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 gradient-warm rounded-xl flex items-center justify-center shadow-soft">
+              <Lightbulb className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-sm">Daily Reminder</h3>
+              <p className="text-[10px] text-muted-foreground">Refresh your iman</p>
+            </div>
           </div>
-          <h3 className="font-semibold text-gradient-gold text-sm">Daily Reminder</h3>
+          <button 
+            onClick={nextReminder}
+            className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted hover:rotate-180 active:scale-95 transition-all duration-300"
+          >
+            <RefreshCw className="w-4 h-4 text-foreground" />
+          </button>
         </div>
-        <button 
-          onClick={nextReminder}
-          className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors"
-        >
-          <RefreshCw className="w-4 h-4 text-foreground" />
-        </button>
-      </div>
 
-      <div className={`transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-        <p className="text-sm text-foreground leading-relaxed mb-3">
-          "{reminder.text}"
-        </p>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-            {getTypeIcon()}
-            {getTypeLabel()}
-          </span>
-          <span className="text-xs text-muted-foreground">— {reminder.source}</span>
+        <div className={`transition-all duration-300 ${isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
+          <p className="text-sm text-foreground leading-relaxed mb-4 italic">
+            "{reminder.text}"
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
+              {getTypeIcon()}
+              {getTypeLabel()}
+            </span>
+            <span className="text-xs text-muted-foreground font-medium">— {reminder.source}</span>
+          </div>
         </div>
       </div>
     </div>
