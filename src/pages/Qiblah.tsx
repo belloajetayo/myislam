@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, ArrowLeft, Compass, AlertCircle } from 'lucide-react';
+import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, ArrowLeft, Compass, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -28,6 +28,9 @@ const Qiblah: React.FC = () => {
   const [calibrating, setCalibrating] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState('Locating...');
+  const [nearbyMosques, setNearbyMosques] = useState<Array<{ name: string; address: string; distance: string; lat: number; lng: number }>>([]);
+  const [loadingMosques, setLoadingMosques] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
   const [compassSupported, setCompassSupported] = useState(true);
@@ -159,6 +162,7 @@ const Qiblah: React.FC = () => {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         if (error) throw error;
         token = data.token;
+        setMapboxToken(token);
       } catch {
         console.error('Failed to get Mapbox token');
         return;
@@ -272,12 +276,69 @@ const Qiblah: React.FC = () => {
     }, 2000);
   };
 
-  const getMosqueMapUrl = () => {
-    if (userLocation) {
-      return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=mosque+near+me&center=${userLocation.lat},${userLocation.lng}&zoom=14`;
+  // Fetch nearby mosques using Mapbox
+  const fetchNearbyMosques = async () => {
+    if (!userLocation || !mapboxToken) return;
+    
+    setLoadingMosques(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/mosque.json?proximity=${userLocation.lng},${userLocation.lat}&limit=5&access_token=${mapboxToken}`
+      );
+      const data = await response.json();
+      
+      if (data.features) {
+        const mosques = data.features.map((feature: any) => {
+          const [lng, lat] = feature.center;
+          const distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+          return {
+            name: feature.text || 'Mosque',
+            address: feature.place_name?.split(',').slice(0, 2).join(',') || 'Unknown address',
+            distance: distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`,
+            lat,
+            lng
+          };
+        });
+        setNearbyMosques(mosques);
+      }
+    } catch (error) {
+      console.error('Failed to fetch mosques:', error);
+    } finally {
+      setLoadingMosques(false);
     }
-    return `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=mosque+near+me&zoom=12`;
   };
+
+  // Calculate distance between two coordinates in km
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const openMosqueInMaps = (lat: number, lng: number, name: string) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
+    window.open(url, '_blank');
+  };
+
+  const openGoogleMapsSearch = () => {
+    if (userLocation) {
+      window.open(`https://www.google.com/maps/search/mosque/@${userLocation.lat},${userLocation.lng},14z`, '_blank');
+    } else {
+      window.open('https://www.google.com/maps/search/mosque+near+me', '_blank');
+    }
+  };
+
+  // Load mosques when dialog opens
+  useEffect(() => {
+    if (showMosqueMap && userLocation && mapboxToken) {
+      fetchNearbyMosques();
+    }
+  }, [showMosqueMap, userLocation, mapboxToken]);
 
   return (
     <MobileLayout>
@@ -502,23 +563,53 @@ const Qiblah: React.FC = () => {
 
           {/* Mosque Map Dialog */}
           <Dialog open={showMosqueMap} onOpenChange={setShowMosqueMap}>
-            <DialogContent className="max-w-lg w-[95vw] h-[70vh] p-0 overflow-hidden border-primary/20">
-              <DialogHeader className="p-4 pb-2">
+            <DialogContent className="max-w-md w-[95vw] max-h-[80vh] overflow-hidden border-primary/20">
+              <DialogHeader className="pb-2">
                 <DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-emerald-500" />
                   Mosques Near You
                 </DialogTitle>
               </DialogHeader>
-              <div className="flex-1 w-full h-full min-h-[50vh]">
-                <iframe
-                  src={getMosqueMapUrl()}
-                  className="w-full h-full border-0"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Mosques Near Me"
-                />
+              
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {loadingMosques ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                  </div>
+                ) : nearbyMosques.length > 0 ? (
+                  nearbyMosques.map((mosque, index) => (
+                    <button
+                      key={index}
+                      onClick={() => openMosqueInMaps(mosque.lat, mosque.lng, mosque.name)}
+                      className="w-full p-3 bg-muted/50 hover:bg-muted rounded-xl text-left transition-colors group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{mosque.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{mosque.address}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-emerald-500 font-medium">{mosque.distance}</span>
+                          <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No mosques found nearby</p>
+                  </div>
+                )}
               </div>
+
+              <button
+                onClick={openGoogleMapsSearch}
+                className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in Google Maps
+              </button>
             </DialogContent>
           </Dialog>
 
