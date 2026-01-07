@@ -15,11 +15,13 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-icons/*.svg'],
+      includeAssets: ['pwa-icons/*.svg', 'favicon.ico'],
       manifest: false, // Using external manifest.webmanifest
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.alquran\.cloud\/.*/i,
@@ -27,8 +29,8 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'quran-api-cache',
               expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+                maxEntries: 300,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -40,9 +42,10 @@ export default defineConfig(({ mode }) => ({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'prayer-times-cache',
+              networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 1 day
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -55,7 +58,7 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'google-fonts-cache',
               expiration: {
-                maxEntries: 10,
+                maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {
@@ -69,11 +72,52 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: 'gstatic-fonts-cache',
               expiration: {
-                maxEntries: 10,
+                maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {
                 statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/api\.mapbox\.com\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'mapbox-api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
           }
