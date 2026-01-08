@@ -1,26 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Play, Radio, Users, ExternalLink, Heart, Eye, Clock, ArrowLeft } from 'lucide-react';
+import { Play, Radio, Users, ExternalLink, Heart, Eye, ArrowLeft, User, Settings, LogOut, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  location_city: string | null;
+  location_country: string | null;
+}
 
 const channels = [
   {
     name: 'Mufti Menk',
-    handle: '@muaboronhani',
+    handle: '@muftimenkofficial',
     subscribers: '4.2M',
     avatar: '🎙️',
     live: false,
   },
   {
     name: 'Omar Suleiman',
-    handle: '@yikiama',
+    handle: '@omarsuleiman',
     subscribers: '2.8M',
     avatar: '📖',
     live: true,
   },
   {
     name: 'Nouman Ali Khan',
-    handle: '@baikinitv',
+    handle: '@noumanali',
     subscribers: '3.5M',
     avatar: '🕌',
     live: false,
@@ -75,7 +90,107 @@ const videos = [
 
 const Community: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'live' | 'videos' | 'channels'>('live');
+  const [activeTab, setActiveTab] = useState<'live' | 'videos' | 'channels' | 'profile'>('live');
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+      }
+      setProfile(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          full_name: editName || null,
+          location_city: editCity || null,
+          location_country: editCountry || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      
+      toast.success('Profile updated successfully');
+      setShowEditProfile(false);
+      fetchProfile(user.id);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
+
+  const openEditProfile = () => {
+    setEditName(profile?.full_name || '');
+    setEditCity(profile?.location_city || '');
+    setEditCountry(profile?.location_country || '');
+    setShowEditProfile(true);
+  };
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
 
   return (
     <MobileLayout>
@@ -90,8 +205,23 @@ const Community: React.FC = () => {
           </button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gradient-gold">Community</h1>
-            <p className="text-xs text-gradient-gold opacity-80">Islamic Content & Livestreams</p>
+            <p className="text-xs text-muted-foreground">Islamic Content & Livestreams</p>
           </div>
+          {user && (
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`w-10 h-10 rounded-2xl overflow-hidden border-2 transition-all ${
+                activeTab === 'profile' ? 'border-islamic-gold' : 'border-transparent'
+              }`}
+            >
+              <Avatar className="w-full h-full">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-islamic-gold to-islamic-gold/70 text-white text-sm font-bold">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          )}
         </header>
 
         {/* Tabs */}
@@ -100,6 +230,7 @@ const Community: React.FC = () => {
             { id: 'live', label: 'Live', icon: Radio },
             { id: 'videos', label: 'Videos', icon: Play },
             { id: 'channels', label: 'Channels', icon: Users },
+            ...(user ? [{ id: 'profile', label: 'Profile', icon: User }] : []),
           ].map((tab) => (
             <button
               key={tab.id}
@@ -111,10 +242,90 @@ const Community: React.FC = () => {
               }`}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="space-y-4 animate-slide-up">
+            {user ? (
+              <>
+                {/* Profile Card */}
+                <div className="glass rounded-3xl p-6 border border-primary/10 text-center">
+                  <div className="relative inline-block mb-4">
+                    <Avatar className="w-24 h-24 border-4 border-islamic-gold/30">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-gradient-to-br from-islamic-gold to-islamic-gold/70 text-white text-2xl font-bold">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <button className="absolute bottom-0 right-0 w-8 h-8 bg-islamic-gold rounded-full flex items-center justify-center shadow-lg">
+                      <Camera className="w-4 h-4 text-white" />
+                    </button>
+                  </div>
+                  
+                  <h2 className="text-xl font-bold text-foreground">
+                    {profile?.full_name || 'Muslim User'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  
+                  {(profile?.location_city || profile?.location_country) && (
+                    <p className="text-sm text-islamic-gold mt-1">
+                      📍 {[profile?.location_city, profile?.location_country].filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                  
+                  <div className="flex gap-3 mt-6">
+                    <Button
+                      onClick={openEditProfile}
+                      className="flex-1 gradient-warm text-white"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                    <Button
+                      onClick={handleLogout}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="glass rounded-2xl p-4 text-center border border-primary/10">
+                    <p className="text-2xl font-bold text-islamic-gold">12</p>
+                    <p className="text-xs text-muted-foreground">Following</p>
+                  </div>
+                  <div className="glass rounded-2xl p-4 text-center border border-primary/10">
+                    <p className="text-2xl font-bold text-islamic-green">45</p>
+                    <p className="text-xs text-muted-foreground">Prayers</p>
+                  </div>
+                  <div className="glass rounded-2xl p-4 text-center border border-primary/10">
+                    <p className="text-2xl font-bold text-primary">7</p>
+                    <p className="text-xs text-muted-foreground">Day Streak</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="glass rounded-3xl p-8 border border-primary/10 text-center">
+                <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Join the Community</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sign in to save your progress, follow scholars, and connect with other Muslims.
+                </p>
+                <Button onClick={() => navigate('/auth')} className="gradient-primary text-white">
+                  Sign In / Sign Up
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'live' && (
           <div className="space-y-4">
@@ -138,35 +349,30 @@ const Community: React.FC = () => {
               </div>
             </div>
 
-            {/* Other Livestreams - Facebook Feed Style */}
-            <h3 className="text-sm font-semibold text-gradient-gold">Other Streams</h3>
+            {/* Other Livestreams */}
+            <h3 className="text-sm font-semibold text-foreground">Other Streams</h3>
             {livestreams.map((stream, index) => (
               <div
                 key={index}
                 className="glass rounded-3xl overflow-hidden border border-primary/10 animate-slide-up"
                 style={{ animationDelay: `${0.15 + index * 0.05}s` }}
               >
-                {/* Video Thumbnail - Full Width */}
                 <div className="w-full aspect-video gradient-primary flex items-center justify-center relative">
                   <span className="text-6xl">{stream.thumbnail}</span>
-                  {/* Play Button Overlay */}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors cursor-pointer">
                     <div className="w-16 h-16 rounded-full bg-primary-foreground/30 backdrop-blur-sm flex items-center justify-center">
                       <Play className="w-8 h-8 text-primary-foreground fill-primary-foreground ml-1" />
                     </div>
                   </div>
-                  {/* Live Badge */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-destructive px-2 py-1 rounded-lg">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                     <span className="text-xs font-medium text-white">LIVE</span>
                   </div>
-                  {/* Viewers */}
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg">
                     <Eye className="w-3 h-3 text-white" />
                     <span className="text-xs text-white">{stream.viewers}</span>
                   </div>
                 </div>
-                {/* Stream Info */}
                 <div className="p-4">
                   <h4 className="font-semibold text-foreground text-base">{stream.title}</h4>
                   <p className="text-sm text-muted-foreground mt-1">{stream.channel}</p>
@@ -178,7 +384,7 @@ const Community: React.FC = () => {
 
         {activeTab === 'videos' && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gradient-gold">Popular Videos</h3>
+            <h3 className="text-sm font-semibold text-foreground">Popular Videos</h3>
             {videos.map((video, index) => (
               <div
                 key={index}
@@ -211,7 +417,7 @@ const Community: React.FC = () => {
 
         {activeTab === 'channels' && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gradient-gold">Popular Scholars</h3>
+            <h3 className="text-sm font-semibold text-foreground">Popular Scholars</h3>
             {channels.map((channel, index) => (
               <div
                 key={index}
@@ -246,7 +452,6 @@ const Community: React.FC = () => {
               </div>
             ))}
 
-            {/* Discover More */}
             <button className="w-full glass rounded-2xl p-4 border border-primary/10 flex items-center justify-center gap-2 text-primary hover:shadow-soft transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.35s' }}>
               <span className="font-medium">Discover More Channels</span>
               <ExternalLink className="w-4 h-4" />
@@ -254,6 +459,51 @@ const Community: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">Full Name</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Your name"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">City</label>
+              <Input
+                value={editCity}
+                onChange={(e) => setEditCity(e.target.value)}
+                placeholder="Your city"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Country</label>
+              <Input
+                value={editCountry}
+                onChange={(e) => setEditCountry(e.target.value)}
+                placeholder="Your country"
+                className="mt-1"
+              />
+            </div>
+            <Button 
+              onClick={handleSaveProfile} 
+              className="w-full gradient-primary text-white"
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };
