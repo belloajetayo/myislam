@@ -28,7 +28,10 @@ const Qiblah: React.FC = () => {
   const [calibrating, setCalibrating] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState('Locating...');
-  const [nearbyMosques, setNearbyMosques] = useState<Array<{ name: string; address: string; distance: string; lat: number; lng: number }>>([]);
+  const [nearbyMosques, setNearbyMosques] = useState<Array<{ name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number }>>([]);
+  const [selectedMosque, setSelectedMosque] = useState<{ name: string; lat: number; lng: number } | null>(null);
+  const mosqueMapContainer = useRef<HTMLDivElement>(null);
+  const mosqueMap = useRef<mapboxgl.Map | null>(null);
   const [loadingMosques, setLoadingMosques] = useState(false);
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [showInfo, setShowInfo] = useState(false);
@@ -276,18 +279,35 @@ const Qiblah: React.FC = () => {
     }, 2000);
   };
 
-  // Fetch nearby mosques using Mapbox
+  // Fetch nearby mosques using Mapbox - search globally without distance limit
   const fetchNearbyMosques = async () => {
     if (!userLocation || !mapboxToken) return;
     
     setLoadingMosques(true);
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/mosque.json?proximity=${userLocation.lng},${userLocation.lat}&limit=5&access_token=${mapboxToken}`
+      // First try nearby search
+      let response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/mosque.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
       );
-      const data = await response.json();
+      let data = await response.json();
       
-      if (data.features) {
+      // If no results, try a broader search with "islamic center" and "masjid"
+      if (!data.features || data.features.length === 0) {
+        response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/masjid.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
+        );
+        data = await response.json();
+      }
+      
+      // If still no results, try "islamic center"
+      if (!data.features || data.features.length === 0) {
+        response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/islamic%20center.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
+        );
+        data = await response.json();
+      }
+      
+      if (data.features && data.features.length > 0) {
         const mosques = data.features.map((feature: any) => {
           const [lng, lat] = feature.center;
           const distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
@@ -295,10 +315,13 @@ const Qiblah: React.FC = () => {
             name: feature.text || 'Mosque',
             address: feature.place_name?.split(',').slice(0, 2).join(',') || 'Unknown address',
             distance: distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`,
+            distanceNum: distanceKm,
             lat,
             lng
           };
         });
+        // Sort by distance
+        mosques.sort((a: any, b: any) => a.distanceNum - b.distanceNum);
         setNearbyMosques(mosques);
       }
     } catch (error) {
@@ -332,6 +355,85 @@ const Qiblah: React.FC = () => {
       window.open('https://www.google.com/maps/search/mosque+near+me', '_blank');
     }
   };
+
+  // Handle mosque selection - show map with direction line
+  const handleMosqueSelect = useCallback((mosque: { name: string; lat: number; lng: number }) => {
+    setSelectedMosque(mosque);
+    
+    // Initialize map after a short delay to allow DOM to update
+    setTimeout(() => {
+      if (!mosqueMapContainer.current || !mapboxToken || !userLocation) return;
+      
+      // Remove existing map if any
+      mosqueMap.current?.remove();
+      
+      mapboxgl.accessToken = mapboxToken;
+      
+      const newMap = new mapboxgl.Map({
+        container: mosqueMapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [
+          (userLocation.lng + mosque.lng) / 2,
+          (userLocation.lat + mosque.lat) / 2
+        ],
+        zoom: 12,
+      });
+      
+      mosqueMap.current = newMap;
+      
+      newMap.on('load', () => {
+        // Add user marker
+        new mapboxgl.Marker({ color: '#4F46E5' })
+          .setLngLat([userLocation.lng, userLocation.lat])
+          .setPopup(new mapboxgl.Popup().setHTML('<strong>Your Location</strong>'))
+          .addTo(newMap);
+        
+        // Add mosque marker
+        new mapboxgl.Marker({ color: '#10B981' })
+          .setLngLat([mosque.lng, mosque.lat])
+          .setPopup(new mapboxgl.Popup().setHTML(`<strong>${mosque.name}</strong>`))
+          .addTo(newMap);
+        
+        // Add straight line from user to mosque
+        newMap.addSource('route-line', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [userLocation.lng, userLocation.lat],
+                [mosque.lng, mosque.lat]
+              ]
+            }
+          }
+        });
+        
+        newMap.addLayer({
+          id: 'route-line-layer',
+          type: 'line',
+          source: 'route-line',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#10B981',
+            'line-width': 4,
+            'line-dasharray': [2, 1]
+          }
+        });
+        
+        // Fit bounds to show both points
+        const bounds = new mapboxgl.LngLatBounds()
+          .extend([userLocation.lng, userLocation.lat])
+          .extend([mosque.lng, mosque.lat]);
+        
+        newMap.fitBounds(bounds, { padding: 60 });
+      });
+    }, 100);
+  }, [mapboxToken, userLocation]);
 
   // Load mosques when dialog opens
   useEffect(() => {
@@ -562,54 +664,94 @@ const Qiblah: React.FC = () => {
           </div>
 
           {/* Mosque Map Dialog */}
-          <Dialog open={showMosqueMap} onOpenChange={setShowMosqueMap}>
-            <DialogContent className="max-w-md w-[95vw] max-h-[80vh] overflow-hidden border-primary/20">
+          <Dialog open={showMosqueMap} onOpenChange={(open) => {
+            setShowMosqueMap(open);
+            if (!open) {
+              setSelectedMosque(null);
+              mosqueMap.current?.remove();
+              mosqueMap.current = null;
+            }
+          }}>
+            <DialogContent className="max-w-md w-[95vw] max-h-[85vh] overflow-hidden border-primary/20">
               <DialogHeader className="pb-2">
                 <DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent flex items-center gap-2">
                   <Building2 className="w-5 h-5 text-emerald-500" />
-                  Mosques Near You
+                  {selectedMosque ? selectedMosque.name : 'Mosques Near You'}
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-                {loadingMosques ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                  </div>
-                ) : nearbyMosques.length > 0 ? (
-                  nearbyMosques.map((mosque, index) => (
+              {selectedMosque ? (
+                <div className="space-y-3">
+                  {/* In-app map with direction line */}
+                  <div 
+                    ref={mosqueMapContainer} 
+                    className="w-full h-64 rounded-xl overflow-hidden border border-primary/20"
+                  />
+                  <div className="flex gap-2">
                     <button
-                      key={index}
-                      onClick={() => openMosqueInMaps(mosque.lat, mosque.lng, mosque.name)}
-                      className="w-full p-3 bg-muted/50 hover:bg-muted rounded-xl text-left transition-colors group"
+                      onClick={() => {
+                        setSelectedMosque(null);
+                        mosqueMap.current?.remove();
+                        mosqueMap.current = null;
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-muted rounded-xl font-medium hover:bg-muted/80 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{mosque.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{mosque.address}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs text-emerald-500 font-medium">{mosque.distance}</span>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-                        </div>
-                      </div>
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to List
                     </button>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No mosques found nearby</p>
+                    <button
+                      onClick={() => openMosqueInMaps(selectedMosque.lat, selectedMosque.lng, selectedMosque.name)}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      Navigate
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                    {loadingMosques ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                      </div>
+                    ) : nearbyMosques.length > 0 ? (
+                      nearbyMosques.map((mosque, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleMosqueSelect(mosque)}
+                          className="w-full p-3 bg-muted/50 hover:bg-muted rounded-xl text-left transition-colors group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">{mosque.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{mosque.address}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs text-emerald-500 font-medium">{mosque.distance}</span>
+                              <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No mosques found nearby</p>
+                        <p className="text-xs mt-1">Try searching in Google Maps</p>
+                      </div>
+                    )}
+                  </div>
 
-              <button
-                onClick={openGoogleMapsSearch}
-                className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Open in Google Maps
-              </button>
+                  <button
+                    onClick={openGoogleMapsSearch}
+                    className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Search in Google Maps
+                  </button>
+                </>
+              )}
             </DialogContent>
           </Dialog>
 
