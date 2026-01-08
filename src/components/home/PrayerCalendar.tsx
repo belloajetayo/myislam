@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Moon } from 'lucide-react';
-import { useHijriDate } from '@/hooks/useHijriDate';
+import { ChevronLeft, ChevronRight, Moon, MapPin } from 'lucide-react';
+import { useHijriDate, islamicMonths } from '@/hooks/useHijriDate';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 
-const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+// Hijri day names
+const hijriDays = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+const hijriDaysShort = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 const PrayerCalendar: React.FC = () => {
   const [selectedDateOffset, setSelectedDateOffset] = useState(0);
-  const [weekHijriDates, setWeekHijriDates] = useState<{ [key: string]: number }>({});
+  const [weekHijriDates, setWeekHijriDates] = useState<{ [key: string]: { day: number; month: string; monthAr: string } }>({});
+  const [userLocation, setUserLocation] = useState<string>('Locating...');
   const { dateInfo, loading: hijriLoading, fetchDateInfo } = useHijriDate();
   const { prayerTimes, currentPrayer, loading: prayerLoading } = usePrayerTimes();
 
@@ -21,10 +24,31 @@ const PrayerCalendar: React.FC = () => {
     return date;
   });
 
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const response = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
+            );
+            const data = await response.json();
+            setUserLocation(data.city || data.locality || 'Your Location');
+          } catch {
+            setUserLocation('Your Location');
+          }
+        },
+        () => setUserLocation('Location unavailable'),
+        { enableHighAccuracy: false }
+      );
+    }
+  }, []);
+
   // Fetch Hijri dates for the week
   useEffect(() => {
     const fetchWeekHijri = async () => {
-      const hijriDates: { [key: string]: number } = {};
+      const hijriDates: { [key: string]: { day: number; month: string; monthAr: string } } = {};
       for (const date of weekDates) {
         const dateStr = date.toDateString();
         const day = date.getDate();
@@ -34,7 +58,11 @@ const PrayerCalendar: React.FC = () => {
           const response = await fetch(`https://api.aladhan.com/v1/gpiToH/${day}-${month}-${year}`);
           const data = await response.json();
           if (data.code === 200) {
-            hijriDates[dateStr] = parseInt(data.data.hijri.day);
+            hijriDates[dateStr] = {
+              day: parseInt(data.data.hijri.day),
+              month: data.data.hijri.month.en,
+              monthAr: data.data.hijri.month.ar
+            };
           }
         } catch (error) {
           console.error('Error fetching Hijri date:', error);
@@ -53,12 +81,12 @@ const PrayerCalendar: React.FC = () => {
   }, [selectedDateOffset]);
 
   const prayers = prayerTimes ? [
-    { name: 'Fajr', time: prayerTimes.Fajr, passed: isPassed(prayerTimes.Fajr), current: currentPrayer === 'Fajr' },
-    { name: 'Sunrise', time: prayerTimes.Sunrise, passed: isPassed(prayerTimes.Sunrise), current: false },
-    { name: 'Dhuhr', time: prayerTimes.Dhuhr, passed: isPassed(prayerTimes.Dhuhr), current: currentPrayer === 'Dhuhr' },
-    { name: 'Asr', time: prayerTimes.Asr, passed: isPassed(prayerTimes.Asr), current: currentPrayer === 'Asr' },
-    { name: 'Maghrib', time: prayerTimes.Maghrib, passed: isPassed(prayerTimes.Maghrib), current: currentPrayer === 'Maghrib' },
-    { name: 'Isha', time: prayerTimes.Isha, passed: isPassed(prayerTimes.Isha), current: currentPrayer === 'Isha' },
+    { name: 'Fajr', nameAr: 'الفجر', time: prayerTimes.Fajr, passed: isPassed(prayerTimes.Fajr), current: currentPrayer === 'Fajr' },
+    { name: 'Sunrise', nameAr: 'الشروق', time: prayerTimes.Sunrise, passed: isPassed(prayerTimes.Sunrise), current: false },
+    { name: 'Dhuhr', nameAr: 'الظهر', time: prayerTimes.Dhuhr, passed: isPassed(prayerTimes.Dhuhr), current: currentPrayer === 'Dhuhr' },
+    { name: 'Asr', nameAr: 'العصر', time: prayerTimes.Asr, passed: isPassed(prayerTimes.Asr), current: currentPrayer === 'Asr' },
+    { name: 'Maghrib', nameAr: 'المغرب', time: prayerTimes.Maghrib, passed: isPassed(prayerTimes.Maghrib), current: currentPrayer === 'Maghrib' },
+    { name: 'Isha', nameAr: 'العشاء', time: prayerTimes.Isha, passed: isPassed(prayerTimes.Isha), current: currentPrayer === 'Isha' },
   ] : [];
 
   function isPassed(time: string): boolean {
@@ -70,33 +98,38 @@ const PrayerCalendar: React.FC = () => {
     return now > prayerTime;
   }
 
-  const formatGregorianDate = () => {
-    return selectedDate.toLocaleDateString('en-US', { 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   const formatHijriDate = () => {
     if (!dateInfo?.hijri) return '';
-    return `${dateInfo.hijri.day} ${dateInfo.hijri.month.en} ${dateInfo.hijri.year} AH`;
+    return `${dateInfo.hijri.day} ${dateInfo.hijri.month.en} ${dateInfo.hijri.year} هـ`;
+  };
+
+  const formatHijriDateArabic = () => {
+    if (!dateInfo?.hijri) return '';
+    return `${dateInfo.hijri.day} ${dateInfo.hijri.month.ar} ${dateInfo.hijri.year}`;
   };
 
   return (
     <div className="relative bg-card rounded-3xl p-5 shadow-card border border-border overflow-hidden animate-slide-up" style={{ animationDelay: '0.3s' }}>
       {/* Decorative background */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 to-transparent rounded-full blur-2xl" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-islamic-gold/10 to-transparent rounded-full blur-xl" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-islamic-gold/15 to-transparent rounded-full blur-2xl" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-islamic-green/10 to-transparent rounded-full blur-xl" />
       
       <div className="relative">
-        {/* Header with Navigation */}
+        {/* Header - Hijri Only */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">
-              {selectedDateOffset === 0 ? 'Today' : formatGregorianDate()}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-islamic-gold/20 to-islamic-gold/5 flex items-center justify-center">
+              <Moon className="w-5 h-5 text-islamic-gold" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {selectedDateOffset === 0 ? 'Today' : formatHijriDate()}
+              </p>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span>{userLocation}</span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-1.5">
             <button 
@@ -115,57 +148,48 @@ const PrayerCalendar: React.FC = () => {
               onClick={() => setSelectedDateOffset(0)}
               className="w-8 h-8 rounded-xl gradient-warm flex items-center justify-center shadow-soft active:scale-95 transition-all"
             >
-              <Calendar className="w-4 h-4 text-primary-foreground" />
+              <Moon className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
         </div>
 
-        {/* Dual Calendar Display */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {/* Gregorian Calendar Card */}
-          <div className="bg-muted/40 rounded-2xl p-4 border border-border/50">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Gregorian</span>
+        {/* Hijri Calendar Card - Primary Focus */}
+        <div className="bg-gradient-to-br from-islamic-gold/20 via-islamic-gold/10 to-islamic-gold/5 rounded-2xl p-5 border border-islamic-gold/25 mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              {hijriLoading ? (
+                <div className="flex items-center py-2">
+                  <div className="w-6 h-6 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : dateInfo?.hijri ? (
+                <>
+                  <p className="text-4xl font-bold text-foreground mb-1">{dateInfo.hijri.day}</p>
+                  <p className="text-lg font-semibold text-islamic-gold">{dateInfo.hijri.month.en}</p>
+                  <p className="text-sm text-muted-foreground">{dateInfo.hijri.year} هـ</p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Loading...</p>
+              )}
             </div>
-            <p className="text-2xl font-bold text-foreground">{selectedDate.getDate()}</p>
-            <p className="text-xs text-muted-foreground font-medium">
-              {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </p>
-          </div>
-
-          {/* Hijri Calendar Card */}
-          <div className="bg-gradient-to-br from-islamic-gold/15 to-islamic-gold/5 rounded-2xl p-4 border border-islamic-gold/25">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-islamic-gold/20 flex items-center justify-center">
-                <Moon className="w-3.5 h-3.5 text-islamic-gold" />
-              </div>
-              <span className="text-[10px] text-islamic-gold uppercase tracking-wider font-semibold">Hijri</span>
+            <div className="text-right">
+              {dateInfo?.hijri && (
+                <>
+                  <p className="text-2xl font-arabic font-bold text-islamic-gold">{dateInfo.hijri.month.ar}</p>
+                  <p className="text-sm font-arabic text-muted-foreground mt-1">
+                    {hijriDays[selectedDate.getDay()]}
+                  </p>
+                </>
+              )}
             </div>
-            {hijriLoading ? (
-              <div className="flex items-center py-2">
-                <div className="w-5 h-5 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : dateInfo?.hijri ? (
-              <>
-                <p className="text-2xl font-bold text-foreground">{dateInfo.hijri.day}</p>
-                <p className="text-xs text-islamic-gold font-medium">
-                  {dateInfo.hijri.month.en} {dateInfo.hijri.year}
-                </p>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">Loading...</p>
-            )}
           </div>
         </div>
 
-        {/* Week Date Selector */}
+        {/* Week Date Selector - Hijri Days */}
         <div className="flex justify-between mb-5 bg-muted/30 rounded-2xl p-1.5">
           {weekDates.map((date, index) => {
             const isSelected = date.toDateString() === selectedDate.toDateString();
             const isToday = date.toDateString() === today.toDateString();
+            const hijriInfo = weekHijriDates[date.toDateString()];
             
             return (
               <button
@@ -176,22 +200,26 @@ const PrayerCalendar: React.FC = () => {
                 }}
                 className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-xl transition-all duration-300 ${
                   isSelected
-                    ? 'gradient-warm shadow-soft'
+                    ? 'bg-gradient-to-br from-islamic-gold to-islamic-gold/80 shadow-soft'
                     : isToday
-                    ? 'bg-primary/10 ring-1 ring-primary/30'
+                    ? 'bg-islamic-gold/10 ring-1 ring-islamic-gold/30'
                     : 'hover:bg-muted'
                 }`}
               >
                 <span className={`text-[10px] font-medium ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
-                  {days[index]}
+                  {hijriDaysShort[index]}
                 </span>
-                <span className={`text-sm font-bold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
-                  {date.getDate()}
-                </span>
-                {weekHijriDates[date.toDateString()] && (
-                  <span className={`text-[9px] font-medium ${isSelected ? 'text-primary-foreground/80' : 'text-islamic-gold'}`}>
-                    {weekHijriDates[date.toDateString()]}
-                  </span>
+                {hijriInfo ? (
+                  <>
+                    <span className={`text-sm font-bold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      {hijriInfo.day}
+                    </span>
+                    <span className={`text-[8px] font-medium truncate max-w-[32px] ${isSelected ? 'text-primary-foreground/80' : 'text-islamic-gold'}`}>
+                      {hijriInfo.month.substring(0, 3)}
+                    </span>
+                  </>
+                ) : (
+                  <div className="w-4 h-4 border border-muted-foreground/30 border-t-transparent rounded-full animate-spin" />
                 )}
               </button>
             );
@@ -203,7 +231,7 @@ const PrayerCalendar: React.FC = () => {
           <h4 className="text-xs text-muted-foreground font-semibold mb-3 uppercase tracking-wider">Prayer Times</h4>
           {prayerLoading ? (
             <div className="flex items-center justify-center py-6">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-islamic-gold border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <div className="space-y-2">
@@ -212,7 +240,7 @@ const PrayerCalendar: React.FC = () => {
                   key={index}
                   className={`flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 ${
                     prayer.current
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-soft'
+                      ? 'bg-gradient-to-r from-islamic-green to-islamic-green/80 shadow-soft'
                       : prayer.passed
                       ? 'bg-muted/30'
                       : 'bg-muted/50 hover:bg-muted'
@@ -222,11 +250,18 @@ const PrayerCalendar: React.FC = () => {
                     <div className={`w-2.5 h-2.5 rounded-full ${
                       prayer.current ? 'bg-white animate-pulse' : prayer.passed ? 'bg-islamic-green' : 'bg-muted-foreground/30'
                     }`} />
-                    <span className={`font-semibold text-sm ${
-                      prayer.current ? 'text-white' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
-                    }`}>
-                      {prayer.name}
-                    </span>
+                    <div>
+                      <span className={`font-semibold text-sm block ${
+                        prayer.current ? 'text-white' : prayer.passed ? 'text-muted-foreground' : 'text-foreground'
+                      }`}>
+                        {prayer.name}
+                      </span>
+                      <span className={`text-[10px] font-arabic ${
+                        prayer.current ? 'text-white/80' : 'text-muted-foreground'
+                      }`}>
+                        {prayer.nameAr}
+                      </span>
+                    </div>
                     {prayer.current && (
                       <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
                         Current
