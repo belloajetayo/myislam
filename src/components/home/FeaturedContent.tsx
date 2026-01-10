@@ -73,7 +73,7 @@ const FeaturedContent: React.FC = () => {
         </div>
       </button>
 
-      {/* Livestream Card */}
+      {/* Islam Channel Live Card */}
       <button 
         onClick={() => navigate('/community')}
         className="w-full relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-600 p-5 shadow-elevated text-left group hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
@@ -86,21 +86,21 @@ const FeaturedContent: React.FC = () => {
             <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
               <Radio className="w-4 h-4 text-white" />
             </div>
-            <span className="text-white/90 text-xs font-semibold tracking-wide uppercase">Live & Community</span>
+            <span className="text-white/90 text-xs font-semibold tracking-wide uppercase">Islam Channel</span>
             <span className="px-2 py-0.5 bg-red-500 rounded-full text-[10px] text-white font-bold animate-pulse ml-auto flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-white rounded-full" />
-              LIVE
+              LIVE 24/7
             </span>
           </div>
-          <h3 className="text-lg font-bold text-white mb-1">Islamic Lectures & Reminders</h3>
-          <p className="text-white/90 text-sm mb-4">Watch live lectures from renowned scholars</p>
+          <h3 className="text-lg font-bold text-white mb-1">Islam Channel Live</h3>
+          <p className="text-white/90 text-sm mb-4">Watch Islamic TV broadcasting live</p>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
               <Play className="w-5 h-5 text-white fill-white ml-0.5" />
             </div>
             <div>
               <p className="text-white text-sm font-semibold">Watch Now</p>
-              <p className="text-white/70 text-xs">Join the community</p>
+              <p className="text-white/70 text-xs">24/7 Live Broadcasting</p>
             </div>
             <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center ml-auto group-hover:bg-white/30 transition-colors">
               <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />

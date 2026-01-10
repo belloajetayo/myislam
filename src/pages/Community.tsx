@@ -329,23 +329,36 @@ const Community: React.FC = () => {
 
         {activeTab === 'live' && (
           <div className="space-y-4">
-            {/* Live Now Banner */}
-            <div className="gradient-accent rounded-3xl p-4 shadow-glow animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-                <span className="text-gradient-gold font-medium text-sm">Live Now</span>
-              </div>
-              <h3 className="text-lg font-bold text-gradient-gold mb-1">Friday Jummah Prayer</h3>
-              <p className="text-gradient-gold opacity-80 text-sm mb-3">Masjid Al-Haram, Makkah</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-primary-foreground/70" />
-                  <span className="text-primary-foreground/70 text-sm">156K watching</span>
+            {/* Islam Channel Live Stream */}
+            <div className="glass rounded-3xl overflow-hidden border border-primary/10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+              <div className="relative w-full aspect-video">
+                <iframe
+                  src="https://watch.islamchannel.tv/live/1025"
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Islam Channel Live"
+                />
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-destructive px-2 py-1 rounded-lg z-10">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <span className="text-xs font-medium text-white">LIVE</span>
                 </div>
-                <button className="flex items-center gap-2 bg-primary-foreground/20 hover:bg-primary-foreground/30 px-4 py-2 rounded-xl transition-colors">
-                  <Play className="w-4 h-4 text-primary-foreground fill-primary-foreground" />
-                  <span className="text-primary-foreground text-sm font-medium">Watch</span>
-                </button>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Radio className="w-5 h-5 text-islamic-gold" />
+                  <h3 className="text-lg font-bold text-foreground">Islam Channel</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">24/7 Islamic Television Broadcasting</p>
+                <a 
+                  href="https://watch.islamchannel.tv/live/1025" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 mt-3 text-islamic-gold text-sm hover:underline"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open in new tab
+                </a>
               </div>
             </div>
 
