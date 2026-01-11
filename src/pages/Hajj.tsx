@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ArrowLeft, MapPin, Plane, CheckCircle, XCircle, Calendar, Info, Package, Calculator, Building2, Video, HelpCircle, ClipboardList, BookOpen } from 'lucide-react';
+import { ArrowLeft, MapPin, Plane, CheckCircle, XCircle, Calendar, Info, Package, Calculator, Building2, Video, HelpCircle, ClipboardList, BookOpen, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import HajjCountdown from '@/components/hajj/HajjCountdown';
@@ -10,6 +10,7 @@ import HajjVideoGuides from '@/components/hajj/HajjVideoGuides';
 import HajjFAQ from '@/components/hajj/HajjFAQ';
 import HajjBookingLinks from '@/components/hajj/HajjBookingLinks';
 import HajjChecklist from '@/components/hajj/HajjChecklist';
+import HajjBookingPage from '@/components/hajj/HajjBookingPage';
 
 const Hajj: React.FC = () => {
   const navigate = useNavigate();
@@ -51,12 +52,15 @@ const Hajj: React.FC = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 glass h-auto p-1 rounded-2xl">
+          <TabsList className="w-full grid grid-cols-5 glass h-auto p-1 rounded-2xl">
             <TabsTrigger value="guide" className="text-xs py-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BookOpen className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger value="book" className="text-xs py-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Plane className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger value="pay" className="text-xs py-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <CreditCard className="w-4 h-4" />
             </TabsTrigger>
             <TabsTrigger value="prepare" className="text-xs py-2 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ClipboardList className="w-4 h-4" />
@@ -154,6 +158,11 @@ const Hajj: React.FC = () => {
             <HajjCostCalculator />
             <HajjAgencies />
             <HajjBookingLinks />
+          </TabsContent>
+
+          {/* Pay Tab - Direct Booking */}
+          <TabsContent value="pay" className="mt-4">
+            <HajjBookingPage />
           </TabsContent>
 
           {/* Prepare Tab */}
