@@ -97,15 +97,15 @@ const HajjBookingLinks: React.FC = () => {
       {bookingCategories.map((category) => (
         <div 
           key={category.id}
-          className="glass rounded-2xl p-4 border border-primary-foreground/10"
+          className="glass rounded-2xl p-4 border border-border"
         >
           <div className="flex items-center gap-3 mb-3">
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
               {category.icon}
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-primary-foreground">{category.title}</h3>
-              <p className="text-xs text-primary-foreground/60">{category.description}</p>
+              <h3 className="text-sm font-semibold text-foreground">{category.title}</h3>
+              <p className="text-xs text-foreground/60">{category.description}</p>
             </div>
           </div>
 
@@ -119,14 +119,14 @@ const HajjBookingLinks: React.FC = () => {
                 onClick={() => handleLinkClick(link.url, link.affiliate)}
               >
                 <span className="text-xs truncate">{link.name}</span>
-                <ExternalLink className="w-3 h-3 flex-shrink-0 ml-1 text-primary-foreground/40" />
+                <ExternalLink className="w-3 h-3 flex-shrink-0 ml-1 text-foreground/40" />
               </Button>
             ))}
           </div>
         </div>
       ))}
 
-      <p className="text-xs text-primary-foreground/40 text-center">
+      <p className="text-xs text-foreground/40 text-center">
         * Some links may be affiliate partnerships that help support this app
       </p>
     </div>
