@@ -79,14 +79,14 @@ const HajjCostCalculator: React.FC = () => {
   }, [inputs]);
 
   return (
-    <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
+    <div className="glass rounded-3xl p-5 border border-border shadow-card">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
           <Calculator className="w-6 h-6 text-white" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-gradient-gold">Cost Estimator</h2>
-          <p className="text-xs text-primary-foreground/70">Plan your budget</p>
+          <p className="text-xs text-foreground/70">Plan your budget</p>
         </div>
       </div>
 
@@ -94,10 +94,10 @@ const HajjCostCalculator: React.FC = () => {
         {/* Travelers */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-primary-foreground/80 flex items-center gap-2">
+            <label className="text-sm text-foreground/80 flex items-center gap-2">
               <Users className="w-4 h-4" /> Travelers
             </label>
-            <span className="text-sm font-semibold text-primary-foreground">{inputs.travelers}</span>
+            <span className="text-sm font-semibold text-foreground">{inputs.travelers}</span>
           </div>
           <Slider
             value={[inputs.travelers]}
@@ -111,14 +111,14 @@ const HajjCostCalculator: React.FC = () => {
 
         {/* Region */}
         <div>
-          <label className="text-sm text-primary-foreground/80 flex items-center gap-2 mb-2">
+          <label className="text-sm text-foreground/80 flex items-center gap-2 mb-2">
             <Plane className="w-4 h-4" /> Departing From
           </label>
           <Select 
             value={inputs.departureCity} 
             onValueChange={(v) => setInputs(prev => ({ ...prev, departureCity: v }))}
           >
-            <SelectTrigger className="glass border-primary-foreground/10">
+            <SelectTrigger className="glass border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -135,14 +135,14 @@ const HajjCostCalculator: React.FC = () => {
 
         {/* Hotel Tier */}
         <div>
-          <label className="text-sm text-primary-foreground/80 flex items-center gap-2 mb-2">
+          <label className="text-sm text-foreground/80 flex items-center gap-2 mb-2">
             <Hotel className="w-4 h-4" /> Accommodation
           </label>
           <Select 
             value={inputs.hotelTier} 
             onValueChange={(v: any) => setInputs(prev => ({ ...prev, hotelTier: v }))}
           >
-            <SelectTrigger className="glass border-primary-foreground/10">
+            <SelectTrigger className="glass border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -157,10 +157,10 @@ const HajjCostCalculator: React.FC = () => {
         {/* Duration */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-primary-foreground/80 flex items-center gap-2">
+            <label className="text-sm text-foreground/80 flex items-center gap-2">
               <Calendar className="w-4 h-4" /> Duration (days)
             </label>
-            <span className="text-sm font-semibold text-primary-foreground">{inputs.duration}</span>
+            <span className="text-sm font-semibold text-foreground">{inputs.duration}</span>
           </div>
           <Slider
             value={[inputs.duration]}
@@ -178,21 +178,21 @@ const HajjCostCalculator: React.FC = () => {
             type="checkbox"
             checked={inputs.includeUmrah}
             onChange={(e) => setInputs(prev => ({ ...prev, includeUmrah: e.target.checked }))}
-            className="w-5 h-5 rounded border-primary-foreground/20 text-primary focus:ring-primary"
+            className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
           />
-          <span className="text-sm text-primary-foreground/80">Include Umrah (+${basePrices.umrahAddon})</span>
+          <span className="text-sm text-foreground/80">Include Umrah (+${basePrices.umrahAddon})</span>
         </label>
 
         {/* Estimate Display */}
         <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-primary-foreground/70">Per Person</span>
-            <span className="text-lg font-bold text-primary-foreground">
+            <span className="text-sm text-foreground/70">Per Person</span>
+            <span className="text-lg font-bold text-foreground">
               ${estimate.perPerson.toLocaleString()}
             </span>
           </div>
-          <div className="flex items-center justify-between border-t border-primary-foreground/10 pt-3">
-            <span className="text-base text-primary-foreground font-medium">Total ({inputs.travelers} travelers)</span>
+          <div className="flex items-center justify-between border-t border-border pt-3">
+            <span className="text-base text-foreground font-medium">Total ({inputs.travelers} travelers)</span>
             <span className="text-2xl font-bold text-gradient-gold">
               ${estimate.total.toLocaleString()}
             </span>
@@ -211,7 +211,7 @@ const HajjCostCalculator: React.FC = () => {
         {showBreakdown && (
           <div className="space-y-2 text-sm">
             {Object.entries(estimate.breakdown).map(([key, value]) => (
-              <div key={key} className="flex justify-between text-primary-foreground/70">
+              <div key={key} className="flex justify-between text-foreground/70">
                 <span className="capitalize">{key}</span>
                 <span>${value.toLocaleString()}</span>
               </div>
@@ -219,7 +219,7 @@ const HajjCostCalculator: React.FC = () => {
           </div>
         )}
 
-        <p className="text-xs text-primary-foreground/50 text-center">
+        <p className="text-xs text-foreground/50 text-center">
           * Estimates based on average 2024-2025 prices. Actual costs may vary.
         </p>
       </div>

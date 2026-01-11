@@ -57,7 +57,7 @@ const HajjCountdown: React.FC = () => {
   ];
 
   return (
-    <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card overflow-hidden relative">
+    <div className="glass rounded-3xl p-5 border border-border shadow-card overflow-hidden relative">
       {/* Background Decoration */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none" />
       
@@ -70,7 +70,7 @@ const HajjCountdown: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-gradient-gold">Hajj {hajjYear}</h2>
-              <p className="text-xs text-primary-foreground/70 flex items-center gap-1">
+              <p className="text-xs text-foreground/70 flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> Makkah, Saudi Arabia
               </p>
             </div>
@@ -82,12 +82,12 @@ const HajjCountdown: React.FC = () => {
           {timeUnits.map((unit, index) => (
             <div 
               key={unit.label}
-              className="glass rounded-xl p-3 text-center border border-primary-foreground/5"
+              className="glass rounded-xl p-3 text-center border border-border/50"
             >
               <div className="text-2xl font-bold text-gradient-gold tabular-nums">
                 {String(unit.value).padStart(2, '0')}
               </div>
-              <div className="text-[10px] text-primary-foreground/60 uppercase tracking-wider">
+              <div className="text-[10px] text-foreground/60 uppercase tracking-wider">
                 {unit.label}
               </div>
             </div>
@@ -95,7 +95,7 @@ const HajjCountdown: React.FC = () => {
         </div>
 
         {/* Info */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-primary-foreground/60">
+        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-foreground/60">
           <Clock className="w-3 h-3" />
           <span>Book early for best prices & availability</span>
         </div>

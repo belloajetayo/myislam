@@ -89,14 +89,14 @@ const HajjVideoGuides: React.FC = () => {
 
   return (
     <>
-      <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
+      <div className="glass rounded-3xl p-5 border border-border shadow-card">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
             <Video className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gradient-gold">Video Guides</h2>
-            <p className="text-xs text-primary-foreground/70">Learn visually</p>
+            <p className="text-xs text-foreground/70">Learn visually</p>
           </div>
         </div>
 
@@ -118,26 +118,26 @@ const HajjVideoGuides: React.FC = () => {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-primary-foreground line-clamp-1">
+                <h4 className="text-sm font-medium text-foreground line-clamp-1">
                   {video.title}
                 </h4>
-                <p className="text-xs text-primary-foreground/60 line-clamp-1 mt-0.5">
+                <p className="text-xs text-foreground/60 line-clamp-1 mt-0.5">
                   {video.description}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={`text-[10px] py-0 ${categoryColors[video.category]}`}>
                     {video.category}
                   </Badge>
-                  <span className="text-[10px] text-primary-foreground/50 flex items-center gap-1">
+                  <span className="text-[10px] text-foreground/50 flex items-center gap-1">
                     <Clock className="w-3 h-3" /> {video.duration}
                   </span>
-                  <span className="text-[10px] text-primary-foreground/50 flex items-center gap-1">
+                  <span className="text-[10px] text-foreground/50 flex items-center gap-1">
                     <Eye className="w-3 h-3" /> {video.views}
                   </span>
                 </div>
               </div>
 
-              <ChevronRight className="w-4 h-4 text-primary-foreground/40 self-center flex-shrink-0" />
+              <ChevronRight className="w-4 h-4 text-foreground/40 self-center flex-shrink-0" />
             </div>
           ))}
         </div>

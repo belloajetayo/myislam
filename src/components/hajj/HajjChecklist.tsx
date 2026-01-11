@@ -92,7 +92,7 @@ const HajjChecklist: React.FC = () => {
   };
 
   return (
-    <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
+    <div className="glass rounded-3xl p-5 border border-border shadow-card">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
@@ -100,7 +100,7 @@ const HajjChecklist: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-bold text-gradient-gold">Preparation Checklist</h2>
-            <p className="text-xs text-primary-foreground/70">{checkedItems.length}/{checklistItems.length} completed</p>
+            <p className="text-xs text-foreground/70">{checkedItems.length}/{checklistItems.length} completed</p>
           </div>
         </div>
         <Button 
@@ -116,14 +116,14 @@ const HajjChecklist: React.FC = () => {
       {/* Progress Bar */}
       <div className="mb-5">
         <Progress value={progress} className="h-2" />
-        <p className="text-xs text-primary-foreground/60 mt-1 text-right">{Math.round(progress)}% ready</p>
+        <p className="text-xs text-foreground/60 mt-1 text-right">{Math.round(progress)}% ready</p>
       </div>
 
       {/* Checklist */}
       <div className="space-y-4 max-h-96 overflow-y-auto scrollbar-hide">
         {Object.entries(groupedItems).map(([category, items]) => (
           <div key={category}>
-            <h4 className="text-xs font-semibold text-primary-foreground/60 uppercase tracking-wider mb-2">
+            <h4 className="text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-2">
               {category}
             </h4>
             <div className="space-y-1">
@@ -142,7 +142,7 @@ const HajjChecklist: React.FC = () => {
                     ) : (
                       <Circle className={`w-5 h-5 ${priorityColors[item.priority]} flex-shrink-0`} />
                     )}
-                    <span className={`text-sm ${isChecked ? 'text-primary-foreground/50 line-through' : 'text-primary-foreground'}`}>
+                    <span className={`text-sm ${isChecked ? 'text-foreground/50 line-through' : 'text-foreground'}`}>
                       {item.task}
                     </span>
                   </button>

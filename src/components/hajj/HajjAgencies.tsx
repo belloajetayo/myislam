@@ -96,14 +96,14 @@ const agencies: HajjAgency[] = [
 
 const HajjAgencies: React.FC = () => {
   return (
-    <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
+    <div className="glass rounded-3xl p-5 border border-border shadow-card">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
           <Building2 className="w-6 h-6 text-white" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-gradient-gold">Trusted Agencies</h2>
-          <p className="text-xs text-primary-foreground/70">Verified & Accredited</p>
+          <p className="text-xs text-foreground/70">Verified & Accredited</p>
         </div>
       </div>
 
@@ -117,12 +117,12 @@ const HajjAgencies: React.FC = () => {
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-primary-foreground">{agency.name}</h3>
+                  <h3 className="font-semibold text-foreground">{agency.name}</h3>
                   {agency.verified && (
                     <Shield className="w-4 h-4 text-emerald-500" />
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-primary-foreground/60 mt-1">
+                <div className="flex items-center gap-2 text-xs text-foreground/60 mt-1">
                   <Globe className="w-3 h-3" />
                   <span>{agency.country}</span>
                   <span>•</span>
@@ -133,12 +133,12 @@ const HajjAgencies: React.FC = () => {
               <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg">
                 <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                 <span className="text-xs font-semibold text-amber-600">{agency.rating}</span>
-                <span className="text-[10px] text-primary-foreground/50">({agency.reviews})</span>
+                <span className="text-[10px] text-foreground/50">({agency.reviews})</span>
               </div>
             </div>
 
             {/* Description */}
-            <p className="text-xs text-primary-foreground/70 line-clamp-2">{agency.description}</p>
+            <p className="text-xs text-foreground/70 line-clamp-2">{agency.description}</p>
 
             {/* Accreditation */}
             <div className="flex flex-wrap gap-1">
@@ -159,8 +159,8 @@ const HajjAgencies: React.FC = () => {
             </div>
 
             {/* Price Range & CTA */}
-            <div className="flex items-center justify-between pt-2 border-t border-primary-foreground/10">
-              <span className="text-xs text-primary-foreground/60">
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <span className="text-xs text-foreground/60">
                 {agency.priceRange}
               </span>
               <Button 
@@ -175,7 +175,7 @@ const HajjAgencies: React.FC = () => {
         ))}
       </div>
 
-      <p className="text-xs text-primary-foreground/50 text-center mt-4">
+      <p className="text-xs text-foreground/50 text-center mt-4">
         ✓ All agencies verified • ✓ Nusuk certified • ✓ Licensed operators
       </p>
     </div>

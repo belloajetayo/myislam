@@ -47,14 +47,14 @@ const faqs = [
 
 const HajjFAQ: React.FC = () => {
   return (
-    <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
+    <div className="glass rounded-3xl p-5 border border-border shadow-card">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
           <HelpCircle className="w-6 h-6 text-white" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-gradient-gold">Common Questions</h2>
-          <p className="text-xs text-primary-foreground/70">Everything you need to know</p>
+          <p className="text-xs text-foreground/70">Everything you need to know</p>
         </div>
       </div>
 
@@ -63,12 +63,12 @@ const HajjFAQ: React.FC = () => {
           <AccordionItem 
             key={index} 
             value={`item-${index}`}
-            className="border border-primary-foreground/10 rounded-xl px-4 data-[state=open]:bg-primary/5"
+            className="border border-border rounded-xl px-4 data-[state=open]:bg-primary/5"
           >
-            <AccordionTrigger className="text-sm text-left text-primary-foreground hover:no-underline py-3">
+            <AccordionTrigger className="text-sm text-left text-foreground hover:no-underline py-3">
               {faq.question}
             </AccordionTrigger>
-            <AccordionContent className="text-xs text-primary-foreground/70 pb-4 leading-relaxed">
+            <AccordionContent className="text-xs text-foreground/70 pb-4 leading-relaxed">
               {faq.answer}
             </AccordionContent>
           </AccordionItem>
