@@ -134,7 +134,7 @@ Allah accepted their repentance and sent them to Earth as a test, promising guid
       "Surah Ta-Ha 20:115-123",
       "Surah Sad 38:71-85"
     ],
-    videoId: "4_F6Y5I-h4s",
+    videoId: "y3PubD0tA2I",
     image: "🌍"
   },
   {
@@ -165,7 +165,7 @@ After the flood subsided, the ark rested on Mount Judi. Nuh and the believers de
       "Surah Al-Mu'minun 23:23-30",
       "Surah Al-Qamar 54:9-17"
     ],
-    videoId: "HL6-F7Y5FQc",
+    videoId: "LGCm2IPlIsU",
     image: "🚢"
   },
   {
@@ -198,7 +198,7 @@ Ibrahim and Ismail later built the Kaaba, the first house of worship for Allah, 
       "Surah As-Saffat 37:83-111",
       "Surah Al-Anbiya 21:51-73"
     ],
-    videoId: "GiSrI-X0mxE",
+    videoId: "ZzWI0EsWrh4",
     image: "🕋"
   },
   {
@@ -230,7 +230,7 @@ Yusuf's story ends with his beautiful prayer: "My Lord, You have given me author
       "Surah Al-An'am 6:84",
       "Surah Ghafir 40:34"
     ],
-    videoId: "GPT3L3mrNJc",
+    videoId: "e0SkM4vEuTg",
     image: "⭐"
   },
   {
@@ -264,7 +264,7 @@ At Mount Sinai, Allah gave Musa the Torah and spoke to him directly. However, th
       "Surah Al-Qasas 28:1-46",
       "Surah Al-Kahf 18:60-82"
     ],
-    videoId: "BhnRnKvqN1g",
+    videoId: "rcAM6N7BQII",
     image: "📜"
   },
   {
@@ -297,7 +297,7 @@ When his enemies plotted to kill him, Allah saved Isa by raising him to heaven a
       "Surah Al-Ma'idah 5:110-120",
       "Surah An-Nisa 4:157-159"
     ],
-    videoId: "fq5eR9dHMTI",
+    videoId: "WvQLVguP8nY",
     image: "✨"
   },
   {
@@ -333,7 +333,7 @@ His life encompassed every human role - husband, father, statesman, judge, milit
       "Surah At-Tawbah 9:128",
       "Surah Al-Qalam 68:4"
     ],
-    videoId: "0hqCArn3K-Y",
+    videoId: "DdWxCVYAOCk",
     image: "🌙"
   }
 ];
