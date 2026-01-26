@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import Prayer from "./pages/Prayer";
 import Qiblah from "./pages/Qiblah";
 import Quran from "./pages/Quran";
-import Community from "./pages/Community";
+
 import Auth from "./pages/Auth";
 import Zakat from "./pages/Zakat";
 import Fasting from "./pages/Fasting";
@@ -27,7 +27,7 @@ const App = () => (
           <Route path="/prayer" element={<Prayer />} />
           <Route path="/qiblah" element={<Qiblah />} />
           <Route path="/quran" element={<Quran />} />
-          <Route path="/community" element={<Community />} />
+          
           <Route path="/auth" element={<Auth />} />
           <Route path="/zakat" element={<Zakat />} />
           <Route path="/fasting" element={<Fasting />} />

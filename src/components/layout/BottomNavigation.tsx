@@ -1,13 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Clock, BookOpen, Users, Compass } from 'lucide-react';
+import { Home, Clock, BookOpen, Compass } from 'lucide-react';
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Clock, label: 'Prayer', path: '/prayer' },
   { icon: Compass, label: 'Qiblah', path: '/qiblah' },
   { icon: BookOpen, label: "Qur'an", path: '/quran' },
-  { icon: Users, label: 'Community', path: '/community' },
 ];
 
 const BottomNavigation: React.FC = () => {
