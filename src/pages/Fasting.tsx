@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ArrowLeft, Moon, Sun, Clock, Calendar, CheckCircle, Info, UtensilsCrossed, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Clock, Calendar, CheckCircle, Info, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -118,17 +118,28 @@ const Fasting: React.FC = () => {
             )}
           </Button>
 
-          {/* myRamadan Integration Link */}
-          <a 
-            href="https://myramadan.lovable.app" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-full mt-3 py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
-          >
-            <Calendar className="w-4 h-4" />
-            Open myRamadan Daily Tracker
-            <ExternalLink className="w-3 h-3" />
-          </a>
+        </div>
+
+        {/* myRamadan Tracker WebView */}
+        <div className="glass rounded-3xl p-4 border border-primary-foreground/10 shadow-card overflow-hidden">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gradient-gold">myRamadan Tracker</h3>
+              <p className="text-xs text-muted-foreground">Daily Ramadan progress</p>
+            </div>
+          </div>
+          <div className="rounded-2xl overflow-hidden bg-background" style={{ height: '500px' }}>
+            <iframe
+              src="https://myramadan.lovable.app/"
+              className="w-full h-full border-0"
+              title="myRamadan Tracker"
+              allow="geolocation; microphone; camera"
+              loading="lazy"
+            />
+          </div>
         </div>
 
         {/* How to Fast Guide */}
