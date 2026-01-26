@@ -131,7 +131,7 @@ const Fasting: React.FC = () => {
               <p className="text-xs text-muted-foreground">Daily Ramadan progress</p>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden bg-background" style={{ height: '500px' }}>
+          <div className="rounded-2xl overflow-hidden bg-background h-[60vh] min-h-[400px] max-h-[700px]">
             <iframe
               src="https://myramadan.lovable.app/"
               className="w-full h-full border-0"
