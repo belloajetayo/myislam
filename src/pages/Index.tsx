@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import QiblahCompass from '@/components/home/QiblahCompass';
+import MIAAssistant from '@/components/home/MIAAssistant';
 
 import PrayerCalendar from '@/components/home/PrayerCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
@@ -94,6 +95,9 @@ const Index: React.FC = () => {
 
         {/* Featured Content */}
         <FeaturedContent />
+
+        {/* MIA Assistant */}
+        <MIAAssistant />
       </div>
     </MobileLayout>
   );
