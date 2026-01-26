@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import QiblahCompass from '@/components/home/QiblahCompass';
-import AIAssistant from '@/components/home/AIAssistant';
+
 import PrayerCalendar from '@/components/home/PrayerCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
@@ -82,8 +82,6 @@ const Index: React.FC = () => {
         {/* Quick Shortcuts */}
         <QuickShortcuts />
 
-        {/* AI Assistant */}
-        <AIAssistant />
 
         {/* Daily Reminders */}
         <DailyReminders />
