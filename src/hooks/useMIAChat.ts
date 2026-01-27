@@ -11,6 +11,7 @@ const MIA_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mia-chat
 export const useMIAChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const sendMessage = useCallback(async (input: string) => {
@@ -121,10 +122,21 @@ export const useMIAChat = () => {
     setMessages([]);
   }, []);
 
+  const openWithQuestion = useCallback((question: string) => {
+    setIsOpen(true);
+    // Small delay to ensure the UI is open before sending
+    setTimeout(() => {
+      sendMessage(question);
+    }, 100);
+  }, [sendMessage]);
+
   return {
     messages,
     isLoading,
+    isOpen,
+    setIsOpen,
     sendMessage,
     clearMessages,
+    openWithQuestion,
   };
 };

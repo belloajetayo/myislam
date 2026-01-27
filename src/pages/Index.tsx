@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import QiblahCompass from '@/components/home/QiblahCompass';
 import MIAAssistant from '@/components/home/MIAAssistant';
-
-import PrayerCalendar from '@/components/home/PrayerCalendar';
+import IslamicCalendar from '@/components/home/IslamicCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
 import DailyReminders from '@/components/home/DailyReminders';
@@ -12,10 +11,20 @@ import { Bell, User, LogOut, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useMIAChat } from '@/hooks/useMIAChat';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const { 
+    messages, 
+    isLoading, 
+    isOpen, 
+    setIsOpen, 
+    sendMessage, 
+    clearMessages, 
+    openWithQuestion 
+  } = useMIAChat();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -32,6 +41,10 @@ const Index: React.FC = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success('Logged out successfully');
+  };
+
+  const handleAskMIA = (question: string) => {
+    openWithQuestion(question);
   };
 
   return (
@@ -83,21 +96,38 @@ const Index: React.FC = () => {
         {/* Quick Shortcuts */}
         <QuickShortcuts />
 
-
         {/* Daily Reminders */}
         <DailyReminders />
 
         {/* Progress Tracker */}
         <ProgressTracker />
 
-        {/* Prayer Calendar */}
-        <PrayerCalendar />
+        {/* Islamic Calendar with AI Sync */}
+        <IslamicCalendar onAskMIA={handleAskMIA} />
 
         {/* Featured Content */}
         <FeaturedContent />
 
-        {/* MIA Assistant */}
-        <MIAAssistant />
+        {/* MIA Floating Button */}
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
+            aria-label="Open MIA Assistant"
+          >
+            <Sparkles className="w-6 h-6" />
+          </button>
+        )}
+
+        {/* MIA Assistant Panel */}
+        <MIAAssistant
+          messages={messages}
+          isLoading={isLoading}
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onSendMessage={sendMessage}
+          onClearMessages={clearMessages}
+        />
       </div>
     </MobileLayout>
   );
