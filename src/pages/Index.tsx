@@ -6,6 +6,7 @@ import IslamicCalendar from '@/components/home/IslamicCalendar';
 import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
 import DailyReminders from '@/components/home/DailyReminders';
+import DailyTeachingsCarousel from '@/components/home/DailyTeachingsCarousel';
 import FeaturedContent from '@/components/home/FeaturedContent';
 import { Bell, User, LogOut, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -98,6 +99,9 @@ const Index: React.FC = () => {
 
         {/* Daily Reminders */}
         <DailyReminders />
+
+        {/* AI-Generated Daily Teachings */}
+        <DailyTeachingsCarousel />
 
         {/* Progress Tracker */}
         <ProgressTracker />
