@@ -1,10 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Trash2, Sparkles, BookOpen, X } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Send, Trash2, Sparkles, BookOpen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useMIAChat } from '@/hooks/useMIAChat';
 import ReactMarkdown from 'react-markdown';
+
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
 
 const SUGGESTED_QUESTIONS = [
   "How do I perform Wudu correctly?",
@@ -13,10 +17,24 @@ const SUGGESTED_QUESTIONS = [
   "What are the pillars of Islam?",
 ];
 
-const MIAAssistant: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState('');
-  const { messages, isLoading, sendMessage, clearMessages } = useMIAChat();
+interface MIAAssistantProps {
+  messages: Message[];
+  isLoading: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onSendMessage: (message: string) => void;
+  onClearMessages: () => void;
+}
+
+const MIAAssistant: React.FC<MIAAssistantProps> = ({
+  messages,
+  isLoading,
+  isOpen,
+  onClose,
+  onSendMessage,
+  onClearMessages,
+}) => {
+  const [input, setInput] = React.useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -26,16 +44,22 @@ const MIAAssistant: React.FC = () => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (isOpen && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
-      sendMessage(input);
+      onSendMessage(input);
       setInput('');
     }
   };
 
   const handleSuggestion = (question: string) => {
-    sendMessage(question);
+    onSendMessage(question);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -46,15 +70,7 @@ const MIAAssistant: React.FC = () => {
   };
 
   if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent shadow-lg flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
-        aria-label="Open MIA Assistant"
-      >
-        <Sparkles className="w-6 h-6" />
-      </button>
-    );
+    return null;
   }
 
   return (
@@ -75,7 +91,7 @@ const MIAAssistant: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={clearMessages}
+              onClick={onClearMessages}
               className="h-8 w-8 text-muted-foreground hover:text-destructive"
               title="Clear chat"
             >
@@ -85,7 +101,7 @@ const MIAAssistant: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsOpen(false)}
+            onClick={onClose}
             className="h-8 w-8 text-muted-foreground"
           >
             <X className="w-4 h-4" />
