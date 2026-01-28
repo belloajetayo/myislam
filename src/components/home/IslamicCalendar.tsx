@@ -40,68 +40,36 @@ interface IslamicCalendarProps {
 }
 
 const IslamicCalendar: React.FC<IslamicCalendarProps> = ({ onDateSelect, onAskMIA }) => {
-  const [currentHijriMonth, setCurrentHijriMonth] = useState<number>(1);
-  const [currentHijriYear, setCurrentHijriYear] = useState<number>(1446);
+  const [currentHijriMonth, setCurrentHijriMonth] = useState<number>(8); // Shaaban
+  const [currentHijriYear, setCurrentHijriYear] = useState<number>(1447);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [todayHijri, setTodayHijri] = useState<HijriDateInfo | null>(null);
   const [userLocation, setUserLocation] = useState<string>('Locating...');
   const [loading, setLoading] = useState(true);
-  const { prayerTimes, currentPrayer, loading: prayerLoading } = usePrayerTimes();
+  const { prayerTimes, location, hijriDate, currentPrayer, loading: prayerLoading } = usePrayerTimes();
 
   const hijriDaysShort = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  // Get user location
+  // Sync location from prayer times hook
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const response = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
-            );
-            const data = await response.json();
-            setUserLocation(data.city || data.locality || 'Your Location');
-          } catch {
-            setUserLocation('Your Location');
-          }
-        },
-        () => setUserLocation('Location unavailable'),
-        { enableHighAccuracy: false }
-      );
+    if (location) {
+      setUserLocation(location.city || 'Your Location');
     }
-  }, []);
+  }, [location]);
 
-  // Fetch today's Hijri date on mount
+  // Sync Hijri date from prayer times hook (single source of truth)
   useEffect(() => {
-    const fetchTodayHijri = async () => {
-      const today = new Date();
-      const day = String(today.getDate()).padStart(2, '0');
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const year = today.getFullYear();
-      
-      try {
-        const response = await fetch(
-          `https://api.aladhan.com/v1/gpiToH/${day}-${month}-${year}`
-        );
-        const data = await response.json();
-        
-        if (data.code === 200) {
-          const hijri = data.data.hijri;
-          setTodayHijri({
-            day: parseInt(hijri.day),
-            month: hijri.month,
-            year: parseInt(hijri.year),
-          });
-          setCurrentHijriMonth(hijri.month.number);
-          setCurrentHijriYear(parseInt(hijri.year));
-        }
-      } catch (error) {
-        console.error('Error fetching today Hijri:', error);
-      }
-    };
-    fetchTodayHijri();
-  }, []);
+    if (hijriDate) {
+      setTodayHijri({
+        day: hijriDate.day,
+        month: hijriDate.month,
+        year: hijriDate.year,
+      });
+      setCurrentHijriMonth(hijriDate.month.number);
+      setCurrentHijriYear(hijriDate.year);
+    }
+  }, [hijriDate]);
 
   // Build calendar for current Hijri month
   useEffect(() => {

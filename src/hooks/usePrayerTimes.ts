@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-interface PrayerTimes {
+export interface PrayerTimes {
   Fajr: string;
   Sunrise: string;
   Dhuhr: string;
@@ -9,7 +9,13 @@ interface PrayerTimes {
   Isha: string;
 }
 
-interface LocationData {
+export interface HijriDateData {
+  day: number;
+  month: { number: number; en: string; ar: string };
+  year: number;
+}
+
+export interface LocationData {
   city: string;
   country: string;
   latitude: number;
@@ -19,6 +25,7 @@ interface LocationData {
 export function usePrayerTimes() {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [hijriDate, setHijriDate] = useState<HijriDateData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPrayer, setCurrentPrayer] = useState<string>('');
@@ -56,6 +63,14 @@ export function usePrayerTimes() {
             Asr: timings.Asr,
             Maghrib: timings.Maghrib,
             Isha: timings.Isha,
+          });
+          
+          // Also extract Hijri date from the same API response
+          const hijri = data.data.date.hijri;
+          setHijriDate({
+            day: parseInt(hijri.day),
+            month: hijri.month,
+            year: parseInt(hijri.year),
           });
         }
       } catch (err) {
@@ -128,5 +143,5 @@ export function usePrayerTimes() {
     return () => clearInterval(interval);
   }, [prayerTimes]);
 
-  return { prayerTimes, location, loading, error, currentPrayer, nextPrayer };
+  return { prayerTimes, location, hijriDate, loading, error, currentPrayer, nextPrayer };
 }
