@@ -258,38 +258,38 @@ const DailyTeachingsCarousel: React.FC = () => {
   return (
     <div className="relative bg-card rounded-3xl overflow-hidden shadow-card border border-border animate-slide-up" style={{ animationDelay: '0.2s' }}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50">
+      <div className="flex items-center justify-between p-3 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-islamic-gold" />
-          <span className="font-semibold text-foreground">Daily Teaching</span>
+          <Sparkles className="w-4 h-4 text-islamic-gold" />
+          <span className="font-semibold text-sm text-foreground">Daily Teaching</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={regenerateImage}
             disabled={isGenerating || currentCard?.loading}
-            className="h-8 w-8"
+            className="h-7 w-7"
           >
-            <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare} className="h-8 w-8">
-            <Share2 className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={handleShare} className="h-7 w-7">
+            <Share2 className="w-3.5 h-3.5" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleDownload} 
             disabled={!currentCard?.imageUrl}
-            className="h-8 w-8"
+            className="h-7 w-7"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* Card Content */}
-      <div className="relative aspect-[9/16] max-h-[400px] overflow-hidden">
+      {/* Card Content - Fit to screen better */}
+      <div className="relative h-[280px] overflow-hidden">
         {/* Background Image */}
         {currentCard?.loading ? (
           <div className="absolute inset-0 bg-gradient-to-br from-islamic-gold/20 via-secondary/20 to-primary/20 flex items-center justify-center">
@@ -312,59 +312,59 @@ const DailyTeachingsCarousel: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
 
         {/* Content */}
-        <div className="relative h-full flex flex-col items-center justify-center p-6 text-white text-center">
+        <div className="relative h-full flex flex-col items-center justify-center p-4 text-white text-center">
           {/* Category Badge */}
-          <span className="px-3 py-1 bg-islamic-gold/90 text-black text-xs font-bold rounded-full mb-4">
+          <span className="px-2.5 py-0.5 bg-islamic-gold/90 text-black text-[10px] font-bold rounded-full mb-3">
             {teaching?.category}
           </span>
 
           {/* Quote */}
-          <p className="text-lg md:text-xl font-serif leading-relaxed mb-4 max-w-[90%]">
+          <p className="text-sm md:text-base font-serif leading-relaxed mb-3 max-w-[95%] line-clamp-4">
             "{teaching?.text}"
           </p>
 
           {/* Source */}
-          <p className="text-sm text-white/80 italic">
+          <p className="text-xs text-white/80 italic">
             — {teaching?.source}
           </p>
 
           {/* Date & Branding */}
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <p className="text-xs text-white/70 mb-1">{hijriDate}</p>
-            <p className="text-xs font-bold text-islamic-gold">MIA • My Islam AI</p>
+          <div className="absolute bottom-3 left-0 right-0 text-center">
+            <p className="text-[10px] text-white/70 mb-0.5">{hijriDate}</p>
+            <p className="text-[10px] font-bold text-islamic-gold">MIA • My Islam AI</p>
           </div>
         </div>
 
         {/* Navigation Arrows */}
         <button
           onClick={goToPrevious}
-          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
         <button
           onClick={goToNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Dots Indicator */}
-      <div className="flex items-center justify-center gap-1.5 py-3">
+      <div className="flex items-center justify-center gap-1 py-2">
         {teachings.slice(0, 5).map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`w-1.5 h-1.5 rounded-full transition-all ${
               idx === currentIndex % 5 
-                ? 'w-6 bg-islamic-gold' 
+                ? 'w-5 bg-islamic-gold' 
                 : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
             }`}
           />
         ))}
         {teachings.length > 5 && (
-          <span className="text-xs text-muted-foreground ml-1">+{teachings.length - 5}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">+{teachings.length - 5}</span>
         )}
       </div>
     </div>
