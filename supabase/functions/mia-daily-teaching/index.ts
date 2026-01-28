@@ -7,76 +7,94 @@ const corsHeaders = {
 
 const ISLAMIC_TEACHINGS = [
   {
-    category: "Hadith",
-    text: "The best among you are those who have the best manners and character.",
-    source: "Sahih al-Bukhari",
+    category: "Verse Of The Day",
+    text: "Indeed, those who have said, 'Our Lord is Allah' and then remained on a right course - the angels will descend upon them, [saying], 'Do not fear and do not grieve but receive good tidings of Paradise, which you were promised. We [angels] were your allies in worldly life and [are so] in the Hereafter. And you will have therein whatever your souls desire, and you will have therein whatever you request [or wish].'",
+    source: "Quran 41:30-31",
+    theme: "paradise"
+  },
+  {
+    category: "Hadith Of The Day",
+    text: "The Messenger of Allah (ﷺ) said: 'The best among you are those who have the best manners and character. The most complete of the believers in faith is the one with the best character among them. And the best of you are those who are best to their women.'",
+    source: "Sahih al-Bukhari & At-Tirmidhi",
     theme: "character"
   },
   {
-    category: "Qur'an",
-    text: "Indeed, with hardship comes ease.",
-    source: "Surah Ash-Sharh 94:6",
+    category: "Verse Of The Day",
+    text: "So verily, with hardship comes ease. Verily, with hardship comes ease. So when you have finished [your duties], then stand up [for worship]. And to your Lord direct [your] longing.",
+    source: "Quran 94:5-8 (Surah Ash-Sharh)",
     theme: "hope"
   },
   {
-    category: "Hadith",
-    text: "Smiling at your brother is an act of charity.",
-    source: "At-Tirmidhi",
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'Do not belittle any good deed, even meeting your brother with a cheerful face. When you cook broth, make a lot of it and give some to your neighbors.' Smiling at your brother is charity. Guiding a person who is lost is charity. Removing harmful objects from the road is charity.",
+    source: "At-Tirmidhi & Sahih Muslim",
     theme: "kindness"
   },
   {
-    category: "Qur'an",
-    text: "And whoever puts their trust in Allah, He will be enough for them.",
-    source: "Surah At-Talaq 65:3",
+    category: "Verse Of The Day",
+    text: "And whoever puts their trust in Allah, He will be enough for them. Indeed, Allah will accomplish His purpose. Allah has already set for everything a [decreed] extent. And whoever fears Allah - He will make for him a way out and will provide for him from where he does not expect.",
+    source: "Quran 65:3 (Surah At-Talaq)",
     theme: "trust"
   },
   {
-    category: "Hadith",
-    text: "The strong person is not the one who can wrestle, but the one who controls themselves when angry.",
-    source: "Sahih al-Bukhari",
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'The strong man is not the one who can wrestle, but the strong man is the one who controls himself when he is angry.' In another narration: 'Strength is not in overpowering others, but true strength is in controlling oneself at the time of anger.'",
+    source: "Sahih al-Bukhari & Muslim",
     theme: "patience"
   },
   {
-    category: "Qur'an",
-    text: "So remember Me; I will remember you.",
-    source: "Surah Al-Baqarah 2:152",
+    category: "Verse Of The Day",
+    text: "So remember Me; I will remember you. Be grateful to Me and do not deny Me. O you who have believed, seek help through patience and prayer. Indeed, Allah is with the patient. And do not say about those who are killed in the way of Allah, 'They are dead.' Rather, they are alive, but you perceive [it] not.",
+    source: "Quran 2:152-154 (Surah Al-Baqarah)",
     theme: "remembrance"
   },
   {
-    category: "Hadith",
-    text: "None of you truly believes until he loves for his brother what he loves for himself.",
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'None of you truly believes until he loves for his brother what he loves for himself.' This encompasses all forms of goodness - in religion and worldly matters. A believer should wish for his fellow Muslim the same guidance, sustenance, and blessings that he wishes for himself.",
     source: "Sahih al-Bukhari & Muslim",
     theme: "brotherhood"
   },
   {
-    category: "Qur'an",
-    text: "And speak to people good words.",
-    source: "Surah Al-Baqarah 2:83",
+    category: "Verse Of The Day",
+    text: "And [recall] when We took the covenant from the Children of Israel, [enjoining upon them], 'Do not worship except Allah; and to parents do good and to relatives, orphans, and the needy. And speak to people good [words] and establish prayer and give zakah.'",
+    source: "Quran 2:83 (Surah Al-Baqarah)",
     theme: "speech"
   },
   {
-    category: "Hadith",
-    text: "The most beloved of deeds to Allah are those that are most consistent, even if they are small.",
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'The most beloved of deeds to Allah are those that are most consistent, even if they are small.' When 'Aisha was asked about the deeds of the Prophet, she said, 'His deeds were consistent. He would continue doing good deeds regularly without interruption.'",
     source: "Sahih al-Bukhari",
     theme: "consistency"
   },
   {
-    category: "Qur'an",
-    text: "Allah does not burden a soul beyond that it can bear.",
-    source: "Surah Al-Baqarah 2:286",
+    category: "Verse Of The Day",
+    text: "Allah does not burden a soul beyond that it can bear. It will have [the consequence of] what [good] it has gained, and it will bear [the consequence of] what [evil] it has earned. 'Our Lord, do not impose blame upon us if we have forgotten or erred. Our Lord, and lay not upon us a burden like that which You laid upon those before us.'",
+    source: "Quran 2:286 (Surah Al-Baqarah)",
     theme: "mercy"
   },
   {
-    category: "Hadith",
-    text: "Whoever believes in Allah and the Last Day, let him speak good or remain silent.",
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'Whoever believes in Allah and the Last Day, let him speak good or remain silent. Whoever believes in Allah and the Last Day, let him honor his neighbor. Whoever believes in Allah and the Last Day, let him honor his guest.'",
     source: "Sahih al-Bukhari & Muslim",
     theme: "wisdom"
   },
   {
-    category: "Qur'an",
-    text: "And We have certainly made the Qur'an easy for remembrance.",
-    source: "Surah Al-Qamar 54:17",
+    category: "Verse Of The Day",
+    text: "And We have certainly made the Qur'an easy for remembrance, so is there any who will remember? How many a generation before them did We destroy, and they are crying out when there is no longer time for escape.",
+    source: "Quran 54:17-18 (Surah Al-Qamar)",
     theme: "guidance"
+  },
+  {
+    category: "Hadith Of The Day",
+    text: "The Prophet (ﷺ) said: 'When Allah created Paradise and Hell, He sent Jibreel to Paradise and said: Look at it and what I have prepared for its people. So he looked at it and saw what Allah had prepared for its people. Then he said: By Your Might, no one who hears of it will fail to enter it.'",
+    source: "At-Tirmidhi & Abu Dawud",
+    theme: "paradise"
+  },
+  {
+    category: "Verse Of The Day",
+    text: "O mankind, indeed We have created you from male and female and made you peoples and tribes that you may know one another. Indeed, the most noble of you in the sight of Allah is the most righteous of you. Indeed, Allah is Knowing and Acquainted.",
+    source: "Quran 49:13 (Surah Al-Hujurat)",
+    theme: "brotherhood"
   },
 ];
 
@@ -93,6 +111,7 @@ const THEME_PROMPTS: { [key: string]: string } = {
   mercy: "soft clouds with golden light breaking through, heavenly atmosphere, divine mercy",
   wisdom: "ancient library aesthetic with warm candlelight, books and scrolls, scholarly atmosphere",
   guidance: "lighthouse on calm sea at twilight, guiding light, peaceful navigation",
+  paradise: "beautiful Islamic garden with fountains, lush greenery, golden light streaming through",
 };
 
 serve(async (req) => {
