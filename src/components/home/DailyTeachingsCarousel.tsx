@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Share2, Download, Sparkles, RefreshCw, Image } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Download, Sparkles, RefreshCw, Image, Maximize2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface Teaching {
   category: string;
@@ -22,6 +23,7 @@ const DailyTeachingsCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cards, setCards] = useState<Map<number, TeachingCard>>(new Map());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   // Get today's Hijri date
   const [hijriDate, setHijriDate] = useState<string>('');
@@ -273,15 +275,18 @@ const DailyTeachingsCarousel: React.FC = () => {
               <Image className="w-3.5 h-3.5" />
             )}
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare} className="h-7 w-7">
+          <Button variant="ghost" size="icon" onClick={() => setIsViewOpen(true)} className="h-7 w-7" title="View full">
+            <Maximize2 className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleShare} className="h-7 w-7" title="Share">
             <Share2 className="w-3.5 h-3.5" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleDownload} 
-            disabled={!currentCard?.imageUrl}
             className="h-7 w-7"
+            title="Save image"
           >
             <Download className="w-3.5 h-3.5" />
           </Button>
@@ -374,6 +379,73 @@ const DailyTeachingsCarousel: React.FC = () => {
           <span className="text-xs text-muted-foreground ml-1">+{teachings.length - 5}</span>
         )}
       </div>
+
+      {/* Fullscreen View Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-border">
+          <DialogTitle className="sr-only">View Teaching</DialogTitle>
+          {/* Background */}
+          <div className="relative min-h-[70vh]">
+            {currentCard?.imageUrl ? (
+              <img
+                src={currentCard.imageUrl}
+                alt="Islamic teaching background"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-islamic-gold/30 via-secondary/20 to-primary/30" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+            
+            {/* Content */}
+            <div className="relative flex flex-col p-8 text-white h-full justify-center">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-white text-black px-4 py-3 rounded-xl text-center min-w-[70px]">
+                  <span className="block text-2xl font-bold leading-tight">
+                    {hijriDate.split(' ')[0] || '9'}
+                  </span>
+                  <span className="block text-xs uppercase tracking-wide">
+                    {hijriDate.split(' ')[1] || 'Shaaban'}
+                  </span>
+                </div>
+                <span className="text-islamic-gold font-semibold text-xl">{teaching?.category}</span>
+              </div>
+
+              <p className="text-lg leading-relaxed mb-6 text-white/95">
+                {teaching?.text}
+              </p>
+
+              <p className="text-sm text-white/70 italic mb-8">
+                [{teaching?.source}]
+              </p>
+
+              <div className="mt-auto pt-4 border-t border-white/20 flex items-center justify-between">
+                <p className="text-sm font-medium text-islamic-gold">MyIslam App</p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleShare}
+                    className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleDownload}
+                    className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
