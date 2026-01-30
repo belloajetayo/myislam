@@ -152,39 +152,59 @@ const DailyTeachingsCarousel: React.FC = () => {
   };
 
   const handleDownload = async () => {
-    const currentCard = cards.get(currentIndex);
-    if (!currentCard?.imageUrl) {
-      toast.error('Generate an image first');
-      return;
-    }
+    const teaching = teachings[currentIndex];
+    if (!teaching) return;
 
     try {
-      // Create a canvas to composite the image with text
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const img = document.createElement('img') as HTMLImageElement;
-      img.crossOrigin = 'anonymous';
-      
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = currentCard.imageUrl!;
-      });
-
       canvas.width = 1080;
       canvas.height = 1920;
 
-      // Draw background image
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const currentCard = cards.get(currentIndex);
+
+      // Draw background - use AI image if available, otherwise gradient
+      if (currentCard?.imageUrl) {
+        const img = document.createElement('img') as HTMLImageElement;
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = currentCard.imageUrl!;
+        });
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      } else {
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#1a365d');
+        gradient.addColorStop(0.5, '#2d3748');
+        gradient.addColorStop(1, '#1a202c');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add decorative pattern
+        ctx.globalAlpha = 0.1;
+        for (let i = 0; i < 20; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const size = Math.random() * 100 + 50;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = '#d4af37';
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
 
       // Add overlay
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Add text
-      const teaching = teachings[currentIndex];
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
 
