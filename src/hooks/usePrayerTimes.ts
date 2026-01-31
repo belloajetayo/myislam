@@ -81,19 +81,36 @@ export function usePrayerTimes() {
       }
     };
 
-    // Get user location
+    // Get user location with high accuracy GPS
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
         },
-        () => {
-          // Default to Makkah if location denied
-          fetchPrayerTimes(21.4225, 39.8262);
+        (error) => {
+          console.warn('Geolocation error:', error.message);
+          // Try with lower accuracy as fallback
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
+            },
+            () => {
+              // Default to Makkah if all location methods fail
+              fetchPrayerTimes(21.4225, 39.8262);
+              setError('Location access denied. Using default location (Makkah).');
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+          );
+        },
+        { 
+          enableHighAccuracy: true,  // Force GPS for precise coordinates
+          timeout: 15000,            // Wait up to 15s for GPS fix
+          maximumAge: 0              // Always get fresh location
         }
       );
     } else {
       fetchPrayerTimes(21.4225, 39.8262);
+      setError('Geolocation not supported. Using default location (Makkah).');
     }
   }, []);
 

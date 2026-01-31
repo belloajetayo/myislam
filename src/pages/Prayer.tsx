@@ -1,29 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ChevronLeft, ChevronRight, MapPin, Bell, Check, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Bell, Check, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 
-const prayers = [
-  { name: 'Fajr', time: '5:23 AM', arabic: 'الفجر', color: 'from-indigo-500 to-purple-600' },
-  { name: 'Sunrise', time: '6:45 AM', arabic: 'الشروق', color: 'from-orange-400 to-pink-500' },
-  { name: 'Dhuhr', time: '12:30 PM', arabic: 'الظهر', color: 'from-amber-400 to-orange-500' },
-  { name: 'Asr', time: '3:45 PM', arabic: 'العصر', color: 'from-cyan-400 to-blue-500', current: true },
-  { name: 'Maghrib', time: '6:12 PM', arabic: 'المغرب', color: 'from-purple-400 to-pink-500' },
-  { name: 'Isha', time: '7:42 PM', arabic: 'العشاء', color: 'from-blue-600 to-indigo-700' },
+const prayerConfig = [
+  { name: 'Fajr', arabic: 'الفجر', color: 'from-indigo-500 to-purple-600' },
+  { name: 'Sunrise', arabic: 'الشروق', color: 'from-orange-400 to-pink-500' },
+  { name: 'Dhuhr', arabic: 'الظهر', color: 'from-amber-400 to-orange-500' },
+  { name: 'Asr', arabic: 'العصر', color: 'from-cyan-400 to-blue-500' },
+  { name: 'Maghrib', arabic: 'المغرب', color: 'from-purple-400 to-pink-500' },
+  { name: 'Isha', arabic: 'العشاء', color: 'from-blue-600 to-indigo-700' },
 ];
-
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const dates = [8, 9, 10, 11, 12, 13, 14];
 
 const Prayer: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(12);
-  const [prayedList, setPrayedList] = useState<string[]>(['Fajr', 'Sunrise', 'Dhuhr']);
+  const { prayerTimes, location, hijriDate, loading, currentPrayer, nextPrayer } = usePrayerTimes();
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [prayedList, setPrayedList] = useState<string[]>([]);
+
+  // Generate week days and dates centered on today
+  const { weekDays, dates } = useMemo(() => {
+    const today = new Date();
+    const days: string[] = [];
+    const dateNums: number[] = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      days.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+      dateNums.push(d.getDate());
+    }
+    return { weekDays: days, dates: dateNums };
+  }, []);
 
   const togglePrayed = (name: string) => {
     setPrayedList(prev => 
       prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
     );
+  };
+
+  // Format time to 12-hour format
+  const formatTime = (time24: string) => {
+    const [hours, minutes] = time24.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Get prayers with real times
+  const prayers = prayerConfig.map(p => ({
+    ...p,
+    time: prayerTimes ? formatTime(prayerTimes[p.name as keyof typeof prayerTimes]) : '--:--',
+    current: p.name === currentPrayer
+  }));
+
+  // Calculate time until next prayer
+  const getTimeUntilNext = () => {
+    if (!prayerTimes || !nextPrayer) return '';
+    const now = new Date();
+    const nextTime = prayerTimes[nextPrayer as keyof typeof prayerTimes];
+    if (!nextTime) return '';
+    const [hours, minutes] = nextTime.split(':').map(Number);
+    const nextDate = new Date();
+    nextDate.setHours(hours, minutes, 0, 0);
+    if (nextDate < now) nextDate.setDate(nextDate.getDate() + 1);
+    const diff = nextDate.getTime() - now.getTime();
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return `${h}h ${m}m`;
   };
 
   return (
@@ -41,7 +85,9 @@ const Prayer: React.FC = () => {
             <h1 className="text-xl font-bold text-gradient-gold">Prayer Times</h1>
             <div className="flex items-center gap-1 text-gradient-gold opacity-80">
               <MapPin className="w-3 h-3" />
-              <span className="text-xs">New York, USA</span>
+              <span className="text-xs">
+                {loading ? 'Locating...' : location ? `${location.city}, ${location.country}` : 'Unknown Location'}
+              </span>
             </div>
           </div>
           <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10">
@@ -56,8 +102,12 @@ const Prayer: React.FC = () => {
               <ChevronLeft className="w-4 h-4 text-foreground" />
             </button>
             <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">December 2024</p>
-              <p className="text-xs text-muted-foreground">Jumada al-Akhirah 1446</p>
+              <p className="text-sm font-semibold text-foreground">
+                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {hijriDate ? `${hijriDate.month.en} ${hijriDate.year}` : 'Loading...'}
+              </p>
             </div>
             <button className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center">
               <ChevronRight className="w-4 h-4 text-foreground" />
@@ -88,17 +138,30 @@ const Prayer: React.FC = () => {
 
         {/* Current Prayer Highlight */}
         <div className="gradient-accent rounded-3xl p-5 shadow-glow animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-primary-foreground/80 text-xs">Current Prayer</p>
-              <h2 className="text-2xl font-bold text-primary-foreground">Asr</h2>
-              <p className="text-primary-foreground/90 font-arabic text-lg">العصر</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-foreground" />
+              <span className="ml-2 text-primary-foreground">Getting precise location...</span>
             </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-primary-foreground">3:45 PM</p>
-              <p className="text-primary-foreground/80 text-xs">Next: Maghrib in 2h 27m</p>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-primary-foreground/80 text-xs">Current Prayer</p>
+                <h2 className="text-2xl font-bold text-primary-foreground">{currentPrayer || '--'}</h2>
+                <p className="text-primary-foreground/90 font-arabic text-lg">
+                  {prayerConfig.find(p => p.name === currentPrayer)?.arabic || ''}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-primary-foreground">
+                  {prayerTimes && currentPrayer ? formatTime(prayerTimes[currentPrayer as keyof typeof prayerTimes]) : '--:--'}
+                </p>
+                <p className="text-primary-foreground/80 text-xs">
+                  Next: {nextPrayer} in {getTimeUntilNext()}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Prayer List */}

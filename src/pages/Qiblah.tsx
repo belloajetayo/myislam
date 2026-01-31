@@ -124,36 +124,71 @@ const Qiblah: React.FC = () => {
   useEffect(() => {
     let mapInstance: mapboxgl.Map | null = null;
     
-    // Get user location first
-    if (navigator.geolocation) {
+    // Get user location with high-accuracy GPS for precise Qibla calculation
+    const getHighAccuracyLocation = () => {
+      if (!navigator.geolocation) {
+        // Use cached location if geolocation not supported
+        const cached = localStorage.getItem('lastLocation');
+        if (cached) {
+          const loc = JSON.parse(cached);
+          setUserLocation(loc);
+          setQiblahDirection(parseInt(localStorage.getItem('lastQiblahDirection') || '0'));
+          setLocationName('Cached location (GPS unavailable)');
+        }
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
+          const { latitude, longitude, accuracy } = position.coords;
+          console.log(`Location acquired: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+          
           setUserLocation({ lat: latitude, lng: longitude });
           
-          // Calculate Qiblah direction
+          // Calculate precise Qiblah direction using spherical trigonometry
           const direction = calculateQiblahDirection(latitude, longitude);
-          setQiblahDirection(Math.round(direction));
+          setQiblahDirection(Math.round(direction * 100) / 100); // Keep 2 decimal precision
           
           // Store location for offline use
           localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
           localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
         },
-        () => {
-          // Try to use cached location
-          const cached = localStorage.getItem('lastLocation');
-          const cachedDirection = localStorage.getItem('lastQiblahDirection');
-          if (cached) {
-            setUserLocation(JSON.parse(cached));
-            setLocationName('Last known location');
-          }
-          if (cachedDirection) {
-            setQiblahDirection(parseInt(cachedDirection));
-          }
+        (error) => {
+          console.warn('High accuracy location failed:', error.message);
+          // Fallback to lower accuracy
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              setUserLocation({ lat: latitude, lng: longitude });
+              const direction = calculateQiblahDirection(latitude, longitude);
+              setQiblahDirection(Math.round(direction));
+              localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
+              localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
+            },
+            () => {
+              // Use cached location as last resort
+              const cached = localStorage.getItem('lastLocation');
+              const cachedDirection = localStorage.getItem('lastQiblahDirection');
+              if (cached) {
+                setUserLocation(JSON.parse(cached));
+                setLocationName('Last known location');
+              }
+              if (cachedDirection) {
+                setQiblahDirection(parseInt(cachedDirection));
+              }
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+          );
         },
-        { enableHighAccuracy: true }
+        { 
+          enableHighAccuracy: true,  // Force GPS hardware for maximum precision
+          timeout: 20000,            // Wait up to 20s for GPS fix
+          maximumAge: 0              // Always get fresh position for accurate Qibla
+        }
       );
-    }
+    };
+
+    getHighAccuracyLocation();
 
     // Initialize map only if online
     const initMap = async () => {
