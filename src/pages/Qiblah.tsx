@@ -23,6 +23,8 @@ const Qiblah: React.FC = () => {
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const locationFetched = useRef(false);
+  const mapInitialized = useRef(false);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [calibrating, setCalibrating] = useState(false);
@@ -120,81 +122,77 @@ const Qiblah: React.FC = () => {
     };
   }, []);
 
-  // Initialize compass and map
+  // Fetch user location ONCE on mount
   useEffect(() => {
-    let mapInstance: mapboxgl.Map | null = null;
-    
-    // Get user location with high-accuracy GPS for precise Qibla calculation
-    const getHighAccuracyLocation = () => {
-      if (!navigator.geolocation) {
-        // Use cached location if geolocation not supported
-        const cached = localStorage.getItem('lastLocation');
-        if (cached) {
-          const loc = JSON.parse(cached);
-          setUserLocation(loc);
-          setQiblahDirection(parseInt(localStorage.getItem('lastQiblahDirection') || '0'));
-          setLocationName('Cached location (GPS unavailable)');
-        }
-        return;
+    if (locationFetched.current) return;
+    locationFetched.current = true;
+
+    if (!navigator.geolocation) {
+      const cached = localStorage.getItem('lastLocation');
+      if (cached) {
+        const loc = JSON.parse(cached);
+        setUserLocation(loc);
+        setQiblahDirection(parseInt(localStorage.getItem('lastQiblahDirection') || '0'));
+        setLocationName('Cached location (GPS unavailable)');
       }
+      return;
+    }
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude, accuracy } = position.coords;
-          console.log(`Location acquired: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
-          
-          setUserLocation({ lat: latitude, lng: longitude });
-          
-          // Calculate precise Qiblah direction using spherical trigonometry
-          const direction = calculateQiblahDirection(latitude, longitude);
-          setQiblahDirection(Math.round(direction * 100) / 100); // Keep 2 decimal precision
-          
-          // Store location for offline use
-          localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
-          localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
-        },
-        (error) => {
-          console.warn('High accuracy location failed:', error.message);
-          // Fallback to lower accuracy
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const { latitude, longitude } = position.coords;
-              setUserLocation({ lat: latitude, lng: longitude });
-              const direction = calculateQiblahDirection(latitude, longitude);
-              setQiblahDirection(Math.round(direction));
-              localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
-              localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
-            },
-            () => {
-              // Use cached location as last resort
-              const cached = localStorage.getItem('lastLocation');
-              const cachedDirection = localStorage.getItem('lastQiblahDirection');
-              if (cached) {
-                setUserLocation(JSON.parse(cached));
-                setLocationName('Last known location');
-              }
-              if (cachedDirection) {
-                setQiblahDirection(parseInt(cachedDirection));
-              }
-            },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-          );
-        },
-        { 
-          enableHighAccuracy: true,  // Force GPS hardware for maximum precision
-          timeout: 20000,            // Wait up to 20s for GPS fix
-          maximumAge: 0              // Always get fresh position for accurate Qibla
-        }
-      );
-    };
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log(`Location acquired: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+        
+        setUserLocation({ lat: latitude, lng: longitude });
+        
+        const direction = calculateQiblahDirection(latitude, longitude);
+        setQiblahDirection(Math.round(direction * 100) / 100);
+        
+        localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
+        localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
+      },
+      (error) => {
+        console.warn('High accuracy location failed:', error.message);
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ lat: latitude, lng: longitude });
+            const direction = calculateQiblahDirection(latitude, longitude);
+            setQiblahDirection(Math.round(direction));
+            localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
+            localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
+          },
+          () => {
+            const cached = localStorage.getItem('lastLocation');
+            const cachedDirection = localStorage.getItem('lastQiblahDirection');
+            if (cached) {
+              setUserLocation(JSON.parse(cached));
+              setLocationName('Last known location');
+            }
+            if (cachedDirection) {
+              setQiblahDirection(parseInt(cachedDirection));
+            }
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
+      }
+    );
+  }, [calculateQiblahDirection]);
 
-    getHighAccuracyLocation();
+  // Initialize map AFTER location is available
+  useEffect(() => {
+    if (!userLocation || mapInitialized.current || isOffline) return;
+    if (!mapContainer.current) return;
+    
+    mapInitialized.current = true;
+    let mapInstance: mapboxgl.Map | null = null;
 
-    // Initialize map only if online
     const initMap = async () => {
-      if (!mapContainer.current || isOffline) return;
-
-      // Get Mapbox token from edge function
       let token = '';
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
@@ -206,11 +204,10 @@ const Qiblah: React.FC = () => {
         return;
       }
       
-      // Initialize map
       mapboxgl.accessToken = token;
       
       mapInstance = new mapboxgl.Map({
-        container: mapContainer.current,
+        container: mapContainer.current!,
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
         zoom: 2,
         center: [39.8262, 21.4225],
@@ -219,72 +216,58 @@ const Qiblah: React.FC = () => {
       
       map.current = mapInstance;
 
-      // Add Kaaba marker
       new mapboxgl.Marker({ color: '#FFD700' })
         .setLngLat([KAABA_COORDS.lng, KAABA_COORDS.lat])
         .setPopup(new mapboxgl.Popup().setHTML('<strong>Al-Masjid al-Haram</strong><br/>The Holy Kaaba'))
         .addTo(mapInstance);
 
-      // Add user marker if location available
-      if (userLocation) {
-        new mapboxgl.Marker({ color: '#4F46E5' })
-          .setLngLat([userLocation.lng, userLocation.lat])
-          .setPopup(new mapboxgl.Popup().setHTML('<strong>Your Location</strong>'))
-          .addTo(mapInstance);
-        
-        // Draw line from user to Kaaba
-        mapInstance.on('load', () => {
-          if (mapInstance && userLocation) {
-            mapInstance.addSource('qiblah-line', {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: [
-                    [userLocation.lng, userLocation.lat],
-                    [KAABA_COORDS.lng, KAABA_COORDS.lat]
-                  ]
-                }
+      new mapboxgl.Marker({ color: '#4F46E5' })
+        .setLngLat([userLocation.lng, userLocation.lat])
+        .setPopup(new mapboxgl.Popup().setHTML('<strong>Your Location</strong>'))
+        .addTo(mapInstance);
+      
+      mapInstance.on('load', () => {
+        if (mapInstance) {
+          mapInstance.addSource('qiblah-line', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [userLocation.lng, userLocation.lat],
+                  [KAABA_COORDS.lng, KAABA_COORDS.lat]
+                ]
               }
-            });
-            
-            mapInstance.addLayer({
-              id: 'qiblah-line-layer',
-              type: 'line',
-              source: 'qiblah-line',
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-              },
-              paint: {
-                'line-color': '#FFD700',
-                'line-width': 3,
-                'line-dasharray': [2, 2]
-              }
-            });
-            
-            // Fit bounds to show both points
-            mapInstance.fitBounds([
-              [Math.min(userLocation.lng, KAABA_COORDS.lng) - 10, Math.min(userLocation.lat, KAABA_COORDS.lat) - 5],
-              [Math.max(userLocation.lng, KAABA_COORDS.lng) + 10, Math.max(userLocation.lat, KAABA_COORDS.lat) + 5]
-            ], { padding: 50 });
-          }
-        });
-        
-        // Reverse geocode for location name
-        try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${userLocation.lng},${userLocation.lat}.json?access_token=${token}`
-          );
-          const data = await response.json();
-          if (data.features && data.features.length > 0) {
-            setLocationName(data.features[0].place_name.split(',').slice(0, 2).join(','));
-          }
-        } catch {
-          setLocationName('Location detected');
+            }
+          });
+          
+          mapInstance.addLayer({
+            id: 'qiblah-line-layer',
+            type: 'line',
+            source: 'qiblah-line',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#FFD700', 'line-width': 3, 'line-dasharray': [2, 2] }
+          });
+          
+          mapInstance.fitBounds([
+            [Math.min(userLocation.lng, KAABA_COORDS.lng) - 10, Math.min(userLocation.lat, KAABA_COORDS.lat) - 5],
+            [Math.max(userLocation.lng, KAABA_COORDS.lng) + 10, Math.max(userLocation.lat, KAABA_COORDS.lat) + 5]
+          ], { padding: 50 });
         }
+      });
+      
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${userLocation.lng},${userLocation.lat}.json?access_token=${token}`
+        );
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          setLocationName(data.features[0].place_name.split(',').slice(0, 2).join(','));
+        }
+      } catch {
+        setLocationName('Location detected');
       }
     };
 
@@ -294,7 +277,7 @@ const Qiblah: React.FC = () => {
       mapInstance?.remove();
       window.removeEventListener('deviceorientation', handleOrientation);
     };
-  }, [calculateQiblahDirection, handleOrientation, isOffline, userLocation]);
+  }, [userLocation, isOffline, handleOrientation]);
 
   // Calculate the rotation needed for the compass needle
   // The needle should point toward Qiblah relative to the device's current heading
@@ -314,53 +297,66 @@ const Qiblah: React.FC = () => {
     }, 2000);
   };
 
-  // Fetch nearby mosques using Mapbox - search globally without distance limit
+  // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
   const fetchNearbyMosques = async () => {
-    if (!userLocation || !mapboxToken) return;
+    if (!userLocation) return;
     
     setLoadingMosques(true);
     try {
-      // First try nearby search
-      let response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/mosque.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
-      );
-      let data = await response.json();
-      
-      // If no results, try a broader search with "islamic center" and "masjid"
-      if (!data.features || data.features.length === 0) {
-        response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/masjid.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
+      // Use Overpass API to find actual mosques within 20km radius
+      const radius = 20000; // 20km in meters
+      const query = `
+        [out:json][timeout:25];
+        (
+          node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLocation.lat},${userLocation.lng});
+          way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLocation.lat},${userLocation.lng});
+          node["building"="mosque"](around:${radius},${userLocation.lat},${userLocation.lng});
+          way["building"="mosque"](around:${radius},${userLocation.lat},${userLocation.lng});
         );
-        data = await response.json();
-      }
+        out center body;
+      `;
       
-      // If still no results, try "islamic center"
-      if (!data.features || data.features.length === 0) {
-        response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/islamic%20center.json?proximity=${userLocation.lng},${userLocation.lat}&limit=10&access_token=${mapboxToken}`
-        );
-        data = await response.json();
-      }
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
       
-      if (data.features && data.features.length > 0) {
-        const mosques = data.features.map((feature: any) => {
-          const [lng, lat] = feature.center;
+      const data = await response.json();
+      
+      if (data.elements && data.elements.length > 0) {
+        const mosques = data.elements.map((element: any) => {
+          // Get coordinates (nodes have lat/lon directly, ways have center)
+          const lat = element.lat || element.center?.lat;
+          const lng = element.lon || element.center?.lon;
+          
+          if (!lat || !lng) return null;
+          
           const distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+          const name = element.tags?.name || element.tags?.['name:en'] || element.tags?.['name:ar'] || 'Mosque';
+          const address = element.tags?.['addr:street'] 
+            ? `${element.tags?.['addr:street']}, ${element.tags?.['addr:city'] || ''}`
+            : element.tags?.['addr:full'] || 'Address not available';
+          
           return {
-            name: feature.text || 'Mosque',
-            address: feature.place_name?.split(',').slice(0, 2).join(',') || 'Unknown address',
+            name,
+            address,
             distance: distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`,
             distanceNum: distanceKm,
             lat,
             lng
           };
-        });
-        // Sort by distance
+        }).filter(Boolean);
+        
+        // Sort by distance and limit to 10
         mosques.sort((a: any, b: any) => a.distanceNum - b.distanceNum);
-        setNearbyMosques(mosques);
+        setNearbyMosques(mosques.slice(0, 10));
+      } else {
+        setNearbyMosques([]);
       }
     } catch (error) {
       console.error('Failed to fetch mosques:', error);
+      setNearbyMosques([]);
     } finally {
       setLoadingMosques(false);
     }
@@ -472,10 +468,10 @@ const Qiblah: React.FC = () => {
 
   // Load mosques when dialog opens
   useEffect(() => {
-    if (showMosqueMap && userLocation && mapboxToken) {
+    if (showMosqueMap && userLocation) {
       fetchNearbyMosques();
     }
-  }, [showMosqueMap, userLocation, mapboxToken]);
+  }, [showMosqueMap, userLocation]);
 
   return (
     <MobileLayout>
