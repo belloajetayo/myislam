@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-community-post]
 verify_jwt = false
+
+[functions.get-user-location]
+verify_jwt = false

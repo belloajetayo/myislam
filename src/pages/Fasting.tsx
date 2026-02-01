@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { ArrowLeft, Moon, Sun, Clock, Calendar, CheckCircle, Info, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Moon, CheckCircle, Info, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import RamadanCountdown from '@/components/home/RamadanCountdown';
+import RamadanTracker from '@/components/fasting/RamadanTracker';
 
 const Fasting: React.FC = () => {
   const navigate = useNavigate();
@@ -120,27 +122,11 @@ const Fasting: React.FC = () => {
 
         </div>
 
-        {/* myRamadan Tracker WebView */}
-        <div className="glass rounded-3xl p-4 border border-primary-foreground/10 shadow-card overflow-hidden">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gradient-gold">myRamadan Tracker</h3>
-              <p className="text-xs text-muted-foreground">Daily Ramadan progress</p>
-            </div>
-          </div>
-          <div className="rounded-2xl overflow-hidden bg-background h-[60vh] min-h-[400px] max-h-[700px]">
-            <iframe
-              src="https://myramadan.lovable.app/"
-              className="w-full h-full border-0"
-              title="myRamadan Tracker"
-              allow="geolocation; microphone; camera"
-              loading="lazy"
-            />
-          </div>
-        </div>
+        {/* Ramadan Countdown */}
+        <RamadanCountdown />
+
+        {/* Native Ramadan Tracker with Location-Based Times */}
+        <RamadanTracker />
 
         {/* How to Fast Guide */}
         <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">

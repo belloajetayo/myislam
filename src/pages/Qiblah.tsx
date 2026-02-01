@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MobileLayout from '@/components/layout/MobileLayout';
-import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, ArrowLeft, Compass, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { Navigation, MapPin, RotateCcw, Building2, Sunrise, Sunset, Info, ArrowLeft, Compass, AlertCircle, ExternalLink, Loader2, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -25,11 +25,14 @@ const Qiblah: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const locationFetched = useRef(false);
   const mapInitialized = useRef(false);
+  const watchId = useRef<number | null>(null);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
+  const [smoothedHeading, setSmoothedHeading] = useState<number>(0);
   const [calibrating, setCalibrating] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState('Locating...');
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [nearbyMosques, setNearbyMosques] = useState<Array<{ name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number }>>([]);
   const [selectedMosque, setSelectedMosque] = useState<{ name: string; lat: number; lng: number } | null>(null);
   const mosqueMapContainer = useRef<HTMLDivElement>(null);
@@ -58,7 +61,7 @@ const Qiblah: React.FC = () => {
     return (bearing + 360) % 360;
   }, []);
 
-  // Handle device orientation for compass
+  // Handle device orientation for compass with smoothing
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     let heading: number;
     
@@ -74,6 +77,17 @@ const Qiblah: React.FC = () => {
     }
     
     setDeviceHeading(heading);
+    
+    // Apply damping for smooth needle movement
+    setSmoothedHeading(prev => {
+      const diff = heading - prev;
+      // Handle wraparound (e.g., 359 to 1)
+      let normalizedDiff = diff;
+      if (diff > 180) normalizedDiff = diff - 360;
+      if (diff < -180) normalizedDiff = diff + 360;
+      // Apply damping factor (0.15 = smooth, 0.5 = responsive)
+      return (prev + normalizedDiff * 0.2 + 360) % 360;
+    });
   }, []);
 
   // Request compass permission (especially for iOS 13+)
@@ -122,7 +136,7 @@ const Qiblah: React.FC = () => {
     };
   }, []);
 
-  // Fetch user location ONCE on mount
+  // Fetch user location with watchPosition for continuous updates
   useEffect(() => {
     if (locationFetched.current) return;
     locationFetched.current = true;
@@ -138,27 +152,37 @@ const Qiblah: React.FC = () => {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    // Use watchPosition for continuous high-accuracy GPS stream
+    watchId.current = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        console.log(`Location acquired: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+        console.log(`GPS Update: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (accuracy: ${accuracy}m)`);
         
-        setUserLocation({ lat: latitude, lng: longitude });
+        // Round to 6 decimal places for precision (sub-meter accuracy)
+        const precisionLat = Math.round(latitude * 1000000) / 1000000;
+        const precisionLng = Math.round(longitude * 1000000) / 1000000;
         
-        const direction = calculateQiblahDirection(latitude, longitude);
+        setUserLocation({ lat: precisionLat, lng: precisionLng });
+        setGpsAccuracy(Math.round(accuracy));
+        
+        // Calculate Qiblah with 2-decimal precision
+        const direction = calculateQiblahDirection(precisionLat, precisionLng);
         setQiblahDirection(Math.round(direction * 100) / 100);
         
-        localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
-        localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
+        // Cache for offline use
+        localStorage.setItem('lastLocation', JSON.stringify({ lat: precisionLat, lng: precisionLng }));
+        localStorage.setItem('lastQiblahDirection', String(Math.round(direction * 100) / 100));
       },
       (error) => {
-        console.warn('High accuracy location failed:', error.message);
+        console.warn('GPS watch error:', error.message);
+        // Fall back to single getCurrentPosition
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const { latitude, longitude } = position.coords;
+            const { latitude, longitude, accuracy } = position.coords;
             setUserLocation({ lat: latitude, lng: longitude });
+            setGpsAccuracy(Math.round(accuracy));
             const direction = calculateQiblahDirection(latitude, longitude);
-            setQiblahDirection(Math.round(direction));
+            setQiblahDirection(Math.round(direction * 100) / 100);
             localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
             localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
           },
@@ -170,7 +194,7 @@ const Qiblah: React.FC = () => {
               setLocationName('Last known location');
             }
             if (cachedDirection) {
-              setQiblahDirection(parseInt(cachedDirection));
+              setQiblahDirection(parseFloat(cachedDirection));
             }
           },
           { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
@@ -179,9 +203,16 @@ const Qiblah: React.FC = () => {
       { 
         enableHighAccuracy: true,
         timeout: 20000,
-        maximumAge: 0
+        maximumAge: 0 // Always get fresh GPS data
       }
     );
+
+    // Cleanup watchPosition on unmount
+    return () => {
+      if (watchId.current !== null) {
+        navigator.geolocation.clearWatch(watchId.current);
+      }
+    };
   }, [calculateQiblahDirection]);
 
   // Initialize map AFTER location is available
@@ -281,7 +312,11 @@ const Qiblah: React.FC = () => {
 
   // Calculate the rotation needed for the compass needle
   // The needle should point toward Qiblah relative to the device's current heading
-  const compassRotation = qiblahDirection - deviceHeading;
+  // Use smoothed heading for butter-smooth animation
+  const compassRotation = qiblahDirection - smoothedHeading;
+  
+  // Check if facing Qiblah (within ±2 degrees)
+  const isFacingQiblah = Math.abs(compassRotation % 360) < 2 || Math.abs(compassRotation % 360) > 358;
 
   const handleCalibrate = () => {
     setCalibrating(true);
@@ -582,12 +617,15 @@ const Qiblah: React.FC = () => {
             </div>
           </div>
 
-          {/* Compass Container */}
+            {/* Compass Container */}
           <div className="relative animate-scale-in">
-            {/* Outer Ring - rotates with device */}
+            {/* Outer Ring - rotates with device using smoothed heading */}
             <div 
-              className="w-64 h-64 rounded-full glass border-2 border-primary/40 flex items-center justify-center shadow-glow backdrop-blur-md transition-transform duration-100"
-              style={{ transform: `rotate(${-deviceHeading}deg)` }}
+              className="w-64 h-64 rounded-full glass border-2 border-primary/40 flex items-center justify-center shadow-glow backdrop-blur-md"
+              style={{ 
+                transform: `rotate(${-smoothedHeading}deg)`,
+                transition: 'transform 0.1s ease-out'
+              }}
             >
               {/* Compass Markings */}
               <div className="absolute inset-4 rounded-full border border-primary/30">
@@ -617,8 +655,15 @@ const Qiblah: React.FC = () => {
               className={`absolute inset-0 flex items-center justify-center ${calibrating ? 'animate-pulse' : ''}`}
             >
               <div 
-                className="w-40 h-40 rounded-full bg-gradient-to-br from-amber-500/90 to-purple-600/90 shadow-lg flex items-center justify-center transition-transform duration-300"
-                style={{ transform: `rotate(${compassRotation}deg)` }}
+                className={`w-40 h-40 rounded-full shadow-lg flex items-center justify-center ${
+                  isFacingQiblah 
+                    ? 'bg-gradient-to-br from-emerald-500/90 to-teal-600/90 ring-4 ring-emerald-400/50' 
+                    : 'bg-gradient-to-br from-amber-500/90 to-purple-600/90'
+                }`}
+                style={{ 
+                  transform: `rotate(${compassRotation}deg)`,
+                  transition: 'transform 0.1s ease-out'
+                }}
               >
                 {/* Kaaba Icon / Arrow */}
                 <div className="relative">
@@ -662,9 +707,16 @@ const Qiblah: React.FC = () => {
                 <p className="text-xs text-primary-foreground/60">Qiblah</p>
                 <p className="text-lg font-bold bg-gradient-to-r from-amber-400 to-purple-500 bg-clip-text text-transparent">{qiblahDirection}°</p>
               </div>
+              <div className="w-px h-8 bg-primary/30" />
+              <div>
+                <p className="text-xs text-primary-foreground/60">GPS</p>
+                <p className={`text-lg font-bold ${gpsAccuracy && gpsAccuracy < 10 ? 'text-emerald-400' : gpsAccuracy && gpsAccuracy < 50 ? 'text-amber-400' : 'text-red-400'}`}>
+                  ±{gpsAccuracy || '--'}m
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-primary-foreground/60">
-              {Math.abs(compassRotation) < 5 
+            <p className={`text-xs ${isFacingQiblah ? 'text-emerald-400 font-semibold' : 'text-primary-foreground/60'}`}>
+              {isFacingQiblah 
                 ? '✓ You are facing Qiblah!' 
                 : compassRotation > 0 
                   ? `Turn ${Math.round(Math.abs(compassRotation))}° right` 
