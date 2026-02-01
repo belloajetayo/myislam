@@ -9,6 +9,7 @@ import DailyReminders from '@/components/home/DailyReminders';
 import DailyTeachingsCarousel from '@/components/home/DailyTeachingsCarousel';
 import FeaturedContent from '@/components/home/FeaturedContent';
 import CommunityFeed from '@/components/community/CommunityFeed';
+import RamadanCountdown from '@/components/home/RamadanCountdown';
 import { Bell, User, LogOut, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +95,9 @@ const Index: React.FC = () => {
             )}
           </div>
         </header>
+
+        {/* Ramadan Countdown */}
+        <RamadanCountdown />
 
         {/* Quick Shortcuts */}
         <QuickShortcuts />
