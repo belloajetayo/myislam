@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import { useLocationCache } from '@/hooks/useLocationCache';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +22,12 @@ interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
 
 const Qiblah: React.FC = () => {
   const navigate = useNavigate();
+  const { cacheLocation } = useLocationCache();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const locationFetched = useRef(false);
   const mapInitialized = useRef(false);
+  const locationCached = useRef(false);
   const watchId = useRef<number | null>(null);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
@@ -172,6 +175,12 @@ const Qiblah: React.FC = () => {
         // Cache for offline use
         localStorage.setItem('lastLocation', JSON.stringify({ lat: precisionLat, lng: precisionLng }));
         localStorage.setItem('lastQiblahDirection', String(Math.round(direction * 100) / 100));
+        
+        // Cache to user profile when accuracy is good (< 100m) and not already cached
+        if (accuracy < 100 && !locationCached.current) {
+          locationCached.current = true;
+          cacheLocation({ latitude: precisionLat, longitude: precisionLng });
+        }
       },
       (error) => {
         console.warn('GPS watch error:', error.message);
@@ -185,6 +194,12 @@ const Qiblah: React.FC = () => {
             setQiblahDirection(Math.round(direction * 100) / 100);
             localStorage.setItem('lastLocation', JSON.stringify({ lat: latitude, lng: longitude }));
             localStorage.setItem('lastQiblahDirection', String(Math.round(direction)));
+            
+            // Cache to profile
+            if (!locationCached.current) {
+              locationCached.current = true;
+              cacheLocation({ latitude, longitude });
+            }
           },
           () => {
             const cached = localStorage.getItem('lastLocation');
@@ -213,7 +228,7 @@ const Qiblah: React.FC = () => {
         navigator.geolocation.clearWatch(watchId.current);
       }
     };
-  }, [calculateQiblahDirection]);
+  }, [calculateQiblahDirection, cacheLocation]);
 
   // Initialize map AFTER location is available
   useEffect(() => {
