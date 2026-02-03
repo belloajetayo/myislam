@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get-user-location]
 verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = false
