@@ -28,6 +28,8 @@ const Qiblah: React.FC = () => {
   const locationFetched = useRef(false);
   const mapInitialized = useRef(false);
   const locationCached = useRef(false);
+  const mosquesLoaded = useRef(false);
+  const deviceHeadingRef = useRef<number>(0);
   const watchId = useRef<number | null>(null);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
@@ -79,6 +81,7 @@ const Qiblah: React.FC = () => {
       return;
     }
     
+    deviceHeadingRef.current = heading;
     setDeviceHeading(heading);
     
     // Apply damping for smooth needle movement
@@ -115,15 +118,15 @@ const Qiblah: React.FC = () => {
       setPermissionGranted(true);
       window.addEventListener('deviceorientation', handleOrientation, true);
       
-      // Check if events are actually being received
+      // Check if events are actually being received using ref to avoid dependency
       setTimeout(() => {
-        if (deviceHeading === 0) {
+        if (deviceHeadingRef.current === 0) {
           // Might not be supported
           setCompassSupported(false);
         }
       }, 3000);
     }
-  }, [handleOrientation, deviceHeading]);
+  }, [handleOrientation]);
 
   // Online/offline detection
   useEffect(() => {
@@ -348,20 +351,22 @@ const Qiblah: React.FC = () => {
   };
 
   // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
-  const fetchNearbyMosques = async () => {
-    if (!userLocation) return;
+  const fetchNearbyMosques = useCallback(async (location: { lat: number; lng: number }) => {
+    if (mosquesLoaded.current || loadingMosques) return;
     
     setLoadingMosques(true);
+    mosquesLoaded.current = true;
+    
     try {
       // Use Overpass API to find actual mosques within 20km radius
       const radius = 20000; // 20km in meters
       const query = `
         [out:json][timeout:25];
         (
-          node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLocation.lat},${userLocation.lng});
-          way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${userLocation.lat},${userLocation.lng});
-          node["building"="mosque"](around:${radius},${userLocation.lat},${userLocation.lng});
-          way["building"="mosque"](around:${radius},${userLocation.lat},${userLocation.lng});
+          node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
+          way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
+          node["building"="mosque"](around:${radius},${location.lat},${location.lng});
+          way["building"="mosque"](around:${radius},${location.lat},${location.lng});
         );
         out center body;
       `;
@@ -382,7 +387,7 @@ const Qiblah: React.FC = () => {
           
           if (!lat || !lng) return null;
           
-          const distanceKm = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+          const distanceKm = calculateDistance(location.lat, location.lng, lat, lng);
           const name = element.tags?.name || element.tags?.['name:en'] || element.tags?.['name:ar'] || 'Mosque';
           const address = element.tags?.['addr:street'] 
             ? `${element.tags?.['addr:street']}, ${element.tags?.['addr:city'] || ''}`
@@ -407,10 +412,11 @@ const Qiblah: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch mosques:', error);
       setNearbyMosques([]);
+      mosquesLoaded.current = false; // Allow retry on error
     } finally {
       setLoadingMosques(false);
     }
-  };
+  }, [loadingMosques]);
 
   // Calculate distance between two coordinates in km
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -516,12 +522,12 @@ const Qiblah: React.FC = () => {
     }, 100);
   }, [mapboxToken, userLocation]);
 
-  // Load mosques when dialog opens
+  // Load mosques when dialog opens (only once)
   useEffect(() => {
-    if (showMosqueMap && userLocation) {
-      fetchNearbyMosques();
+    if (showMosqueMap && userLocation && !mosquesLoaded.current) {
+      fetchNearbyMosques(userLocation);
     }
-  }, [showMosqueMap, userLocation]);
+  }, [showMosqueMap, userLocation, fetchNearbyMosques]);
 
   return (
     <MobileLayout>
