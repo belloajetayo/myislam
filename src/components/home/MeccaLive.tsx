@@ -36,7 +36,7 @@ const MeccaLive: React.FC = () => {
   };
 
   // Saudi Quran TV Channel live stream
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/live_stream?channel=UCG_6fU7v_T3Yn_K9XpU_fCw&autoplay=1&mute=${isMuted ? 1 : 0}&rel=0&modestbranding=1&playsinline=1`;
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/AR6W-jWe85k?autoplay=1&mute=${isMuted ? 1 : 0}&rel=0&modestbranding=1&playsinline=1`;
 
   return (
     <div className={`relative bg-card rounded-3xl overflow-hidden shadow-card border border-border animate-slide-up ${isTheaterMode ? 'fixed inset-4 z-50' : ''}`}>
