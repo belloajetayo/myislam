@@ -7,7 +7,7 @@ import QuickShortcuts from '@/components/home/QuickShortcuts';
 import ProgressTracker from '@/components/home/ProgressTracker';
 import DailyReminders from '@/components/home/DailyReminders';
 import DailyTeachingsCarousel from '@/components/home/DailyTeachingsCarousel';
-import FeaturedContent from '@/components/home/FeaturedContent';
+import MeccaLive from '@/components/home/MeccaLive';
 import CommunityFeed from '@/components/community/CommunityFeed';
 import RamadanCountdown from '@/components/home/RamadanCountdown';
 import { Bell, User, LogOut, Sparkles } from 'lucide-react';
@@ -114,8 +114,8 @@ const Index: React.FC = () => {
         {/* Islamic Calendar with AI Sync */}
         <IslamicCalendar onAskMIA={handleAskMIA} />
 
-        {/* Featured Content */}
-        <FeaturedContent />
+        {/* Mecca Live Stream */}
+        <MeccaLive />
 
         {/* Community Feed - AI Generated Posts */}
         <CommunityFeed />
