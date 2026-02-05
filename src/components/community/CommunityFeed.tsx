@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, RefreshCw, Sparkles, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, RefreshCw, Send, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -24,11 +24,37 @@ interface Comment {
   created_at: string;
 }
 
-const POST_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  teaching: { label: '📖 Teaching', color: 'bg-emerald-500/20 text-emerald-400' },
-  qa: { label: '❓ Q&A', color: 'bg-blue-500/20 text-blue-400' },
-  hadith: { label: '📜 Hadith', color: 'bg-amber-500/20 text-amber-400' },
-  verse: { label: '✨ Quran', color: 'bg-purple-500/20 text-purple-400' },
+const POST_TYPE_CONFIG: Record<string, { label: string; icon: string; gradient: string; border: string }> = {
+  teaching: { 
+    label: 'Daily Teaching', 
+    icon: '📖', 
+    gradient: 'from-emerald-500/20 to-emerald-500/5',
+    border: 'border-emerald-500/30'
+  },
+  qa: { 
+    label: 'Q&A', 
+    icon: '❓', 
+    gradient: 'from-blue-500/20 to-blue-500/5',
+    border: 'border-blue-500/30'
+  },
+  hadith: { 
+    label: 'Hadith of the Day', 
+    icon: '📜', 
+    gradient: 'from-amber-500/20 to-amber-500/5',
+    border: 'border-amber-500/30'
+  },
+  verse: { 
+    label: 'Quranic Verse', 
+    icon: '✨', 
+    gradient: 'from-purple-500/20 to-purple-500/5',
+    border: 'border-purple-500/30'
+  },
+  story: { 
+    label: 'Prophet Story', 
+    icon: '📚', 
+    gradient: 'from-indigo-500/20 to-indigo-500/5',
+    border: 'border-indigo-500/30'
+  },
 };
 
 const CommunityFeed: React.FC = () => {
@@ -37,7 +63,7 @@ const CommunityFeed: React.FC = () => {
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [authorName, setAuthorName] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch posts
@@ -102,18 +128,18 @@ const CommunityFeed: React.FC = () => {
     };
   }, [fetchPosts]);
 
-  const handleGeneratePost = async () => {
-    setIsGenerating(true);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-community-post');
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate');
-      toast.success('New post generated!');
+      toast.success('New wisdom added!');
     } catch (error: any) {
       console.error('Error generating post:', error);
-      toast.error(error.message || 'Failed to generate post');
+      toast.error(error.message || 'Failed to refresh');
     } finally {
-      setIsGenerating(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -157,11 +183,12 @@ const CommunityFeed: React.FC = () => {
   };
 
   const handleShare = async (post: Post) => {
-    const shareText = `${post.content}\n\n— ${post.source}\n📱 MyIslam App`;
+    const typeConfig = POST_TYPE_CONFIG[post.post_type] || POST_TYPE_CONFIG.teaching;
+    const shareText = `${typeConfig.icon} ${typeConfig.label}\n\n"${post.content}"\n\n— ${post.source}\n\n📱 Shared via MyIslam App\n🌙 Your daily source of Islamic wisdom`;
     
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Islamic Teaching', text: shareText });
+        await navigator.share({ title: `${typeConfig.label} - MyIslam App`, text: shareText });
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           await navigator.clipboard.writeText(shareText);
@@ -178,9 +205,9 @@ const CommunityFeed: React.FC = () => {
     return (
       <div className="space-y-4 animate-pulse">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-card rounded-2xl p-4 border border-border">
-            <div className="h-4 bg-muted rounded w-1/4 mb-3" />
-            <div className="h-20 bg-muted rounded mb-3" />
+          <div key={i} className="bg-card rounded-2xl p-5 border border-border">
+            <div className="h-4 bg-muted rounded w-1/4 mb-4" />
+            <div className="h-24 bg-muted rounded mb-4" />
             <div className="h-4 bg-muted rounded w-1/2" />
           </div>
         ))}
@@ -193,22 +220,18 @@ const CommunityFeed: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-islamic-gold" />
-          <h2 className="text-lg font-semibold text-foreground">Community Feed</h2>
+          <BookOpen className="w-5 h-5 text-islamic-gold" />
+          <h2 className="text-lg font-semibold text-foreground">Daily Wisdom</h2>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={handleGeneratePost}
-          disabled={isGenerating}
-          className="gap-2"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="gap-2 border-islamic-gold/30 hover:bg-islamic-gold/10"
         >
-          {isGenerating ? (
-            <RefreshCw className="w-4 h-4 animate-spin" />
-          ) : (
-            <Sparkles className="w-4 h-4" />
-          )}
-          Generate
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
         </Button>
       </div>
 
@@ -225,44 +248,53 @@ const CommunityFeed: React.FC = () => {
       {/* Posts */}
       {posts.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          <p>No posts yet. Click "Generate" to create the first one!</p>
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No posts yet. Tap "Refresh" to add wisdom!</p>
         </div>
       ) : (
         posts.map((post) => {
-          const typeInfo = POST_TYPE_LABELS[post.post_type] || POST_TYPE_LABELS.teaching;
+          const typeConfig = POST_TYPE_CONFIG[post.post_type] || POST_TYPE_CONFIG.teaching;
           const postComments = comments[post.id] || [];
           
           return (
-            <div key={post.id} className="bg-card rounded-2xl border border-border overflow-hidden">
-              {/* Post Header */}
-              <div className="p-4 pb-2 flex items-center gap-3">
-                <Avatar className="w-10 h-10 bg-islamic-gold/20">
-                  <AvatarFallback className="bg-islamic-gold/20 text-islamic-gold font-semibold">
-                    MI
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">MyIslam AI</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${typeInfo.color}`}>
-                      {typeInfo.label}
+            <div 
+              key={post.id} 
+              className={`bg-gradient-to-b ${typeConfig.gradient} rounded-2xl border ${typeConfig.border} overflow-hidden shadow-card`}
+            >
+              {/* Post Header - Like Hadith of the Day style */}
+              <div className="p-4 pb-0">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-islamic-gold to-amber-600 flex items-center justify-center shadow-lg">
+                    <span className="text-xl">{typeConfig.icon}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{typeConfig.label}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                  </span>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-islamic-gold/10 border border-islamic-gold/20">
+                    <span className="text-[10px] font-medium text-islamic-gold">MyIslam</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Post Content */}
-              <div className="px-4 pb-3">
-                <p className="text-foreground whitespace-pre-wrap leading-relaxed">
-                  {post.content}
-                </p>
+              {/* Post Content - Styled quote */}
+              <div className="px-4 pb-4">
+                <div className="bg-background/40 rounded-xl p-4 border border-border/50">
+                  <p className="text-foreground leading-relaxed italic text-sm">
+                    "{post.content}"
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-3 font-medium">
+                    — {post.source}
+                  </p>
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="px-4 py-2 border-t border-border/50 flex items-center gap-4">
+              <div className="px-4 py-3 border-t border-border/30 flex items-center gap-4 bg-background/20">
                 <button className="flex items-center gap-1.5 text-muted-foreground hover:text-red-400 transition-colors">
                   <Heart className="w-5 h-5" />
                   <span className="text-sm">{post.likes_count}</span>
@@ -278,15 +310,16 @@ const CommunityFeed: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleShare(post)}
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-blue-400 transition-colors"
+                  className="flex items-center gap-1.5 text-muted-foreground hover:text-blue-400 transition-colors ml-auto"
                 >
                   <Share2 className="w-5 h-5" />
+                  <span className="text-sm">Share</span>
                 </button>
               </div>
 
               {/* Comments Section */}
               {expandedPost === post.id && (
-                <div className="border-t border-border/50 bg-muted/30">
+                <div className="border-t border-border/30 bg-background/30">
                   {/* Comments List */}
                   {postComments.length > 0 && (
                     <div className="p-4 space-y-3">
