@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-icons/*.svg', 'favicon.ico'],
+      includeAssets: ['pwa-icons/*.png', 'favicon.ico'],
       manifest: false, // Using external manifest.webmanifest
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
