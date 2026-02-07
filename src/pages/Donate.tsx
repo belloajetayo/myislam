@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Heart, Globe, Users, Building2, Star, CheckCircle2, Moon, BookOpen, Compass, Clock, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Heart, Globe, Users, Building2, Star, CheckCircle2, Moon, BookOpen, Compass, Clock, ChevronRight, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +9,27 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import donateHero from '@/assets/donate-hero.jpg';
+
+const CryptoAddress = ({ label, address }: { label: string; address: string }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    toast.success('Address copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="bg-muted/50 rounded-xl p-4 space-y-1">
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs text-muted-foreground font-mono break-all select-all flex-1">{address}</p>
+        <button onClick={handleCopy} className="shrink-0 p-1.5 rounded-lg hover:bg-muted transition-colors" aria-label="Copy address">
+          {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} className="text-muted-foreground" />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const AMOUNTS = [10, 25, 50, 100, 250];
 
@@ -182,20 +203,13 @@ const Donate: React.FC = () => {
               <h3 className="font-semibold text-foreground flex items-center gap-2">🪙 Crypto Donations</h3>
 
               <div className="space-y-3">
-                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
-                  <p className="text-sm font-medium text-foreground">USDT (TRC-20)</p>
-                  <p className="text-xs text-muted-foreground font-mono break-all select-all">TMnEj3v9AHi3u1ynXsWYHTtd4mPfAidVjg</p>
-                </div>
-
-                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
-                  <p className="text-sm font-medium text-foreground">USDC (Solana)</p>
-                  <p className="text-xs text-muted-foreground font-mono break-all select-all">7rMcAyV4mT9aRkhqwEy34d5WiKQtjT4XkqpM4qsbj7H8</p>
-                </div>
-
-                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
-                  <p className="text-sm font-medium text-foreground">USDC (ERC-20)</p>
-                  <p className="text-xs text-muted-foreground font-mono break-all select-all">0x9dbfd15eb3188c6f784e2a4a89dd9fbb75ca1e22</p>
-                </div>
+                {[
+                  { label: 'USDT (TRC-20)', address: 'TMnEj3v9AHi3u1ynXsWYHTtd4mPfAidVjg' },
+                  { label: 'USDC (Solana)', address: '7rMcAyV4mT9aRkhqwEy34d5WiKQtjT4XkqpM4qsbj7H8' },
+                  { label: 'USDC (ERC-20)', address: '0x9dbfd15eb3188c6f784e2a4a89dd9fbb75ca1e22' },
+                ].map(({ label, address }) => (
+                  <CryptoAddress key={label} label={label} address={address} />
+                ))}
               </div>
             </CardContent>
           </Card>
