@@ -33,7 +33,7 @@ const App = () => (
           <Route path="/zakat" element={<Zakat />} />
           <Route path="/fasting" element={<Fasting />} />
           <Route path="/hajj" element={<Hajj />} />
-          <Route path="/donate" element={<Donate />} />
+          <Route path="/donation" element={<Donate />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
