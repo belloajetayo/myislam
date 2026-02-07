@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Zakat from "./pages/Zakat";
 import Fasting from "./pages/Fasting";
 import Hajj from "./pages/Hajj";
+import Donate from "./pages/Donate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/zakat" element={<Zakat />} />
           <Route path="/fasting" element={<Fasting />} />
           <Route path="/hajj" element={<Hajj />} />
+          <Route path="/donate" element={<Donate />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
