@@ -160,9 +160,47 @@ const Donate: React.FC = () => {
           </div>
         </section>
 
-        {/* Donation Form */}
+        {/* Payment Details */}
         <section id="donation-form" className="space-y-5 scroll-mt-8">
-          <h2 className="text-xl font-bold text-foreground text-center">Choose Your Contribution</h2>
+          <h2 className="text-xl font-bold text-foreground text-center">How to Donate</h2>
+
+          {/* Bank Transfer */}
+          <Card className="glass border-border/50">
+            <CardContent className="p-5 space-y-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">🏦 Bank Transfer (PalmPay)</h3>
+              <div className="space-y-1 text-sm text-muted-foreground bg-muted/50 rounded-xl p-4 font-mono">
+                <p><span className="text-foreground font-medium">Account Number:</span> 7033139259</p>
+                <p><span className="text-foreground font-medium">Bank:</span> PalmPay</p>
+                <p><span className="text-foreground font-medium">Name:</span> Abdulazeez Ibrahim Deji</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Crypto Donations */}
+          <Card className="glass border-border/50">
+            <CardContent className="p-5 space-y-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">🪙 Crypto Donations</h3>
+
+              <div className="space-y-3">
+                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
+                  <p className="text-sm font-medium text-foreground">USDT (TRC-20)</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all select-all">TMnEj3v9AHi3u1ynXsWYHTtd4mPfAidVjg</p>
+                </div>
+
+                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
+                  <p className="text-sm font-medium text-foreground">USDC (Solana)</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all select-all">7rMcAyV4mT9aRkhqwEy34d5WiKQtjT4XkqpM4qsbj7H8</p>
+                </div>
+
+                <div className="bg-muted/50 rounded-xl p-4 space-y-1">
+                  <p className="text-sm font-medium text-foreground">USDC (ERC-20)</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all select-all">0x9dbfd15eb3188c6f784e2a4a89dd9fbb75ca1e22</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <h2 className="text-xl font-bold text-foreground text-center pt-4">Or Choose an Amount</h2>
 
           {/* Amount Selection */}
           <div className="grid grid-cols-3 gap-3">
