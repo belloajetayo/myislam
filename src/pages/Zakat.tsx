@@ -61,14 +61,14 @@ const Zakat: React.FC = () => {
           </div>
         </header>
 
-        {/* Donation Button */}
-        <Button
+        {/* Floating Donation Button */}
+        <button
           onClick={() => navigate('/donation')}
-          className="w-full gradient-accent text-primary-foreground font-semibold py-5 rounded-2xl shadow-card"
+          className="fixed bottom-24 right-4 z-50 flex items-center gap-2 px-6 py-4 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white font-bold text-base shadow-[0_8px_30px_rgba(245,158,11,0.4)] hover:shadow-[0_8px_40px_rgba(245,158,11,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 animate-pulse-gentle"
         >
-          <HandHeart className="w-5 h-5 mr-2" />
-          Support the Dawah — Donate Now
-        </Button>
+          <HandHeart className="w-6 h-6" />
+          Donate Now 💛
+        </button>
 
         {/* Intro Card */}
         <div className="glass rounded-3xl p-5 border border-primary-foreground/10 shadow-card">
