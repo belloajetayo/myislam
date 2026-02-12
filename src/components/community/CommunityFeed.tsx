@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, Send, BookOpen, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Heart, MessageCircle, Share2, Send, BookOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -129,8 +129,15 @@ const CommunityFeed: React.FC = () => {
     };
   }, [fetchPosts]);
 
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expandedContent, setExpandedContent] = useState<Record<string, boolean>>({});
+
   const handleLoadMore = () => {
-    setVisibleCount(prev => prev + 5);
+    setLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount(prev => prev + 5);
+      setLoadingMore(false);
+    }, 800);
   };
 
   const handleExpandComments = (postId: string) => {
@@ -252,9 +259,19 @@ const CommunityFeed: React.FC = () => {
               {/* Post Content - Styled quote */}
               <div className="px-4 pb-4">
                 <div className="bg-background/40 rounded-xl p-4 border border-border/50">
-                  <p className="text-foreground leading-relaxed italic text-sm">
+                  <p className={`text-foreground leading-relaxed italic text-sm ${
+                    !expandedContent[post.id] ? 'line-clamp-6' : ''
+                  }`}>
                     "{post.content}"
                   </p>
+                  {post.content.length > 300 && (
+                    <button
+                      onClick={() => setExpandedContent(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                      className="text-xs font-semibold text-islamic-gold mt-2 hover:underline"
+                    >
+                      {expandedContent[post.id] ? 'See less' : 'See more'}
+                    </button>
+                  )}
                   <p className="text-xs text-muted-foreground mt-3 font-medium">
                     — {post.source}
                   </p>
@@ -345,10 +362,17 @@ const CommunityFeed: React.FC = () => {
         <Button
           variant="outline"
           onClick={handleLoadMore}
+          disabled={loadingMore}
           className="w-full gap-2 border-border hover:bg-muted"
         >
-          <ChevronDown className="w-4 h-4" />
-          Load More ({posts.length - visibleCount} remaining)
+          {loadingMore ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            <>Load More ({posts.length - visibleCount} remaining)</>
+          )}
         </Button>
       )}
     </div>
