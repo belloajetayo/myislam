@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, RefreshCw, Send, BookOpen } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, BookOpen, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -57,13 +57,14 @@ const POST_TYPE_CONFIG: Record<string, { label: string; icon: string; gradient: 
   },
 };
 
+const INITIAL_VISIBLE = 3;
+
 const CommunityFeed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [newComment, setNewComment] = useState<Record<string, string>>({});
-  const [authorName, setAuthorName] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch posts
@@ -128,19 +129,8 @@ const CommunityFeed: React.FC = () => {
     };
   }, [fetchPosts]);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-community-post');
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate');
-      toast.success('New wisdom added!');
-    } catch (error: any) {
-      console.error('Error generating post:', error);
-      toast.error(error.message || 'Failed to refresh');
-    } finally {
-      setIsRefreshing(false);
-    }
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 5);
   };
 
   const handleExpandComments = (postId: string) => {
@@ -158,7 +148,7 @@ const CommunityFeed: React.FC = () => {
     const content = newComment[postId]?.trim();
     if (!content) return;
 
-    const name = authorName.trim() || 'Anonymous';
+    const name = 'Anonymous';
 
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -218,31 +208,9 @@ const CommunityFeed: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-islamic-gold" />
-          <h2 className="text-lg font-semibold text-foreground">Daily Wisdom</h2>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="gap-2 border-islamic-gold/30 hover:bg-islamic-gold/10"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {/* Author Name Input */}
-      <div className="bg-card rounded-xl p-3 border border-border">
-        <Input
-          placeholder="Your display name (optional)"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          className="bg-background/50"
-        />
+      <div className="flex items-center gap-2">
+        <BookOpen className="w-5 h-5 text-islamic-gold" />
+        <h2 className="text-lg font-semibold text-foreground">Daily Wisdom</h2>
       </div>
 
       {/* Posts */}
@@ -252,7 +220,7 @@ const CommunityFeed: React.FC = () => {
           <p>No posts yet. Tap "Refresh" to add wisdom!</p>
         </div>
       ) : (
-        posts.map((post) => {
+        posts.slice(0, visibleCount).map((post) => {
           const typeConfig = POST_TYPE_CONFIG[post.post_type] || POST_TYPE_CONFIG.teaching;
           const postComments = comments[post.id] || [];
           
@@ -370,6 +338,18 @@ const CommunityFeed: React.FC = () => {
             </div>
           );
         })
+      )}
+
+      {/* Load More Button */}
+      {posts.length > visibleCount && (
+        <Button
+          variant="outline"
+          onClick={handleLoadMore}
+          className="w-full gap-2 border-border hover:bg-muted"
+        >
+          <ChevronDown className="w-4 h-4" />
+          Load More ({posts.length - visibleCount} remaining)
+        </Button>
       )}
     </div>
   );
