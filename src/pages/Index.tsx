@@ -10,7 +10,7 @@ import DailyTeachingsCarousel from '@/components/home/DailyTeachingsCarousel';
 import MeccaLive from '@/components/home/MeccaLive';
 import CommunityFeed from '@/components/community/CommunityFeed';
 import RamadanCountdown from '@/components/home/RamadanCountdown';
-import { Bell, User, LogOut, Sparkles } from 'lucide-react';
+import { User, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -41,10 +41,6 @@ const Index: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logged out successfully');
-  };
 
   const handleAskMIA = (question: string) => {
     openWithQuestion(question);
@@ -74,18 +70,17 @@ const Index: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <button className="relative w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-primary/30 hover:shadow-soft active:scale-95 transition-all duration-200">
-              <Bell className="w-5 h-5 text-foreground" />
+            <button 
+              onClick={() => {
+                const tracker = document.getElementById('progress-tracker');
+                tracker?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="relative w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-primary/30 hover:shadow-soft active:scale-95 transition-all duration-200"
+            >
+              <span className="text-lg">📊</span>
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
             </button>
-            {user ? (
-              <button 
-                onClick={handleLogout}
-                className="w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-destructive/30 hover:bg-destructive/5 active:scale-95 transition-all duration-200"
-              >
-                <LogOut className="w-5 h-5 text-foreground" />
-              </button>
-            ) : (
+            {!user && (
               <button 
                 onClick={() => navigate('/auth')}
                 className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
@@ -109,7 +104,9 @@ const Index: React.FC = () => {
         <DailyTeachingsCarousel />
 
         {/* Progress Tracker */}
-        <ProgressTracker />
+        <div id="progress-tracker">
+          <ProgressTracker />
+        </div>
 
         {/* Islamic Calendar with AI Sync */}
         <IslamicCalendar onAskMIA={handleAskMIA} />
