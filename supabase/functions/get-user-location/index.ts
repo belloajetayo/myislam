@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
                      req.headers.get('cf-connecting-ip') ||
                      'unknown';
 
-    let ipLocation = { city: 'Makkah', country: 'Saudi Arabia', latitude: 21.4225, longitude: 39.8262 };
+    let ipLocation = { city: 'Makkah', country: 'Saudi Arabia', latitude: 21.4224779, longitude: 39.8251832 };
 
     try {
       // Use ipapi.co for IP geolocation (free tier: 1000 requests/day)
@@ -175,8 +175,8 @@ Deno.serve(async (req) => {
         error: 'Internal server error',
         city: 'Makkah',
         country: 'Saudi Arabia',
-        latitude: 21.4225,
-        longitude: 39.8262,
+        latitude: 21.4224779,
+        longitude: 39.8251832,
         source: 'ip'
       }),
       { 

@@ -12,13 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    // Note: Mapbox public tokens are publishable keys designed for client-side use.
-    // They don't require authentication as they have built-in usage limits and domain restrictions.
     const mapboxToken = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
     
     if (!mapboxToken) {
+      console.error('MAPBOX_PUBLIC_TOKEN is not configured');
       return new Response(
-        JSON.stringify({ error: 'Mapbox token not configured' }),
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -28,9 +27,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('get-mapbox-token error:', error);
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'Service temporarily unavailable' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
