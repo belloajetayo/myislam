@@ -51,6 +51,42 @@ If unsure: "There is no clear scholarly ruling available on this matter. Allah k
 You exist to preserve Islamic authenticity, educate responsibly, and build trust.
 Accuracy is more important than speed. Truth is more important than popularity.`;
 
+// Input validation
+function validateMessages(messages: unknown): { valid: boolean; error?: string; sanitized?: Array<{ role: string; content: string }> } {
+  if (!Array.isArray(messages)) {
+    return { valid: false, error: "Invalid request format" };
+  }
+  if (messages.length === 0) {
+    return { valid: false, error: "No messages provided" };
+  }
+  if (messages.length > 50) {
+    return { valid: false, error: "Conversation too long. Please start a new conversation." };
+  }
+
+  const sanitized: Array<{ role: string; content: string }> = [];
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object") {
+      return { valid: false, error: "Invalid message format" };
+    }
+    const { role, content } = msg as { role?: string; content?: string };
+    if (!role || !content || typeof role !== "string" || typeof content !== "string") {
+      return { valid: false, error: "Invalid message format" };
+    }
+    if (role !== "user" && role !== "assistant") {
+      return { valid: false, error: "Invalid message format" };
+    }
+    if (content.trim().length === 0) {
+      return { valid: false, error: "Message cannot be empty" };
+    }
+    if (content.length > 4000) {
+      return { valid: false, error: "Message too long. Please keep messages under 4000 characters." };
+    }
+    sanitized.push({ role, content: content.trim() });
+  }
+
+  return { valid: true, sanitized };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -81,11 +117,25 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    const body = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateMessages(body.messages);
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error("LOVABLE_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -98,7 +148,7 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          ...messages,
+          ...validation.sanitized!,
         ],
         stream: true,
       }),
@@ -111,16 +161,9 @@ serve(async (req) => {
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Service temporarily unavailable. Please try again later." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status);
       return new Response(
-        JSON.stringify({ error: "Failed to get response from AI" }),
+        JSON.stringify({ error: "Service temporarily unavailable. Please try again later." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -131,7 +174,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("MIA chat error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }),
+      JSON.stringify({ error: "An unexpected error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

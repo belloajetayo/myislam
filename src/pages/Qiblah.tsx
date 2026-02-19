@@ -14,7 +14,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-const KAABA_COORDS = { lat: 21.4225, lng: 39.8262 };
+// Precise Kaaba coordinates (Al-Masjid al-Haram)
+const KAABA_COORDS = { lat: 21.4224779, lng: 39.8251832 };
 
 interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
   requestPermission?: () => Promise<'granted' | 'denied'>;
@@ -259,7 +260,7 @@ const Qiblah: React.FC = () => {
         container: mapContainer.current!,
         style: 'mapbox://styles/mapbox/satellite-streets-v12',
         zoom: 2,
-        center: [39.8262, 21.4225],
+        center: [KAABA_COORDS.lng, KAABA_COORDS.lat],
         pitch: 45,
       });
       
@@ -342,7 +343,7 @@ const Qiblah: React.FC = () => {
     
     if (userLocation) {
       const direction = calculateQiblahDirection(userLocation.lat, userLocation.lng);
-      setQiblahDirection(Math.round(direction));
+      setQiblahDirection(Math.round(direction * 100) / 100);
     }
     
     setTimeout(() => {
