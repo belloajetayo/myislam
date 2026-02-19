@@ -73,7 +73,7 @@ const Auth: React.FC = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gradient-gold mb-2">My Islam</h1>
-            <p className="text-primary-foreground/80 text-sm">
+            <p className="text-foreground/70 text-sm">
               {isLogin ? 'Welcome back, Assalamu Alaikum' : 'Join us on your spiritual journey'}
             </p>
           </div>
@@ -82,25 +82,25 @@ const Auth: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-primary-foreground/90">Full Name</Label>
+                <Label htmlFor="fullName" className="text-foreground/90">Full Name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/50" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
                   <Input
                     id="fullName"
                     type="text"
                     placeholder="Enter your name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="pl-10 glass border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
+                    className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-primary-foreground/90">Email</Label>
+              <Label htmlFor="email" className="text-foreground/90">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/50" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
                 <Input
                   id="email"
                   type="email"
@@ -108,15 +108,15 @@ const Auth: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="pl-10 glass border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
+                  className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-primary-foreground/90">Password</Label>
+              <Label htmlFor="password" className="text-foreground/90">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-foreground/50" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -125,12 +125,12 @@ const Auth: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="pl-10 pr-10 glass border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50"
+                  className="pl-10 pr-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-foreground/50 hover:text-primary-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -148,7 +148,7 @@ const Auth: React.FC = () => {
 
           {/* Toggle */}
           <div className="mt-6 text-center">
-            <p className="text-primary-foreground/70 text-sm">
+            <p className="text-foreground/70 text-sm">
               {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
                 onClick={() => setIsLogin(!isLogin)}
