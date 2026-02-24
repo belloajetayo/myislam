@@ -13,7 +13,6 @@ import {
   AlertCircle,
   ExternalLink,
   Loader2,
-  Target,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import mapboxgl from "mapbox-gl";
@@ -38,6 +37,26 @@ interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
   requestPermission?: () => Promise<"granted" | "denied">;
 }
 
+// Calculate distance between two coordinates in km - moved outside component for stability
+const calculateDistance = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 const Qiblah: React.FC = () => {
   const navigate = useNavigate();
   const { cacheLocation } = useLocationCache();
@@ -49,6 +68,8 @@ const Qiblah: React.FC = () => {
   const mosquesLoaded = useRef(false);
   const deviceHeadingRef = useRef<number>(0);
   const watchId = useRef<number | null>(null);
+  const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const listenersAdded = useRef(false);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [smoothedHeading, setSmoothedHeading] = useState<number>(0);
@@ -89,57 +110,59 @@ const Qiblah: React.FC = () => {
     return calculateQiblaBearing(lat, lng);
   }, []);
 
+  // Sync ref with state for use in orientation handler without causing re-binds
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
+
   // Handle device orientation for compass with smoothing
-  const handleOrientation = useCallback(
-    (event: DeviceOrientationEvent) => {
-      let heading: number;
-      let isTrueNorth = false;
+  const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
+    let heading: number;
 
-      // 1. Best: absolute orientation event (Android/Chrome)
-      if (event.type === "deviceorientationabsolute" && event.alpha !== null) {
-        heading = 360 - event.alpha;
-        isTrueNorth = true;
+    // 1. iOS True North or Android absolute event type
+    if (
+      "webkitCompassHeading" in event &&
+      typeof (event as any).webkitCompassHeading === "number"
+    ) {
+      heading = (event as any).webkitCompassHeading;
+    } else if (
+      (event.type === "deviceorientationabsolute" || (event as any).absolute) &&
+      event.alpha !== null
+    ) {
+      // deviceorientationabsolute is already True North
+      heading = 360 - event.alpha;
+    } else if (event.alpha !== null) {
+      // 2. Standard alpha with magnetic declination correction
+      heading = 360 - event.alpha;
+      const cachedLoc = userLocationRef.current;
+      if (cachedLoc) {
+        const declination = getMagneticDeclination(
+          cachedLoc.lat,
+          cachedLoc.lng,
+        );
+        heading = (heading + declination + 360) % 360;
       }
-      // 2. iOS True North
-      else if (
-        "webkitCompassHeading" in event &&
-        typeof (event as any).webkitCompassHeading === "number"
-      ) {
-        heading = (event as any).webkitCompassHeading;
-        isTrueNorth = true;
-      }
-      // 3. Fallback: standard alpha with magnetic declination correction
-      else if (event.alpha !== null) {
-        heading = 360 - event.alpha;
-        // Apply correction if location is available
-        if (userLocation) {
-          const declination = getMagneticDeclination(
-            userLocation.lat,
-            userLocation.lng,
-          );
-          heading = (heading + declination + 360) % 360;
-        }
-      } else {
-        return;
-      }
+    } else {
+      return;
+    }
 
-      deviceHeadingRef.current = heading;
-      setDeviceHeading(heading);
+    deviceHeadingRef.current = heading;
+    setDeviceHeading(heading);
 
-      // Apply damping for smooth needle movement
-      setSmoothedHeading((prev) => {
-        const diff = heading - prev;
-        let normalizedDiff = diff;
-        if (diff > 180) normalizedDiff = diff - 360;
-        if (diff < -180) normalizedDiff = diff + 360;
-        return (prev + normalizedDiff * 0.2 + 360) % 360;
-      });
-    },
-    [userLocation],
-  );
+    setSmoothedHeading((prev) => {
+      const diff = heading - prev;
+      let normalizedDiff = diff;
+      if (diff > 180) normalizedDiff = diff - 360;
+      if (diff < -180) normalizedDiff = diff + 360;
+      // Higher damping factor (0.3) for more "free" feel while filtering jitter
+      return (prev + normalizedDiff * 0.3 + 360) % 360;
+    });
+  }, []); // Stable handler
 
   // Request compass permission (especially for iOS 13+)
   const requestCompassPermission = useCallback(async () => {
+    if (listenersAdded.current) return;
+
     const DeviceOrientationEventTyped =
       DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
 
@@ -150,6 +173,7 @@ const Qiblah: React.FC = () => {
         if (permission === "granted") {
           setPermissionGranted(true);
           window.addEventListener("deviceorientation", handleOrientation, true);
+          listenersAdded.current = true;
         } else {
           setCompassSupported(false);
         }
@@ -159,17 +183,27 @@ const Qiblah: React.FC = () => {
       }
     } else {
       setPermissionGranted(true);
-      // Try absolute first for Android/Chrome
-      window.addEventListener(
-        "deviceorientationabsolute",
-        handleOrientation,
-        true,
-      );
-      // Also add standard as fallback
-      window.addEventListener("deviceorientation", handleOrientation, true);
+
+      // Try deviceorientationabsolute first as it gives True North on Android
+      let absoluteFired = false;
+      const onAbsolute = (e: DeviceOrientationEvent) => {
+        absoluteFired = true;
+        handleOrientation(e);
+      };
+
+      window.addEventListener("deviceorientationabsolute", onAbsolute, true);
+
+      // Fallback to standard deviceorientation after a short delay if absolute doesn't fire
+      setTimeout(() => {
+        if (!absoluteFired) {
+          window.addEventListener("deviceorientation", handleOrientation, true);
+        }
+      }, 500);
+
+      listenersAdded.current = true;
 
       setTimeout(() => {
-        if (deviceHeadingRef.current === 0) {
+        if (deviceHeadingRef.current === 0 && !absoluteFired) {
           setCompassSupported(false);
         }
       }, 3000);
@@ -201,7 +235,7 @@ const Qiblah: React.FC = () => {
         const loc = JSON.parse(cached);
         setUserLocation(loc);
         setQiblahDirection(
-          parseInt(localStorage.getItem("lastQiblahDirection") || "0"),
+          parseFloat(localStorage.getItem("lastQiblahDirection") || "0"),
         );
         setLocationName("Cached location (GPS unavailable)");
       }
@@ -225,17 +259,15 @@ const Qiblah: React.FC = () => {
 
         // Calculate Qiblah with 2-decimal precision
         const direction = calculateQiblahDirection(precisionLat, precisionLng);
-        setQiblahDirection(Math.round(direction * 100) / 100);
+        const roundedDir = Math.round(direction * 100) / 100;
+        setQiblahDirection(roundedDir);
 
         // Cache for offline use
         localStorage.setItem(
           "lastLocation",
           JSON.stringify({ lat: precisionLat, lng: precisionLng }),
         );
-        localStorage.setItem(
-          "lastQiblahDirection",
-          String(Math.round(direction * 100) / 100),
-        );
+        localStorage.setItem("lastQiblahDirection", String(roundedDir));
 
         // Cache to user profile when accuracy is good (< 100m) and not already cached
         if (accuracy < 100 && !locationCached.current) {
@@ -252,15 +284,13 @@ const Qiblah: React.FC = () => {
             setUserLocation({ lat: latitude, lng: longitude });
             setGpsAccuracy(Math.round(accuracy));
             const direction = calculateQiblahDirection(latitude, longitude);
-            setQiblahDirection(Math.round(direction * 100) / 100);
+            const roundedDir = Math.round(direction * 100) / 100;
+            setQiblahDirection(roundedDir);
             localStorage.setItem(
               "lastLocation",
               JSON.stringify({ lat: latitude, lng: longitude }),
             );
-            localStorage.setItem(
-              "lastQiblahDirection",
-              String(Math.round(direction)),
-            );
+            localStorage.setItem("lastQiblahDirection", String(roundedDir));
 
             // Cache to profile
             if (!locationCached.current) {
@@ -410,6 +440,12 @@ const Qiblah: React.FC = () => {
 
     return () => {
       mapInstance?.remove();
+    };
+  }, [userLocation, isOffline]);
+
+  // Overall cleanup for orientation listeners
+  useEffect(() => {
+    return () => {
       window.removeEventListener("deviceorientation", handleOrientation, true);
       window.removeEventListener(
         "deviceorientationabsolute",
@@ -417,17 +453,16 @@ const Qiblah: React.FC = () => {
         true,
       );
     };
-  }, [userLocation, isOffline, handleOrientation]);
+  }, [handleOrientation]);
 
   // Calculate the rotation needed for the compass needle
   // The needle should point toward Qiblah relative to the device's current heading
   // Use smoothed heading for butter-smooth animation
   const compassRotation = qiblahDirection - smoothedHeading;
 
-  // Check if facing Qiblah (within ±2 degrees)
-  const isFacingQiblah =
-    Math.abs(compassRotation % 360) < 2 ||
-    Math.abs(compassRotation % 360) > 358;
+  // Check if facing Qiblah (within ±2 degrees) with proper modulo normalization
+  const normalizedRotation = ((compassRotation % 360) + 360) % 360;
+  const isFacingQiblah = normalizedRotation < 2 || normalizedRotation > 358;
 
   const handleCalibrate = () => {
     setCalibrating(true);
@@ -449,7 +484,7 @@ const Qiblah: React.FC = () => {
   // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
   const fetchNearbyMosques = useCallback(
     async (location: { lat: number; lng: number }) => {
-      if (mosquesLoaded.current || loadingMosques) return;
+      if (mosquesLoaded.current) return;
 
       setLoadingMosques(true);
       mosquesLoaded.current = true;
@@ -531,28 +566,8 @@ const Qiblah: React.FC = () => {
         setLoadingMosques(false);
       }
     },
-    [loadingMosques],
+    [], // Stable - uses ref-guarded mosquesLoaded.current
   );
-
-  // Calculate distance between two coordinates in km
-  const calculateDistance = (
-    lat1: number,
-    lng1: number,
-    lat2: number,
-    lng2: number,
-  ) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
 
   const openMosqueInMaps = (lat: number, lng: number, name: string) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
@@ -805,74 +820,108 @@ const Qiblah: React.FC = () => {
             </div>
           </div>
 
-          {/* Compass Container */}
-          <div className="relative animate-scale-in">
-            {/* Outer Ring - rotates with device using smoothed heading */}
+          {/* Redesigned Compass Container */}
+          <div className="relative animate-scale-in my-8">
+            {/* Outer Ring with Cardinal Points and Degree Markings */}
             <div
-              className="w-64 h-64 rounded-full glass border-2 border-primary/40 flex items-center justify-center shadow-glow backdrop-blur-md"
+              className="w-72 h-72 rounded-full glass border-4 border-islamic-gold/30 flex items-center justify-center shadow-2xl relative z-10"
               style={{
                 transform: `rotate(${-smoothedHeading}deg)`,
-                transition: "transform 0.1s ease-out",
+                transition: "transform 0.15s ease-out",
+                willChange: "transform",
               }}
             >
-              {/* Compass Markings */}
-              <div className="absolute inset-4 rounded-full border border-primary/30">
-                {/* Cardinal Points */}
-                <span className="absolute top-2 left-1/2 -translate-x-1/2 text-sm font-bold text-red-500">
+              {/* Dial with Map Background */}
+              <div className="absolute inset-2 rounded-full overflow-hidden border border-primary/20 bg-emerald-500/5">
+                {/* Stylized Map Pattern */}
+                <div
+                  className="absolute inset-0 opacity-20 pointer-events-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='none'/%3E%3Cpath d='M10 10h80v80H10z' fill='none' stroke='%2310b981' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%2310b981' stroke-width='0.5'/%3E%3Cpath d='M10 50h80M50 10v80' stroke='%2310b981' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E")`,
+                    backgroundSize: "100% 100%",
+                  }}
+                />
+              </div>
+
+              {/* Cardinal Points */}
+              <div className="absolute inset-0 p-4 font-bold">
+                <span className="absolute top-2 left-1/2 -translate-x-1/2 text-lg text-emerald-500">
                   N
                 </span>
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-sm font-bold text-primary-foreground/60">
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-lg text-primary-foreground/60">
                   S
                 </span>
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-bold text-primary-foreground/60">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-lg text-primary-foreground/60">
                   W
                 </span>
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-bold text-primary-foreground/60">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg text-primary-foreground/60">
                   E
                 </span>
-
-                {/* Degree Markings */}
-                {[...Array(36)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`absolute left-1/2 ${i % 3 === 0 ? "w-0.5 h-4 bg-primary-foreground/50" : "w-px h-2 bg-primary-foreground/30"}`}
-                    style={{
-                      transform: `translateX(-50%) rotate(${i * 10}deg)`,
-                      transformOrigin: "50% 110px",
-                      top: "4px",
-                    }}
-                  />
-                ))}
               </div>
+
+              {/* Degree Markings */}
+              {[...Array(72)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`absolute left-1/2 ${i % 9 === 0 ? "w-0.5 h-6 bg-islamic-gold/60" : i % 3 === 0 ? "w-px h-3 bg-primary-foreground/40" : "w-px h-1.5 bg-primary-foreground/20"}`}
+                  style={{
+                    transform: `translateX(-50%) rotate(${i * 5}deg)`,
+                    transformOrigin: "50% 140px",
+                    top: "4px",
+                  }}
+                />
+              ))}
             </div>
 
-            {/* Inner Circle with Qiblah Arrow - points to Qiblah */}
+            {/* Free-Moving Needle with Qiblah Arrow */}
             <div
-              className={`absolute inset-0 flex items-center justify-center ${calibrating ? "animate-pulse" : ""}`}
+              className={`absolute inset-0 flex items-center justify-center z-20 pointer-events-none`}
+              style={{
+                transform: `rotate(${compassRotation}deg)`,
+                transition: "transform 0.15s ease-out",
+                willChange: "transform",
+              }}
             >
-              <div
-                className={`w-40 h-40 rounded-full shadow-lg flex items-center justify-center ${
-                  isFacingQiblah
-                    ? "bg-gradient-to-br from-emerald-500/90 to-teal-600/90 ring-4 ring-emerald-400/50"
-                    : "bg-gradient-to-br from-amber-500/90 to-purple-600/90"
-                }`}
-                style={{
-                  transform: `rotate(${compassRotation}deg)`,
-                  transition: "transform 0.1s ease-out",
-                }}
-              >
-                {/* Kaaba Icon / Arrow */}
-                <div className="relative">
-                  <div className="w-14 h-14 bg-primary-foreground rounded-2xl flex items-center justify-center shadow-lg transform -translate-y-6">
-                    <span className="text-2xl">🕋</span>
+              <div className="relative w-12 h-64 flex flex-col items-center justify-center">
+                {/* Needle Shape */}
+                <svg
+                  width="40"
+                  height="240"
+                  viewBox="0 0 40 240"
+                  className="drop-shadow-xl overflow-visible"
+                >
+                  {/* Bottom half (Blue - South) */}
+                  <path d="M20 120 L5 120 L20 230 L35 120 Z" fill="#3b82f6" />
+                  {/* Top half (Red - North/Qiblah) */}
+                  <path d="M20 120 L5 120 L20 10 L35 120 Z" fill="#ef4444" />
+                  {/* Center hub */}
+                  <circle
+                    cx="20"
+                    cy="120"
+                    r="4"
+                    fill="white"
+                    stroke="#1f2937"
+                    strokeWidth="2"
+                  />
+                </svg>
+
+                {/* Kaaba Icon at the tip of the Red needle */}
+                <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 transform">
+                  <div className="w-10 h-10 bg-[#121212] rounded-lg flex items-center justify-center shadow-xl border border-amber-500/30">
+                    <span className="text-xl">🕋</span>
                   </div>
-                  {/* Arrow pointing up (towards Kaaba) */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full">
-                    <Navigation className="w-7 h-7 text-primary-foreground fill-primary-foreground drop-shadow-lg" />
+                  {/* Arrow Pointing UP */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                    <Navigation className="w-6 h-6 text-emerald-400 fill-emerald-400 drop-shadow-glow" />
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Checkmark indicator for being on target */}
+            {isFacingQiblah && (
+              <div className="absolute -inset-4 rounded-full border-4 border-emerald-400/50 animate-pulse z-0" />
+            )}
 
             {/* Calibrating Indicator */}
             {calibrating && (
@@ -930,9 +979,12 @@ const Qiblah: React.FC = () => {
             >
               {isFacingQiblah
                 ? "✓ You are facing Qiblah!"
-                : compassRotation > 0
-                  ? `Turn ${Math.round(Math.abs(compassRotation))}° right`
-                  : `Turn ${Math.round(Math.abs(compassRotation))}° left`}
+                : (() => {
+                    const r = ((compassRotation % 360) + 360) % 360;
+                    const turn = r > 180 ? 360 - r : r;
+                    const dir = r > 180 ? "left" : "right";
+                    return `Turn ${Math.round(turn)}° ${dir}`;
+                  })()}
             </p>
           </div>
 
