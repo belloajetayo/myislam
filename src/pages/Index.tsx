@@ -1,32 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import MobileLayout from '@/components/layout/MobileLayout';
-import QiblahCompass from '@/components/home/QiblahCompass';
-import MIAAssistant from '@/components/home/MIAAssistant';
-import IslamicCalendar from '@/components/home/IslamicCalendar';
-import QuickShortcuts from '@/components/home/QuickShortcuts';
-import ProgressTracker from '@/components/home/ProgressTracker';
-import DailyReminders from '@/components/home/DailyReminders';
-import DailyTeachingsCarousel from '@/components/home/DailyTeachingsCarousel';
-import MeccaLive from '@/components/home/MeccaLive';
-import CommunityFeed from '@/components/community/CommunityFeed';
-import RamadanCountdown from '@/components/home/RamadanCountdown';
-import { User, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useMIAChat } from '@/hooks/useMIAChat';
+import React, { useState, useEffect } from "react";
+import MobileLayout from "@/components/layout/MobileLayout";
+import QiblahCompass from "@/components/home/QiblahCompass";
+import MIAAssistant from "@/components/home/MIAAssistant";
+import IslamicCalendar from "@/components/home/IslamicCalendar";
+import QuickShortcuts from "@/components/home/QuickShortcuts";
+import ProgressTracker from "@/components/home/ProgressTracker";
+import DailyReminders from "@/components/home/DailyReminders";
+import DailyTeachingsCarousel from "@/components/home/DailyTeachingsCarousel";
+import MeccaLive from "@/components/home/MeccaLive";
+import CommunityFeed from "@/components/community/CommunityFeed";
+import RamadanCountdown from "@/components/home/RamadanCountdown";
+import { User, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useMIAChat } from "@/hooks/useMIAChat";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const { 
-    messages, 
-    isLoading, 
-    isOpen, 
-    setIsOpen, 
-    sendMessage, 
-    clearMessages, 
-    openWithQuestion 
+  const {
+    messages,
+    isLoading,
+    isOpen,
+    setIsOpen,
+    sendMessage,
+    clearMessages,
+    openWithQuestion,
   } = useMIAChat();
 
   useEffect(() => {
@@ -34,13 +34,14 @@ const Index: React.FC = () => {
       setUser(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
 
   const handleAskMIA = (question: string) => {
     openWithQuestion(question);
@@ -59,30 +60,57 @@ const Index: React.FC = () => {
         {/* Header */}
         <header className="flex items-center justify-between py-3 animate-fade-in">
           <QiblahCompass />
-          
+
           <div className="text-center flex-1 mx-4">
             <div className="flex items-center justify-center gap-1.5 mb-0.5">
               <Sparkles className="w-4 h-4 text-primary animate-pulse-soft" />
-              <h1 className="text-2xl font-bold text-gradient-gold tracking-tight">My Islam</h1>
+              <h1 className="text-2xl font-bold text-gradient-gold tracking-tight">
+                My Islam
+              </h1>
               <Sparkles className="w-4 h-4 text-primary animate-pulse-soft" />
             </div>
-            <p className="text-xs font-medium text-muted-foreground">Assalamu Alaikum</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              Assalamu Alaikum
+            </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => {
-                const tracker = document.getElementById('progress-tracker');
-                tracker?.scrollIntoView({ behavior: 'smooth' });
+                const tracker = document.getElementById("progress-tracker");
+                tracker?.scrollIntoView({ behavior: "smooth" });
               }}
               className="relative w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-primary/30 hover:shadow-soft active:scale-95 transition-all duration-200"
             >
               <span className="text-lg">📊</span>
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
             </button>
-            {!user && (
-              <button 
-                onClick={() => navigate('/auth')}
+            {user ? (
+              <button
+                onClick={() => navigate("/profile")}
+                className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
+              >
+                <span className="text-sm font-bold text-primary-foreground">
+                  {(() => {
+                    const name =
+                      user.user_metadata?.full_name ||
+                      user.user_metadata?.name ||
+                      "";
+                    if (name.trim())
+                      return name
+                        .trim()
+                        .split(" ")
+                        .map((w: string) => w[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
+                    return (user.email?.[0] ?? "U").toUpperCase();
+                  })()}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
                 className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
               >
                 <User className="w-5 h-5 text-primary-foreground" />

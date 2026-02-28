@@ -1,13 +1,13 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Clock, BookOpen, Compass, Moon } from 'lucide-react';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Home, Clock, BookOpen, Compass, Moon } from "lucide-react";
 
 const navItems = [
-  { icon: Home, label: 'Home', path: '/' },
-  { icon: Clock, label: 'Prayer', path: '/prayer' },
-  { icon: Compass, label: 'Qiblah', path: '/qiblah' },
-  { icon: BookOpen, label: "Qur'an", path: '/quran' },
-  { icon: Moon, label: 'Sawm', path: '/fasting' },
+  { icon: Home, label: "Home", path: "/" },
+  { icon: Clock, label: "Prayer", path: "/prayer" },
+  { icon: Compass, label: "Qiblah", path: "/qiblah" },
+  { icon: BookOpen, label: "Qur'an", path: "/quran" },
+  { icon: Moon, label: "Sawm", path: "/fasting" },
 ];
 
 const BottomNavigation: React.FC = () => {
@@ -21,15 +21,15 @@ const BottomNavigation: React.FC = () => {
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
-              
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all duration-300 ${
                     isActive
-                      ? 'gradient-primary text-primary-foreground shadow-soft scale-105'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? "gradient-primary text-primary-foreground shadow-soft scale-105"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
