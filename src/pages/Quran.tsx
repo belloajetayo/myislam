@@ -420,7 +420,7 @@ const Quran: React.FC = () => {
   const [selectedReciter, setSelectedReciter] = useState("ar.alafasy");
   const [showTransliteration, setShowTransliteration] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const activeAyahRef = useRef<HTMLDivElement | null>(null);
+  const activeAyahRef = useRef<HTMLElement | null>(null);
   const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
 
   const {
@@ -588,16 +588,19 @@ const Quran: React.FC = () => {
     minSwipeDistance: 80,
   });
 
-  const playAyah = (ayahIndex: number) => {
-    if (selectedSurah && selectedSurah.ayahs[ayahIndex]?.audio) {
-      if (audioRef.current) {
-        audioRef.current.src = selectedSurah.ayahs[ayahIndex].audio!;
-        audioRef.current.play();
-        setCurrentAyah(ayahIndex);
-        setIsPlaying(true);
+  const playAyah = useCallback(
+    (ayahIndex: number) => {
+      if (selectedSurah && selectedSurah.ayahs[ayahIndex]?.audio) {
+        if (audioRef.current) {
+          audioRef.current.src = selectedSurah.ayahs[ayahIndex].audio!;
+          audioRef.current.play();
+          setCurrentAyah(ayahIndex);
+          setIsPlaying(true);
+        }
       }
-    }
-  };
+    },
+    [selectedSurah],
+  );
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -643,13 +646,13 @@ const Quran: React.FC = () => {
 
   // Auto-scroll to active ayah during playback
   useEffect(() => {
-    if (isPlaying && activeAyahRef.current) {
+    if (activeAyahRef.current) {
       activeAyahRef.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }
-  }, [currentAyah, isPlaying]);
+  }, [currentAyah]);
 
   const toggleBookmark = (surahNumber: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -800,7 +803,7 @@ const Quran: React.FC = () => {
                   </p>
                 </div>
               )}
-              <ScrollArea className="flex-1">
+              <div className="flex-1 overflow-y-auto">
                 <div className="p-6 pb-12 bg-gradient-to-b from-amber-50/30 to-transparent dark:from-amber-900/5">
                   {/* Surah Name Header */}
                   <div className="text-center mb-8">
@@ -815,6 +818,11 @@ const Quran: React.FC = () => {
                     {selectedSurah.ayahs.map((ayah, index) => (
                       <span
                         key={ayah.number}
+                        ref={
+                          currentAyah === index
+                            ? (activeAyahRef as React.RefObject<HTMLSpanElement>)
+                            : null
+                        }
                         className={`cursor-pointer hover:text-primary transition-colors ${
                           currentAyah === index && isPlaying
                             ? "text-primary bg-primary/10 rounded px-1"
@@ -830,7 +838,7 @@ const Quran: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
             </>
           ) : (
             <>
@@ -845,12 +853,16 @@ const Quran: React.FC = () => {
                 </div>
               )}
 
-              <ScrollArea className="flex-1 p-4">
+              <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-6 pb-8">
                   {selectedSurah.ayahs.map((ayah, index) => (
                     <div
                       key={ayah.number}
-                      ref={currentAyah === index ? activeAyahRef : null}
+                      ref={
+                        currentAyah === index
+                          ? (activeAyahRef as React.RefObject<HTMLDivElement>)
+                          : null
+                      }
                       className={`glass rounded-2xl p-4 border transition-all ${
                         currentAyah === index && isPlaying
                           ? "border-primary bg-primary/5 shadow-lg"
@@ -897,7 +909,7 @@ const Quran: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
             </>
           )}
         </div>
