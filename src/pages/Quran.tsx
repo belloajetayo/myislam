@@ -417,6 +417,7 @@ const Quran: React.FC = () => {
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAyah, setCurrentAyah] = useState<number>(0);
+  const currentAyahRef = useRef<number>(0); // ref copy to avoid stale closures in ended handler
   const [selectedReciter, setSelectedReciter] = useState("ar.alafasy");
   const [showTransliteration, setShowTransliteration] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -594,6 +595,7 @@ const Quran: React.FC = () => {
         if (audioRef.current) {
           audioRef.current.src = selectedSurah.ayahs[ayahIndex].audio!;
           audioRef.current.play();
+          currentAyahRef.current = ayahIndex; // keep ref in sync
           setCurrentAyah(ayahIndex);
           setIsPlaying(true);
         }
@@ -629,20 +631,34 @@ const Quran: React.FC = () => {
     }
   };
 
+  // Use selectedSurahRef to access latest surah inside the ended handler
+  const selectedSurahRef = useRef(selectedSurah);
+  useEffect(() => {
+    selectedSurahRef.current = selectedSurah;
+  }, [selectedSurah]);
+
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio) {
-      const handleEnded = () => {
-        if (selectedSurah && currentAyah < selectedSurah.ayahs.length - 1) {
-          playAyah(currentAyah + 1);
-        } else {
-          setIsPlaying(false);
+    if (!audio) return;
+    const handleEnded = () => {
+      const surah = selectedSurahRef.current;
+      const nextIndex = currentAyahRef.current + 1;
+      if (surah && nextIndex < surah.ayahs.length) {
+        // Directly set src and play for zero-delay transition
+        if (surah.ayahs[nextIndex]?.audio) {
+          audio.src = surah.ayahs[nextIndex].audio!;
+          audio.play();
+          currentAyahRef.current = nextIndex;
+          setCurrentAyah(nextIndex);
+          setIsPlaying(true);
         }
-      };
-      audio.addEventListener("ended", handleEnded);
-      return () => audio.removeEventListener("ended", handleEnded);
-    }
-  }, [currentAyah, selectedSurah]);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+    audio.addEventListener("ended", handleEnded);
+    return () => audio.removeEventListener("ended", handleEnded);
+  }, []); // register once only — uses refs for current values
 
   // Auto-scroll to active ayah during playback
   useEffect(() => {
@@ -668,8 +684,8 @@ const Quran: React.FC = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full" {...surahSwipeHandlers}>
-          {/* Hidden audio element */}
-          <audio ref={audioRef} className="hidden" />
+          {/* Hidden audio element — preload for faster transitions */}
+          <audio ref={audioRef} className="hidden" preload="auto" />
 
           <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button
