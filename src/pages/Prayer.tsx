@@ -10,7 +10,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { usePrayerTimes } from "@/hooks/usePrayerTimes";
+import { usePrayerTimes, useNotifications } from "@/hooks/usePrayerTimes";
+import { toast } from "sonner";
 
 const prayerConfig = [
   { name: "Fajr", arabic: "الفجر", color: "from-indigo-500 to-purple-600" },
@@ -31,6 +32,8 @@ const Prayer: React.FC = () => {
     currentPrayer,
     nextPrayer,
   } = usePrayerTimes();
+  const { notificationsEnabled, toggleNotifications } =
+    useNotifications(prayerTimes);
   const todayKey = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [prayedList, setPrayedList] = useState<string[]>([]);
@@ -118,8 +121,34 @@ const Prayer: React.FC = () => {
               </span>
             </div>
           </div>
-          <button className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10">
-            <Bell className="w-5 h-5 text-primary-foreground" />
+          <button
+            onClick={async () => {
+              const enabled = await toggleNotifications();
+              if (enabled === null || enabled === undefined) return;
+              if (enabled) {
+                toast.success(
+                  "Prayer notifications enabled! You'll be notified at each prayer time.",
+                );
+              } else if (
+                enabled === false &&
+                Notification.permission === "denied"
+              ) {
+                toast.error(
+                  "Notifications are blocked. Please enable them in your browser settings.",
+                );
+              } else {
+                toast.info("Prayer notifications disabled.");
+              }
+            }}
+            className={`w-10 h-10 glass rounded-2xl flex items-center justify-center border transition-colors duration-300 ${
+              notificationsEnabled
+                ? "border-islamic-gold/60 bg-islamic-gold/15"
+                : "border-primary-foreground/10"
+            }`}
+          >
+            <Bell
+              className={`w-5 h-5 ${notificationsEnabled ? "text-islamic-gold" : "text-primary-foreground"}`}
+            />
           </button>
         </header>
 

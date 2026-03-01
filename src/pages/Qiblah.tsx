@@ -167,6 +167,7 @@ const Qiblah: React.FC = () => {
       DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
 
     if (typeof DeviceOrientationEventTyped.requestPermission === "function") {
+      // iOS 13+ requires explicit user gesture
       try {
         const permission =
           await DeviceOrientationEventTyped.requestPermission();
@@ -182,9 +183,10 @@ const Qiblah: React.FC = () => {
         setCompassSupported(false);
       }
     } else {
+      // Android / Desktop — no permission needed, attach immediately
       setPermissionGranted(true);
 
-      // Try deviceorientationabsolute first as it gives True North on Android
+      // Try deviceorientationabsolute first (True North on Android Chrome)
       let absoluteFired = false;
       const onAbsolute = (e: DeviceOrientationEvent) => {
         absoluteFired = true;
@@ -193,7 +195,7 @@ const Qiblah: React.FC = () => {
 
       window.addEventListener("deviceorientationabsolute", onAbsolute, true);
 
-      // Fallback to standard deviceorientation after a short delay if absolute doesn't fire
+      // Fallback to standard deviceorientation if absolute never fires
       setTimeout(() => {
         if (!absoluteFired) {
           window.addEventListener("deviceorientation", handleOrientation, true);
@@ -202,6 +204,7 @@ const Qiblah: React.FC = () => {
 
       listenersAdded.current = true;
 
+      // If nothing fires at all after 3s, mark as unsupported
       setTimeout(() => {
         if (deviceHeadingRef.current === 0 && !absoluteFired) {
           setCompassSupported(false);
@@ -209,6 +212,17 @@ const Qiblah: React.FC = () => {
       }, 3000);
     }
   }, [handleOrientation]);
+
+  // Auto-start listener on mount (works for Android; iOS still needs tap)
+  useEffect(() => {
+    const DeviceOrientationEventTyped =
+      DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
+    // Only auto-start when requestPermission API is NOT present (non-iOS)
+    if (typeof DeviceOrientationEventTyped.requestPermission !== "function") {
+      requestCompassPermission();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   // Online/offline detection
   useEffect(() => {
@@ -791,16 +805,19 @@ const Qiblah: React.FC = () => {
             </div>
           </header>
 
-          {/* Compass permission notice */}
-          {!permissionGranted && (
-            <button
-              onClick={requestCompassPermission}
-              className="mb-4 flex items-center gap-2 px-4 py-2 bg-islamic-gold/20 border border-islamic-gold/30 rounded-xl text-sm text-islamic-gold animate-pulse"
-            >
-              <Compass className="w-4 h-4" />
-              Tap to enable live compass
-            </button>
-          )}
+          {/* Compass permission notice — iOS only (requires explicit user gesture) */}
+          {!permissionGranted &&
+            typeof (
+              DeviceOrientationEvent as unknown as DeviceOrientationEventiOS
+            ).requestPermission === "function" && (
+              <button
+                onClick={requestCompassPermission}
+                className="mb-4 flex items-center gap-2 px-4 py-2 bg-islamic-gold/20 border border-islamic-gold/30 rounded-xl text-sm text-islamic-gold animate-pulse"
+              >
+                <Compass className="w-4 h-4" />
+                Tap to enable compass (iOS)
+              </button>
+            )}
 
           {/* Sun Direction Indicators */}
           <div className="flex justify-between w-full max-w-xs mb-4 animate-fade-in">
