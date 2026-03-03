@@ -515,7 +515,12 @@ const Quran: React.FC = () => {
   const handleSurahClick = async (surahNumber: number) => {
     setLoadingSurah(true);
     setCurrentAyah(0);
+    currentAyahRef.current = 0; // keep ref in sync so handleEnded starts from ayah 1
     setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
     const detail = await fetchSurahDetail(surahNumber, selectedReciter);
     if (detail) {
       setSelectedSurah(detail);
@@ -529,8 +534,12 @@ const Quran: React.FC = () => {
       const nextNumber = selectedSurah.number + 1;
       setLoadingSurah(true);
       setCurrentAyah(0);
+      currentAyahRef.current = 0; // reset ref so auto-advance starts from ayah 1
       setIsPlaying(false);
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
       const detail = await fetchSurahDetail(nextNumber, selectedReciter);
       if (detail) setSelectedSurah(detail);
       setLoadingSurah(false);
@@ -543,8 +552,12 @@ const Quran: React.FC = () => {
       const prevNumber = selectedSurah.number - 1;
       setLoadingSurah(true);
       setCurrentAyah(0);
+      currentAyahRef.current = 0; // reset ref so auto-advance starts from ayah 1
       setIsPlaying(false);
-      if (audioRef.current) audioRef.current.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
       const detail = await fetchSurahDetail(prevNumber, selectedReciter);
       if (detail) setSelectedSurah(detail);
       setLoadingSurah(false);
@@ -610,11 +623,8 @@ const Quran: React.FC = () => {
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-        if (selectedSurah && selectedSurah.ayahs[currentAyah]?.audio) {
-          audioRef.current.src = selectedSurah.ayahs[currentAyah].audio!;
-          audioRef.current.play();
-          setIsPlaying(true);
-        }
+        // Use playAyah so currentAyahRef stays in sync with the current ayah index
+        playAyah(currentAyah);
       }
     }
   };
@@ -658,7 +668,8 @@ const Quran: React.FC = () => {
     };
     audio.addEventListener("ended", handleEnded);
     return () => audio.removeEventListener("ended", handleEnded);
-  }, []); // register once only — uses refs for current values
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSurah]); // re-run when surah changes so we attach to the audio element (it only renders inside the selectedSurah branch)
 
   // Auto-scroll to active ayah during playback
   useEffect(() => {
