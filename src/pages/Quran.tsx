@@ -31,6 +31,7 @@ import {
   SurahDetail,
   AudioEdition,
 } from "@/hooks/useQuranData";
+import { useProgress } from "@/hooks/useProgress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -434,6 +435,13 @@ const Quran: React.FC = () => {
     getCachedSurahCount,
   } = useQuranData();
 
+  const { addQuranPages } = useProgress();
+
+  const handleLogPage = () => {
+    addQuranPages(1);
+    toast.success("Logged 1 page of Quran read today! Mashallah.");
+  };
+
   // Check which surahs are already cached
   useEffect(() => {
     const checkCachedSurahs = () => {
@@ -817,6 +825,13 @@ const Quran: React.FC = () => {
                   Transliteration
                 </button>
               )}
+              <button
+                onClick={handleLogPage}
+                className="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 hover:bg-emerald-500/20 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                Log Page
+              </button>
             </div>
           </div>
 

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePrayerTimes, useNotifications } from "@/hooks/usePrayerTimes";
+import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
 
 const prayerConfig = [
@@ -36,7 +37,7 @@ const Prayer: React.FC = () => {
     useNotifications(prayerTimes);
   const todayKey = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayKey);
-  const [prayedList, setPrayedList] = useState<string[]>([]);
+  const { progress, togglePrayer: toggleGlobalPrayer } = useProgress();
 
   // Generate week days and dates centered on today
   const { weekDays, dates, dateKeys } = useMemo(() => {
@@ -55,9 +56,11 @@ const Prayer: React.FC = () => {
   }, []);
 
   const togglePrayed = (name: string) => {
-    setPrayedList((prev) =>
-      prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name],
-    );
+    if (selectedDate === todayKey) {
+      toggleGlobalPrayer(name);
+    } else {
+      toast.info("You can only track prayers for today.");
+    }
   };
 
   // Format time to 12-hour format – strip optional timezone suffix e.g. "05:30 (+05:00)"
@@ -250,7 +253,10 @@ const Prayer: React.FC = () => {
             All Prayers
           </h3>
           {prayers.map((prayer, index) => {
-            const isPrayed = prayedList.includes(prayer.name);
+            const isPrayed =
+              selectedDate === todayKey
+                ? progress.prayersCompleted.includes(prayer.name)
+                : false;
 
             return (
               <div
