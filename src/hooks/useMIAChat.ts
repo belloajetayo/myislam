@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,7 +13,42 @@ export const useMIAChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const { toast } = useToast();
+
+  // Load previous chat history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('role, content')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (!error && data && data.length > 0) {
+        setMessages(data.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })));
+      }
+      setHistoryLoaded(true);
+    };
+
+    loadHistory();
+  }, []);
+
+  // Persist a message to the database
+  const persistMessage = async (msg: Message) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    await supabase.from('chat_messages').insert({
+      user_id: session.user.id,
+      role: msg.role,
+      content: msg.content,
+    });
+  };
 
   const sendMessage = useCallback(async (input: string) => {
     if (!input.trim() || isLoading) return;
@@ -21,6 +56,9 @@ export const useMIAChat = () => {
     const userMessage: Message = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+
+    // Persist user message
+    persistMessage(userMessage);
 
     let assistantContent = '';
 
@@ -38,7 +76,6 @@ export const useMIAChat = () => {
     };
 
     try {
-      // Get the current session token for authenticated requests
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
@@ -112,6 +149,11 @@ export const useMIAChat = () => {
           } catch { /* ignore */ }
         }
       }
+
+      // Persist the complete assistant response
+      if (assistantContent) {
+        persistMessage({ role: 'assistant', content: assistantContent });
+      }
     } catch (error) {
       console.error('MIA chat error:', error);
       toast({
@@ -119,20 +161,26 @@ export const useMIAChat = () => {
         description: error instanceof Error ? error.message : 'Failed to send message',
         variant: 'destructive',
       });
-      // Remove the user message if we failed
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
   }, [messages, isLoading, toast]);
 
-  const clearMessages = useCallback(() => {
+  const clearMessages = useCallback(async () => {
+    // Delete from database too
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', session.user.id);
+    }
     setMessages([]);
   }, []);
 
   const openWithQuestion = useCallback((question: string) => {
     setIsOpen(true);
-    // Small delay to ensure the UI is open before sending
     setTimeout(() => {
       sendMessage(question);
     }, 100);
@@ -146,5 +194,6 @@ export const useMIAChat = () => {
     sendMessage,
     clearMessages,
     openWithQuestion,
+    historyLoaded,
   };
 };
