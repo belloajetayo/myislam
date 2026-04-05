@@ -67,6 +67,9 @@ const Qiblah: React.FC = () => {
   const locationCached = useRef(false);
   const mosquesLoaded = useRef(false);
   const deviceHeadingRef = useRef<number>(0);
+  const targetHeadingRef = useRef<number>(0);
+  const smoothedHeadingRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
   const watchId = useRef<number | null>(null);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const listenersAdded = useRef(false);
@@ -115,7 +118,33 @@ const Qiblah: React.FC = () => {
     userLocationRef.current = userLocation;
   }, [userLocation]);
 
-  // Handle device orientation for compass with smoothing
+  // Smooth animation loop using requestAnimationFrame
+  useEffect(() => {
+    const animate = () => {
+      const target = targetHeadingRef.current;
+      const current = smoothedHeadingRef.current;
+
+      let diff = target - current;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+
+      // Lerp with 0.12 factor at ~60fps for buttery smooth movement
+      const next = (current + diff * 0.12 + 360) % 360;
+      smoothedHeadingRef.current = next;
+      setSmoothedHeading(next);
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  // Handle device orientation for compass — just update the target heading
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     let heading: number;
 
@@ -129,10 +158,8 @@ const Qiblah: React.FC = () => {
       (event.type === "deviceorientationabsolute" || (event as any).absolute) &&
       event.alpha !== null
     ) {
-      // deviceorientationabsolute is already True North
       heading = 360 - event.alpha;
     } else if (event.alpha !== null) {
-      // 2. Standard alpha with magnetic declination correction
       heading = 360 - event.alpha;
       const cachedLoc = userLocationRef.current;
       if (cachedLoc) {
@@ -147,17 +174,9 @@ const Qiblah: React.FC = () => {
     }
 
     deviceHeadingRef.current = heading;
+    targetHeadingRef.current = heading;
     setDeviceHeading(heading);
-
-    setSmoothedHeading((prev) => {
-      const diff = heading - prev;
-      let normalizedDiff = diff;
-      if (diff > 180) normalizedDiff = diff - 360;
-      if (diff < -180) normalizedDiff = diff + 360;
-      // Higher damping factor (0.3) for more "free" feel while filtering jitter
-      return (prev + normalizedDiff * 0.3 + 360) % 360;
-    });
-  }, []); // Stable handler
+  }, []);
 
   // Request compass permission (especially for iOS 13+)
   const requestCompassPermission = useCallback(async () => {
