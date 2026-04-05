@@ -67,6 +67,9 @@ const Qiblah: React.FC = () => {
   const locationCached = useRef(false);
   const mosquesLoaded = useRef(false);
   const deviceHeadingRef = useRef<number>(0);
+  const targetHeadingRef = useRef<number>(0);
+  const smoothedHeadingRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
   const watchId = useRef<number | null>(null);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const listenersAdded = useRef(false);
