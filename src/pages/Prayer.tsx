@@ -5,12 +5,14 @@ import {
   ChevronRight,
   MapPin,
   Bell,
+  BellRing,
   Check,
   ArrowLeft,
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePrayerTimes, useNotifications } from "@/hooks/usePrayerTimes";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
 
@@ -35,6 +37,8 @@ const Prayer: React.FC = () => {
   } = usePrayerTimes();
   const { notificationsEnabled, toggleNotifications } =
     useNotifications(prayerTimes);
+  const { isSubscribed: pushEnabled, isSupported: pushSupported, isLoading: pushLoading, toggle: togglePush } =
+    usePushNotifications();
   const todayKey = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const { progress, togglePrayer: toggleGlobalPrayer } = useProgress();
@@ -126,32 +130,43 @@ const Prayer: React.FC = () => {
           </div>
           <button
             onClick={async () => {
-              const enabled = await toggleNotifications();
-              if (enabled === null || enabled === undefined) return;
-              if (enabled) {
-                toast.success(
-                  "Prayer notifications enabled! You'll be notified at each prayer time.",
-                );
-              } else if (
-                enabled === false &&
-                Notification.permission === "denied"
-              ) {
-                toast.error(
-                  "Notifications are blocked. Please enable them in your browser settings.",
-                );
+              if (pushSupported) {
+                const result = await togglePush();
+                if (result) {
+                  toast.success(
+                    pushEnabled
+                      ? "Push notifications disabled."
+                      : "Push notifications enabled! You'll be reminded even when the browser is closed.",
+                  );
+                } else if (Notification.permission === "denied") {
+                  toast.error("Notifications are blocked. Please enable them in your browser settings.");
+                }
               } else {
-                toast.info("Prayer notifications disabled.");
+                const enabled = await toggleNotifications();
+                if (enabled === null || enabled === undefined) return;
+                if (enabled) {
+                  toast.success("Prayer notifications enabled!");
+                } else if (enabled === false && Notification.permission === "denied") {
+                  toast.error("Notifications are blocked. Please enable them in your browser settings.");
+                } else {
+                  toast.info("Prayer notifications disabled.");
+                }
               }
             }}
+            disabled={pushLoading}
             className={`w-10 h-10 glass rounded-2xl flex items-center justify-center border transition-colors duration-300 ${
-              notificationsEnabled
+              pushEnabled || notificationsEnabled
                 ? "border-islamic-gold/60 bg-islamic-gold/15"
                 : "border-primary-foreground/10"
             }`}
           >
-            <Bell
-              className={`w-5 h-5 ${notificationsEnabled ? "text-islamic-gold" : "text-primary-foreground"}`}
-            />
+            {pushLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-primary-foreground" />
+            ) : pushEnabled ? (
+              <BellRing className="w-5 h-5 text-islamic-gold" />
+            ) : (
+              <Bell className={`w-5 h-5 ${notificationsEnabled ? "text-islamic-gold" : "text-primary-foreground"}`} />
+            )}
           </button>
         </header>
 
