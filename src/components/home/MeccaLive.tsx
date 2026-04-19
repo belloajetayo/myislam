@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Maximize2, Minimize2, Volume2, VolumeX, Clock, Cloud, Sun, Wind, ExternalLink } from 'lucide-react';
+import { Maximize2, Minimize2, Volume2, VolumeX, Clock, Cloud, Sun, Wind, ExternalLink, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 const MeccaLive: React.FC = () => {
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
   const [makkahTime, setMakkahTime] = useState('');
 
   // Update Makkah local time every second
@@ -35,7 +36,7 @@ const MeccaLive: React.FC = () => {
     wind: 12,
   };
 
-  // Saudi Quran TV Channel live stream
+  // Saudi Quran TV Channel live stream — only autoplay AFTER user clicks play
   const youtubeEmbedUrl = `https://www.youtube.com/embed/AR6W-jWe85k?autoplay=1&mute=${isMuted ? 1 : 0}&rel=0&modestbranding=1&playsinline=1`;
 
   return (
@@ -64,7 +65,10 @@ const MeccaLive: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsMuted(!isMuted)}
+            onClick={() => {
+              if (!hasStarted) setHasStarted(true);
+              setIsMuted(!isMuted);
+            }}
             className="h-8 w-8"
             title={isMuted ? 'Unmute' : 'Mute'}
           >
@@ -84,22 +88,37 @@ const MeccaLive: React.FC = () => {
 
       {/* Video Player */}
       <div className={`relative ${isTheaterMode ? 'h-[60vh]' : 'aspect-video'} bg-black`}>
-        <iframe
-          src={youtubeEmbedUrl}
-          className="absolute inset-0 w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          title="Mecca Live Stream - Saudi Quran TV"
-        />
-        
-        {/* Unmute instruction overlay */}
-        {isMuted && (
-          <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
-            <div className="bg-black/70 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 animate-pulse">
-              <VolumeX className="w-4 h-4 text-white" />
-              <span className="text-xs text-white">Tap unmute button to hear audio</span>
+        {hasStarted ? (
+          <>
+            <iframe
+              src={youtubeEmbedUrl}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Mecca Live Stream - Saudi Quran TV"
+            />
+            {isMuted && (
+              <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
+                <div className="bg-black/70 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 animate-pulse">
+                  <VolumeX className="w-4 h-4 text-white" />
+                  <span className="text-xs text-white">Tap unmute button to hear audio</span>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <button
+            onClick={() => setHasStarted(true)}
+            className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-black via-zinc-900 to-black hover:from-zinc-900 transition-colors group"
+            aria-label="Play Mecca Live Stream"
+          >
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.4)_0%,transparent_60%)]" />
+            <div className="relative w-20 h-20 rounded-full bg-islamic-gold/90 flex items-center justify-center shadow-2xl group-hover:scale-110 group-active:scale-95 transition-transform">
+              <Play className="w-10 h-10 text-black fill-black ml-1" />
             </div>
-          </div>
+            <p className="relative mt-4 text-white text-sm font-semibold">Tap to play live stream</p>
+            <p className="relative text-white/60 text-xs mt-1">Saudi Quran TV · Al-Masjid al-Haram</p>
+          </button>
         )}
       </div>
 
