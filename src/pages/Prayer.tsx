@@ -156,18 +156,18 @@ const Prayer: React.FC = () => {
               }
             }}
             disabled={pushLoading}
-            className={`w-10 h-10 glass rounded-2xl flex items-center justify-center border transition-colors duration-300 ${
+            className={`w-10 h-10 glass rounded-2xl flex items-center justify-center border transition-colors duration-300 shrink-0 ${
               pushEnabled || notificationsEnabled
                 ? "border-islamic-gold/60 bg-islamic-gold/15"
-                : "border-primary-foreground/10"
+                : "border-islamic-gold/40 bg-background/40"
             }`}
           >
             {pushLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-primary-foreground" />
+              <Loader2 className="w-5 h-5 animate-spin text-islamic-gold" />
             ) : pushEnabled ? (
               <BellRing className="w-5 h-5 text-islamic-gold" />
             ) : (
-              <Bell className={`w-5 h-5 ${notificationsEnabled ? "text-islamic-gold" : "text-primary-foreground"}`} />
+              <Bell className={`w-5 h-5 ${notificationsEnabled ? "text-islamic-gold" : "text-islamic-gold"}`} />
             )}
           </button>
         </header>
