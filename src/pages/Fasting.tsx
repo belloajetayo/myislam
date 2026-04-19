@@ -17,7 +17,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import RamadanCountdown from "@/components/home/RamadanCountdown";
+// RamadanCountdown temporarily hidden — will return ~1 month before next Ramadan
+// import RamadanCountdown from "@/components/home/RamadanCountdown";
 import RamadanTracker from "@/components/fasting/RamadanTracker";
 
 // ─── Hijri helpers ────────────────────────────────────────────────────────────
@@ -400,8 +401,8 @@ const Fasting: React.FC = () => {
               </Button>
             </div>
 
-            {/* Ramadan Countdown */}
-            <RamadanCountdown />
+            {/* Ramadan Countdown — hidden until ~1 month before next Ramadan */}
+            {/* <RamadanCountdown /> */}
 
             {/* Native Ramadan Tracker with Location-Based Times */}
             <RamadanTracker />
@@ -492,8 +493,8 @@ const Fasting: React.FC = () => {
               </div>
             </div>
 
-            {/* Ramadan countdown */}
-            <RamadanCountdown />
+            {/* Ramadan countdown — hidden until ~1 month before next Ramadan */}
+            {/* <RamadanCountdown /> */}
 
             {/* Next Sawm Days */}
             <div>

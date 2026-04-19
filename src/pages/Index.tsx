@@ -9,7 +9,8 @@ import DailyReminders from "@/components/home/DailyReminders";
 import DailyTeachingsCarousel from "@/components/home/DailyTeachingsCarousel";
 import MeccaLive from "@/components/home/MeccaLive";
 import CommunityFeed from "@/components/community/CommunityFeed";
-import RamadanCountdown from "@/components/home/RamadanCountdown";
+// RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
+// import RamadanCountdown from "@/components/home/RamadanCountdown";
 import { User, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,8 +120,8 @@ const Index: React.FC = () => {
           </div>
         </header>
 
-        {/* Ramadan Countdown */}
-        <RamadanCountdown />
+        {/* Ramadan Countdown — hidden until ~1 month before next Ramadan */}
+        {/* <RamadanCountdown /> */}
 
         {/* Quick Shortcuts */}
         <QuickShortcuts />

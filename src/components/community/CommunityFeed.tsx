@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Heart, MessageCircle, Share2, Send, BookOpen, Loader2 } from 'lucide-react';
+import { Heart, Share2, Send, BookOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -285,15 +285,6 @@ const CommunityFeed: React.FC = () => {
                   <span className="text-sm">{post.likes_count}</span>
                 </button>
                 <button
-                  onClick={() => handleExpandComments(post.id)}
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    expandedPost === post.id ? 'text-islamic-gold' : 'text-muted-foreground hover:text-islamic-gold'
-                  }`}
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm">{postComments.length}</span>
-                </button>
-                <button
                   onClick={() => handleShare(post)}
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-blue-400 transition-colors ml-auto"
                 >
@@ -301,57 +292,6 @@ const CommunityFeed: React.FC = () => {
                   <span className="text-sm">Share</span>
                 </button>
               </div>
-
-              {/* Comments Section */}
-              {expandedPost === post.id && (
-                <div className="border-t border-border/30 bg-background/30">
-                  {/* Comments List */}
-                  {postComments.length > 0 && (
-                    <div className="p-4 space-y-3">
-                      {postComments.map((comment) => (
-                        <div key={comment.id} className="flex gap-2">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="text-xs bg-secondary">
-                              {comment.author_name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 bg-background/50 rounded-xl px-3 py-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm text-foreground">
-                                {comment.author_name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-foreground/90 mt-0.5">
-                              {comment.content}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add Comment */}
-                  <div className="p-4 pt-2 flex gap-2">
-                    <Input
-                      placeholder="Write a comment..."
-                      value={newComment[post.id] || ''}
-                      onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment(post.id)}
-                      className="flex-1 bg-background"
-                    />
-                    <Button
-                      size="icon"
-                      onClick={() => handleSubmitComment(post.id)}
-                      disabled={!newComment[post.id]?.trim()}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })
