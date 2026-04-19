@@ -493,8 +493,8 @@ const Fasting: React.FC = () => {
               </div>
             </div>
 
-            {/* Ramadan countdown */}
-            <RamadanCountdown />
+            {/* Ramadan countdown — hidden until ~1 month before next Ramadan */}
+            {/* <RamadanCountdown /> */}
 
             {/* Next Sawm Days */}
             <div>
