@@ -109,17 +109,18 @@ const Prayer: React.FC = () => {
         <header className="flex items-center gap-4 py-2 animate-fade-in">
           <button
             onClick={() => navigate("/")}
-            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+            aria-label="Back to home"
+            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-islamic-gold/40 bg-background/40 shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+            <ArrowLeft className="w-5 h-5 text-islamic-gold" />
           </button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-gradient-gold">
               Prayer Times
             </h1>
             <div className="flex items-center gap-1 text-gradient-gold opacity-80">
               <MapPin className="w-3 h-3" />
-              <span className="text-xs">
+              <span className="text-xs truncate">
                 {loading
                   ? "Locating..."
                   : location
@@ -129,6 +130,7 @@ const Prayer: React.FC = () => {
             </div>
           </div>
           <button
+            aria-label={pushEnabled || notificationsEnabled ? "Disable prayer notifications" : "Enable prayer notifications"}
             onClick={async () => {
               if (pushSupported) {
                 const result = await togglePush();
