@@ -61,7 +61,7 @@ const RamadanCountdown: React.FC = () => {
 
         // Calculate days until Ramadan
         // We need to find the Gregorian date for 1st Ramadan
-        let targetYear = currentMonth > 9 ? currentYear + 1 : currentYear;
+        const targetYear = currentMonth > 9 ? currentYear + 1 : currentYear;
         
         // Fetch the Gregorian date for 1st Ramadan of target year
         const ramadanResponse = await fetch(

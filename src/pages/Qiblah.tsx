@@ -35,6 +35,8 @@ import {
 
 interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
   requestPermission?: () => Promise<"granted" | "denied">;
+  webkitCompassHeading?: number;
+  absolute?: boolean;
 }
 
 // Calculate distance between two coordinates in km - moved outside component for stability
@@ -147,15 +149,16 @@ const Qiblah: React.FC = () => {
   // Handle device orientation for compass — just update the target heading
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     let heading: number;
+    const extEvent = event as DeviceOrientationEventiOS;
 
     // 1. iOS True North or Android absolute event type
     if (
       "webkitCompassHeading" in event &&
-      typeof (event as any).webkitCompassHeading === "number"
+      typeof extEvent.webkitCompassHeading === "number"
     ) {
-      heading = (event as any).webkitCompassHeading;
+      heading = extEvent.webkitCompassHeading;
     } else if (
-      (event.type === "deviceorientationabsolute" || (event as any).absolute) &&
+      (event.type === "deviceorientationabsolute" || extEvent.absolute) &&
       event.alpha !== null
     ) {
       heading = 360 - event.alpha;
@@ -547,12 +550,20 @@ const Qiblah: React.FC = () => {
 
         const data = await response.json();
 
+        type OverpassElement = {
+          lat?: number;
+          lon?: number;
+          center?: { lat: number; lon: number };
+          tags?: Record<string, string>;
+        };
+        type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
+
         if (data.elements && data.elements.length > 0) {
-          const mosques = data.elements
-            .map((element: any) => {
+          const mosques = (data.elements as OverpassElement[])
+            .map((element): MosqueEntry | null => {
               // Get coordinates (nodes have lat/lon directly, ways have center)
-              const lat = element.lat || element.center?.lat;
-              const lng = element.lon || element.center?.lon;
+              const lat = element.lat ?? element.center?.lat;
+              const lng = element.lon ?? element.center?.lon;
 
               if (!lat || !lng) return null;
 
@@ -583,10 +594,10 @@ const Qiblah: React.FC = () => {
                 lng,
               };
             })
-            .filter(Boolean);
+            .filter((m): m is MosqueEntry => m !== null);
 
           // Sort by distance and limit to 10
-          mosques.sort((a: any, b: any) => a.distanceNum - b.distanceNum);
+          mosques.sort((a, b) => a.distanceNum - b.distanceNum);
           setNearbyMosques(mosques.slice(0, 10));
         } else {
           setNearbyMosques([]);

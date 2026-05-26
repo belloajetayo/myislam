@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { type User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ const QUICK_LINKS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -230,13 +231,17 @@ const Profile: React.FC = () => {
     if (stored) {
       try {
         setStats(JSON.parse(stored));
-      } catch {}
+      } catch (e) {
+        console.warn("Failed to parse stats:", e);
+      }
     }
     const storedPrefs = localStorage.getItem("myislam_prefs");
     if (storedPrefs) {
       try {
         setPrefs(JSON.parse(storedPrefs));
-      } catch {}
+      } catch (e) {
+        console.warn("Failed to parse prefs:", e);
+      }
     }
   }, []);
 

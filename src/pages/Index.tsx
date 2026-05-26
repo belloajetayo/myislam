@@ -14,12 +14,13 @@ import CommunityFeed from "@/components/community/CommunityFeed";
 import { User, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { type User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useMIAChat } from "@/hooks/useMIAChat";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const {
     messages,
     isLoading,

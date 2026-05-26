@@ -227,7 +227,7 @@ export const useQuranData = () => {
       const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${edition}`);
       const data = await response.json();
       if (data.code === 200) {
-        const audioData = data.data.ayahs.map((ayah: any) => ({
+        const audioData = data.data.ayahs.map((ayah: Ayah) => ({
           number: ayah.numberInSurah,
           audio: ayah.audio
         }));

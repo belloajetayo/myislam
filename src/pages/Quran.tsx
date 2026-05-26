@@ -676,7 +676,6 @@ const Quran: React.FC = () => {
     };
     audio.addEventListener("ended", handleEnded);
     return () => audio.removeEventListener("ended", handleEnded);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSurah]); // re-run when surah changes so we attach to the audio element (it only renders inside the selectedSurah branch)
 
   // Auto-scroll to active ayah during playback

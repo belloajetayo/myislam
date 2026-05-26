@@ -1,26 +1,27 @@
+/// <reference lib="deno.ns" />
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 
-const VAPID_PUBLIC_KEY = "BObpc8J1cBRpX-WCRS-yQS0tXVW6S0SrD4rRlQF7ta0gptZhwGTjaujo5Yx4Pt9UmhzLX40Xk79jN4kl16gqNgY";
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
 
 // Web Push requires signing JWTs with ES256 (P-256 / ECDSA)
 async function importVapidPrivateKey(base64url: string): Promise<CryptoKey> {
-  const raw = base64urlToUint8Array(base64url);
-  // VAPID private key is raw 32-byte scalar – import as JWK
+  const rawPriv = base64urlToUint8Array(base64url);
+  const rawPub = base64urlToUint8Array(VAPID_PUBLIC_KEY);
+
+  if (rawPub.length !== 65 || rawPub[0] !== 0x04) {
+    throw new Error("Invalid VAPID public key format. Expected uncompressed P-256 key (65 bytes starting with 0x04).");
+  }
+
   const jwk = {
     kty: "EC",
     crv: "P-256",
-    d: uint8ArrayToBase64url(raw),
-    // Derive public point from the known public key
-    x: VAPID_PUBLIC_KEY.replace(/-/g, "+").replace(/_/g, "/").padEnd(
-      Math.ceil(VAPID_PUBLIC_KEY.length / 4) * 4, "="
-    ).slice(1, 44), // skip 0x04 prefix byte
-    y: VAPID_PUBLIC_KEY.replace(/-/g, "+").replace(/_/g, "/").padEnd(
-      Math.ceil(VAPID_PUBLIC_KEY.length / 4) * 4, "="
-    ).slice(44),
+    x: uint8ArrayToBase64url(rawPub.slice(1, 33)),
+    y: uint8ArrayToBase64url(rawPub.slice(33, 65)),
+    d: uint8ArrayToBase64url(rawPriv),
   };
   return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
 }
@@ -180,15 +181,26 @@ async function sendPushNotification(
   }
 }
 
-// Fetch prayer times for a location
+// Fetch prayer times for a location with memoization
+const prayerTimesCache = new Map<string, Record<string, string>>();
+
 async function getPrayerTimes(lat: number, lon: number): Promise<Record<string, string> | null> {
+  // Round to 2 decimal places (~1.1km precision) to increase cache hits
+  const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+  if (prayerTimesCache.has(cacheKey)) {
+    return prayerTimesCache.get(cacheKey)!;
+  }
+
   try {
     const now = Math.floor(Date.now() / 1000);
     const res = await fetch(`https://api.aladhan.com/v1/timings/${now}?latitude=${lat}&longitude=${lon}&method=2`);
     const data = await res.json();
-    if (data.code === 200) return data.data.timings;
+    if (data.code === 200) {
+      prayerTimesCache.set(cacheKey, data.data.timings);
+      return data.data.timings;
+    }
   } catch (e) {
-    console.error("Failed to fetch prayer times:", e);
+    console.error(`Failed to fetch prayer times for ${cacheKey}:`, e);
   }
   return null;
 }
@@ -201,12 +213,16 @@ Deno.serve(async (req) => {
   try {
     const vapidPrivateKeyStr = Deno.env.get("VAPID_PRIVATE_KEY");
     if (!vapidPrivateKeyStr) throw new Error("VAPID_PRIVATE_KEY not configured");
+    if (!VAPID_PUBLIC_KEY) throw new Error("VAPID_PUBLIC_KEY not configured");
 
     const vapidPrivateKey = await importVapidPrivateKey(vapidPrivateKeyStr);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Clear cache at start of each run to ensure fresh timings
+    prayerTimesCache.clear();
 
     // Fetch all subscriptions
     const { data: subscriptions, error: subError } = await supabase
@@ -215,7 +231,7 @@ Deno.serve(async (req) => {
 
     if (subError) throw subError;
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No subscriptions" }), {
+      return new Response(JSON.stringify({ sent: 0, checked: 0, message: "No subscriptions" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -224,6 +240,7 @@ Deno.serve(async (req) => {
     let cleaned = 0;
     const prayerNames = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
+    // Process subscriptions
     for (const sub of subscriptions) {
       if (!sub.latitude || !sub.longitude) continue;
 
@@ -232,7 +249,14 @@ Deno.serve(async (req) => {
 
       // Get current time in subscriber's timezone
       const now = new Date();
-      const tzNow = new Date(now.toLocaleString("en-US", { timeZone: sub.timezone || "UTC" }));
+      let tzNow: Date;
+      try {
+        tzNow = new Date(now.toLocaleString("en-US", { timeZone: sub.timezone || "UTC" }));
+      } catch (e) {
+        console.error(`Invalid timezone for sub ${sub.id}: ${sub.timezone}. Falling back to UTC.`);
+        tzNow = new Date(now.toLocaleString("en-US", { timeZone: "UTC" }));
+      }
+      
       const currentMinutes = tzNow.getHours() * 60 + tzNow.getMinutes();
 
       for (const prayer of prayerNames) {
@@ -243,6 +267,7 @@ Deno.serve(async (req) => {
 
         // Send notification if within 1-minute window of prayer time
         if (Math.abs(currentMinutes - prayerMinutes) <= 1) {
+          console.log(`Sending ${prayer} push to ${sub.endpoint.slice(0, 40)}...`);
           const success = await sendPushNotification(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
             {
@@ -258,6 +283,7 @@ Deno.serve(async (req) => {
             sent++;
           } else {
             // Clean up dead subscriptions
+            console.log(`Cleaning up dead subscription: ${sub.id}`);
             await supabase.from("push_subscriptions").delete().eq("id", sub.id);
             cleaned++;
             break;
@@ -271,9 +297,10 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    const error = err as Error;
     console.error("Push scheduler error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal error" }),
+      JSON.stringify({ error: error.message || "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

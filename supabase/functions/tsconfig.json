@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+    "isolatedModules": true,
+    "lib": ["esnext"],
+    "module": "esnext",
+    "strict": true,
+    "target": "esnext",
+    "types": ["https://raw.githubusercontent.com/denoland/deno/main/cli/tsc/dts/lib.deno.ns.d.ts"]
+  }
+}

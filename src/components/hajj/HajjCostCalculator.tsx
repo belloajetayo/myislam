@@ -140,7 +140,7 @@ const HajjCostCalculator: React.FC = () => {
           </label>
           <Select 
             value={inputs.hotelTier} 
-            onValueChange={(v: any) => setInputs(prev => ({ ...prev, hotelTier: v }))}
+            onValueChange={(v: CalculatorInputs['hotelTier']) => setInputs(prev => ({ ...prev, hotelTier: v }))}
           >
             <SelectTrigger className="glass border-border">
               <SelectValue />

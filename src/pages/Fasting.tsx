@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { type User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 // RamadanCountdown temporarily hidden — will return ~1 month before next Ramadan
 // import RamadanCountdown from "@/components/home/RamadanCountdown";
@@ -208,7 +209,7 @@ const Fasting: React.FC = () => {
   const navigate = useNavigate();
 
   // Auth
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // Ramadan detection
   const [hijriInfo, setHijriInfo] = useState<HijriInfo | null>(null);
@@ -290,15 +291,18 @@ const Fasting: React.FC = () => {
     } else {
       fetchData(21.4225, 39.8262);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentional: run once on mount to get location
 
   // Derived: is it Ramadan?
   const isRamadan = hijriInfo?.month === 9;
 
   // Next Sunnah fasting days (shown outside Ramadan)
+  const todayStr = now.toDateString();
   const nextFastDays = useMemo(
     () => getNextSunnahFastDays(now, 5),
-    [now.toDateString()],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [todayStr], // todayStr changes once per day — intentional proxy for `now`
   );
 
   // Ramadan tracking toggle

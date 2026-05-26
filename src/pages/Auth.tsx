@@ -53,13 +53,14 @@ const Auth: React.FC = () => {
         if (error) throw error;
         toast.success('Account created successfully! Welcome to My Islam');
       }
-    } catch (error: any) {
-      if (error.message.includes('User already registered')) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message.includes('User already registered')) {
         toast.error('This email is already registered. Please login instead.');
-      } else if (error.message.includes('Invalid login credentials')) {
+      } else if (err.message.includes('Invalid login credentials')) {
         toast.error('Invalid email or password. Please try again.');
       } else {
-        toast.error(error.message || 'An error occurred');
+        toast.error(err.message || 'An error occurred');
       }
     } finally {
       setLoading(false);
