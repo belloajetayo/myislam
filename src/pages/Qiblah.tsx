@@ -33,7 +33,7 @@ import {
   getMagneticDeclination,
 } from "@/utils/geo";
 
-interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
+interface DeviceOrientationEventiOS extends Omit<DeviceOrientationEvent, 'absolute'> {
   requestPermission?: () => Promise<"granted" | "denied">;
   webkitCompassHeading?: number;
   absolute?: boolean;
@@ -757,9 +757,9 @@ const Qiblah: React.FC = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/")}
-                className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+                className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
               >
-                <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+                <ArrowLeft className="w-5 h-5 text-white" />
               </button>
               <div className="flex-1 text-center">
                 <div className="flex items-center justify-center gap-2">

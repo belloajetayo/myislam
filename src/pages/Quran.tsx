@@ -409,6 +409,19 @@ const Quran: React.FC = () => {
     (typeof prophetStories)[0] | null
   >(null);
   const [loadingSurah, setLoadingSurah] = useState(false);
+  const [lastReadSurah, setLastReadSurah] = useState<{
+    number: number;
+    name: string;
+    translation: string;
+  }>(() => {
+    const num = localStorage.getItem("myislam_last_read_surah_number");
+    const name = localStorage.getItem("myislam_last_read_surah_name");
+    const translation = localStorage.getItem("myislam_last_read_surah_translation");
+    if (num && name && translation) {
+      return { number: parseInt(num), name, translation };
+    }
+    return { number: 1, name: "Al-Fatiha", translation: "The Opening" };
+  });
   const [bookmarkedSurahs, setBookmarkedSurahs] = useState<number[]>([
     36, 67, 112,
   ]);
@@ -532,6 +545,14 @@ const Quran: React.FC = () => {
     const detail = await fetchSurahDetail(surahNumber, selectedReciter);
     if (detail) {
       setSelectedSurah(detail);
+      localStorage.setItem("myislam_last_read_surah_number", surahNumber.toString());
+      localStorage.setItem("myislam_last_read_surah_name", detail.englishName);
+      localStorage.setItem("myislam_last_read_surah_translation", detail.englishNameTranslation);
+      setLastReadSurah({
+        number: surahNumber,
+        name: detail.englishName,
+        translation: detail.englishNameTranslation
+      });
     }
     setLoadingSurah(false);
   };
@@ -1238,9 +1259,9 @@ const Quran: React.FC = () => {
         <header className="flex items-center gap-4 py-2 animate-fade-in">
           <button
             onClick={() => navigate("/")}
-            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
           >
-            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+            <ArrowLeft className="w-5 h-5 text-white" />
           </button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gradient-gold">
@@ -1314,14 +1335,14 @@ const Quran: React.FC = () => {
                     Last Read
                   </p>
                   <h3 className="text-lg font-bold text-primary-foreground">
-                    Surah Al-Fatiha
+                    {lastReadSurah.name.startsWith("Surah") ? lastReadSurah.name : `Surah ${lastReadSurah.name}`}
                   </h3>
                   <p className="text-primary-foreground/90 text-sm">
-                    The Opening
+                    {lastReadSurah.translation}
                   </p>
                 </div>
                 <button
-                  onClick={() => handleSurahClick(1)}
+                  onClick={() => handleSurahClick(lastReadSurah.number)}
                   className="w-12 h-12 bg-primary-foreground/20 rounded-2xl flex items-center justify-center hover:bg-primary-foreground/30 transition-colors"
                 >
                   {loadingSurah ? (

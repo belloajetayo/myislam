@@ -74,9 +74,9 @@ const Zakat: React.FC = () => {
         <header className="flex items-center gap-4 py-2">
           <button
             onClick={() => navigate("/")}
-            className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary-foreground/10"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
           >
-            <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+            <ArrowLeft className="w-5 h-5 text-white" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gradient-gold">Zakat</h1>
