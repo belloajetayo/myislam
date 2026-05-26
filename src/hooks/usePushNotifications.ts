@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const VAPID_PUBLIC_KEY = "BObpc8J1cBRpX-WCRS-yQS0tXVW6S0SrD4rRlQF7ta0gptZhwGTjaujo5Yx4Pt9UmhzLX40Xk79jN4kl16gqNgY";
 
@@ -50,6 +51,7 @@ export function usePushNotifications() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         console.error("User must be logged in for push notifications");
+        toast.error("Please sign in to enable push notifications.");
         return false;
       }
 

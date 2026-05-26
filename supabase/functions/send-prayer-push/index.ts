@@ -221,23 +221,69 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Try to read test trigger from JSON body
+    let isTest = false;
+    let testUserId: string | null = null;
+    try {
+      const body = await req.json();
+      if (body?.is_test) {
+        isTest = true;
+        testUserId = body?.user_id || null;
+      }
+    } catch {
+      // Normal cron runs or pings pass empty/no JSON body
+    }
+
     // Clear cache at start of each run to ensure fresh timings
     prayerTimesCache.clear();
 
-    // Fetch all subscriptions
-    const { data: subscriptions, error: subError } = await supabase
-      .from("push_subscriptions")
-      .select("*");
+    // Fetch subscriptions (filter by user_id if test)
+    let query = supabase.from("push_subscriptions").select("*");
+    if (isTest && testUserId) {
+      query = query.eq("user_id", testUserId);
+    }
+    const { data: subscriptions, error: subError } = await query;
 
     if (subError) throw subError;
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, checked: 0, message: "No subscriptions" }), {
+      return new Response(JSON.stringify({ sent: 0, checked: 0, message: isTest ? "No active push subscription found for this user" : "No subscriptions" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     let sent = 0;
     let cleaned = 0;
+
+    if (isTest) {
+      // Direct test notification trigger
+      for (const sub of subscriptions) {
+        console.log(`Sending immediate test push to ${sub.endpoint.slice(0, 40)}...`);
+        const success = await sendPushNotification(
+          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+          {
+            title: `🕌 Prayer Test Notification`,
+            body: `Assalamu Alaikum! Your My Islam prayer notification system is working perfectly.`,
+            tag: `prayer-test`,
+            icon: "/pwa-icons/icon-192.svg",
+          },
+          vapidPrivateKey
+        );
+
+        if (success) {
+          sent++;
+        } else {
+          console.log(`Cleaning up dead subscription: ${sub.id}`);
+          await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          cleaned++;
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ sent, cleaned, is_test: true, message: "Test notifications triggered successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const prayerNames = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
     // Process subscriptions

@@ -15,6 +15,7 @@ import { usePrayerTimes, useNotifications } from "@/hooks/usePrayerTimes";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const prayerConfig = [
   { name: "Fajr", arabic: "الفجر", color: "from-indigo-500 to-purple-600" },
@@ -42,6 +43,47 @@ const Prayer: React.FC = () => {
   const todayKey = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const { progress, togglePrayer: toggleGlobalPrayer } = useProgress();
+  const [testLoading, setTestLoading] = useState(false);
+
+  const handleSendTestNotification = async () => {
+    try {
+      setTestLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error("Please sign in to test notifications.");
+        navigate("/auth");
+        return;
+      }
+
+      const response = await fetch(
+        "https://lhdksrflshusknopsrzz.supabase.co/functions/v1/send-prayer-push",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoZGtzcmZsc2h1c2tub3Bzcnp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjEzMTMsImV4cCI6MjA4MTIzNzMxM30.ojA3qY26fY9zGFR55EuaDOX0ZClleccwH6y71KdovAg"
+          },
+          body: JSON.stringify({
+            is_test: true,
+            user_id: session.user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (response.ok && result.sent > 0) {
+        toast.success("Test notification sent! Check your device.");
+      } else {
+        toast.error(result.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("An error occurred while sending the test notification.");
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   // Generate week days and dates centered on today
   const { weekDays, dates, dateKeys } = useMemo(() => {
@@ -263,6 +305,30 @@ const Prayer: React.FC = () => {
             </div>
           )}
         </div>
+
+        {pushSupported && pushEnabled && (
+          <div className="glass rounded-3xl p-4 border border-islamic-gold/20 bg-islamic-gold/5 flex items-center justify-between animate-slide-up">
+            <div className="flex-1 pr-2">
+              <h4 className="font-semibold text-foreground text-sm">
+                Test Push Notification
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Instantly trigger a test notification to verify your device setup.
+              </p>
+            </div>
+            <button
+              onClick={handleSendTestNotification}
+              disabled={testLoading}
+              className="gradient-accent text-primary-foreground font-semibold px-4 py-2.5 rounded-2xl text-xs shadow-soft hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 shrink-0"
+            >
+              {testLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                "Send Test"
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Prayer List */}
         <div className="space-y-3">
