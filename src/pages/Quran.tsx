@@ -31,6 +31,7 @@ import {
   SurahDetail,
   AudioEdition,
 } from "@/hooks/useQuranData";
+import { useAudio } from "@/context/AudioContext";
 import { useProgress } from "@/hooks/useProgress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -428,13 +429,7 @@ const Quran: React.FC = () => {
   const [downloadingSurah, setDownloadingSurah] = useState<number | null>(null);
   const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>([]);
 
-  // Audio player state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentAyah, setCurrentAyah] = useState<number>(0);
-  const currentAyahRef = useRef<number>(0); // ref copy to avoid stale closures in ended handler
-  const [selectedReciter, setSelectedReciter] = useState("ar.alafasy");
   const [showTransliteration, setShowTransliteration] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const activeAyahRef = useRef<HTMLElement | null>(null);
   const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
 
@@ -447,6 +442,18 @@ const Quran: React.FC = () => {
     isOffline,
     getCachedSurahCount,
   } = useQuranData();
+
+  const {
+    isPlaying,
+    currentSurah,
+    currentAyahIndex,
+    selectedReciter,
+    setSelectedReciter,
+    playSurah,
+    togglePlayPause,
+    playNext,
+    playPrevious,
+  } = useAudio();
 
   const { addQuranPages } = useProgress();
 
@@ -535,13 +542,6 @@ const Quran: React.FC = () => {
 
   const handleSurahClick = async (surahNumber: number) => {
     setLoadingSurah(true);
-    setCurrentAyah(0);
-    currentAyahRef.current = 0; // keep ref in sync so handleEnded starts from ayah 1
-    setIsPlaying(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
-    }
     const detail = await fetchSurahDetail(surahNumber, selectedReciter);
     if (detail) {
       setSelectedSurah(detail);
@@ -562,13 +562,6 @@ const Quran: React.FC = () => {
     if (selectedSurah && selectedSurah.number < 114) {
       const nextNumber = selectedSurah.number + 1;
       setLoadingSurah(true);
-      setCurrentAyah(0);
-      currentAyahRef.current = 0; // reset ref so auto-advance starts from ayah 1
-      setIsPlaying(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
       const detail = await fetchSurahDetail(nextNumber, selectedReciter);
       if (detail) setSelectedSurah(detail);
       setLoadingSurah(false);
@@ -580,13 +573,6 @@ const Quran: React.FC = () => {
     if (selectedSurah && selectedSurah.number > 1) {
       const prevNumber = selectedSurah.number - 1;
       setLoadingSurah(true);
-      setCurrentAyah(0);
-      currentAyahRef.current = 0; // reset ref so auto-advance starts from ayah 1
-      setIsPlaying(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
       const detail = await fetchSurahDetail(prevNumber, selectedReciter);
       if (detail) setSelectedSurah(detail);
       setLoadingSurah(false);
@@ -631,83 +617,54 @@ const Quran: React.FC = () => {
     minSwipeDistance: 80,
   });
 
+  const isViewingCurrentSurah = !!(
+    currentSurah &&
+    selectedSurah &&
+    currentSurah.number === selectedSurah.number
+  );
+
   const playAyah = useCallback(
     (ayahIndex: number) => {
-      if (selectedSurah && selectedSurah.ayahs[ayahIndex]?.audio) {
-        if (audioRef.current) {
-          audioRef.current.src = selectedSurah.ayahs[ayahIndex].audio!;
-          audioRef.current.play();
-          currentAyahRef.current = ayahIndex; // keep ref in sync
-          setCurrentAyah(ayahIndex);
-          setIsPlaying(true);
+      if (selectedSurah) {
+        if (isViewingCurrentSurah && currentAyahIndex === ayahIndex) {
+          togglePlayPause();
+        } else {
+          playSurah(selectedSurah, ayahIndex);
         }
       }
     },
-    [selectedSurah],
+    [selectedSurah, isViewingCurrentSurah, currentAyahIndex, playSurah, togglePlayPause],
   );
 
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        // Use playAyah so currentAyahRef stays in sync with the current ayah index
-        playAyah(currentAyah);
-      }
+  const handleTogglePlayPause = () => {
+    if (isViewingCurrentSurah) {
+      togglePlayPause();
+    } else if (selectedSurah) {
+      playSurah(selectedSurah, 0);
     }
   };
 
-  const playNext = () => {
-    if (selectedSurah && currentAyah < selectedSurah.ayahs.length - 1) {
-      playAyah(currentAyah + 1);
+  const handlePlayNext = () => {
+    if (isViewingCurrentSurah) {
+      playNext();
     }
   };
 
-  const playPrevious = () => {
-    if (currentAyah > 0) {
-      playAyah(currentAyah - 1);
+  const handlePlayPrevious = () => {
+    if (isViewingCurrentSurah) {
+      playPrevious();
     }
   };
-
-  // Use selectedSurahRef to access latest surah inside the ended handler
-  const selectedSurahRef = useRef(selectedSurah);
-  useEffect(() => {
-    selectedSurahRef.current = selectedSurah;
-  }, [selectedSurah]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handleEnded = () => {
-      const surah = selectedSurahRef.current;
-      const nextIndex = currentAyahRef.current + 1;
-      if (surah && nextIndex < surah.ayahs.length) {
-        // Directly set src and play for zero-delay transition
-        if (surah.ayahs[nextIndex]?.audio) {
-          audio.src = surah.ayahs[nextIndex].audio!;
-          audio.play();
-          currentAyahRef.current = nextIndex;
-          setCurrentAyah(nextIndex);
-          setIsPlaying(true);
-        }
-      } else {
-        setIsPlaying(false);
-      }
-    };
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [selectedSurah]); // re-run when surah changes so we attach to the audio element (it only renders inside the selectedSurah branch)
 
   // Auto-scroll to active ayah during playback
   useEffect(() => {
-    if (activeAyahRef.current) {
+    if (isViewingCurrentSurah && activeAyahRef.current) {
       activeAyahRef.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }
-  }, [currentAyah]);
+  }, [currentAyahIndex, isViewingCurrentSurah]);
 
   const toggleBookmark = (surahNumber: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -723,16 +680,9 @@ const Quran: React.FC = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full" {...surahSwipeHandlers}>
-          {/* Hidden audio element — preload for faster transitions */}
-          <audio ref={audioRef} className="hidden" preload="auto" />
-
           <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button
-              onClick={() => {
-                setSelectedSurah(null);
-                setIsPlaying(false);
-                if (audioRef.current) audioRef.current.pause();
-              }}
+              onClick={() => setSelectedSurah(null)}
               className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
             >
               <ChevronLeft className="w-5 h-5 text-primary-foreground" />
@@ -760,32 +710,32 @@ const Quran: React.FC = () => {
           <div className="p-3 border-b border-primary/10 bg-gradient-to-r from-primary/5 to-accent/5">
             <div className="flex items-center gap-3 mb-2">
               <button
-                onClick={playPrevious}
-                disabled={currentAyah === 0}
+                onClick={handlePlayPrevious}
+                disabled={!isViewingCurrentSurah || currentAyahIndex === 0}
                 className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center disabled:opacity-50"
               >
                 <SkipBack className="w-4 h-4 text-primary" />
               </button>
               <button
-                onClick={togglePlayPause}
+                onClick={handleTogglePlayPause}
                 className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-soft"
               >
-                {isPlaying ? (
+                {isViewingCurrentSurah && isPlaying ? (
                   <Pause className="w-5 h-5 text-primary-foreground" />
                 ) : (
                   <Play className="w-5 h-5 text-primary-foreground fill-primary-foreground ml-0.5" />
                 )}
               </button>
               <button
-                onClick={playNext}
-                disabled={currentAyah >= selectedSurah.ayahs.length - 1}
+                onClick={handlePlayNext}
+                disabled={!isViewingCurrentSurah || currentAyahIndex >= selectedSurah.ayahs.length - 1}
                 className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center disabled:opacity-50"
               >
                 <SkipForward className="w-4 h-4 text-primary" />
               </button>
               <div className="flex-1 text-center">
                 <p className="text-xs text-muted-foreground">
-                  Ayah {currentAyah + 1} of {selectedSurah.ayahs.length}
+                  Ayah {(isViewingCurrentSurah ? currentAyahIndex : 0) + 1} of {selectedSurah.ayahs.length}
                 </p>
               </div>
               <Select
@@ -797,7 +747,12 @@ const Quran: React.FC = () => {
                       selectedSurah.number,
                       value,
                     );
-                    if (detail) setSelectedSurah(detail);
+                    if (detail) {
+                      setSelectedSurah(detail);
+                      if (isViewingCurrentSurah) {
+                        playSurah(detail, currentAyahIndex);
+                      }
+                    }
                   }
                 }}
               >
@@ -881,12 +836,12 @@ const Quran: React.FC = () => {
                       <span
                         key={ayah.number}
                         ref={
-                          currentAyah === index
+                          isViewingCurrentSurah && currentAyahIndex === index
                             ? (activeAyahRef as React.RefObject<HTMLSpanElement>)
                             : null
                         }
                         className={`cursor-pointer hover:text-primary transition-colors ${
-                          currentAyah === index && isPlaying
+                          isViewingCurrentSurah && currentAyahIndex === index && isPlaying
                             ? "text-primary bg-primary/10 rounded px-1"
                             : ""
                         }`}
@@ -921,12 +876,12 @@ const Quran: React.FC = () => {
                     <div
                       key={ayah.number}
                       ref={
-                        currentAyah === index
+                        isViewingCurrentSurah && currentAyahIndex === index
                           ? (activeAyahRef as React.RefObject<HTMLDivElement>)
                           : null
                       }
                       className={`glass rounded-2xl p-4 border transition-all ${
-                        currentAyah === index && isPlaying
+                        isViewingCurrentSurah && currentAyahIndex === index && isPlaying
                           ? "border-primary bg-primary/5 shadow-lg"
                           : "border-primary/10"
                       }`}
@@ -941,12 +896,12 @@ const Quran: React.FC = () => {
                           <button
                             onClick={() => playAyah(index)}
                             className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                              currentAyah === index && isPlaying
+                              isViewingCurrentSurah && currentAyahIndex === index && isPlaying
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-primary/10 text-primary hover:bg-primary/20"
                             }`}
                           >
-                            {currentAyah === index && isPlaying ? (
+                            {isViewingCurrentSurah && currentAyahIndex === index && isPlaying ? (
                               <Pause className="w-3 h-3" />
                             ) : (
                               <Play className="w-3 h-3 ml-0.5" />

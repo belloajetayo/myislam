@@ -15,30 +15,33 @@ import Fasting from "./pages/Fasting";
 import Hajj from "./pages/Hajj";
 import Donate from "./pages/Donate";
 import NotFound from "./pages/NotFound";
+import { AudioProvider } from "./context/AudioContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/prayer" element={<Prayer />} />
-          <Route path="/qiblah" element={<Qiblah />} />
-          <Route path="/quran" element={<Quran />} />
+      <AudioProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/prayer" element={<Prayer />} />
+            <Route path="/qiblah" element={<Qiblah />} />
+            <Route path="/quran" element={<Quran />} />
 
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/zakat" element={<Zakat />} />
-          <Route path="/fasting" element={<Fasting />} />
-          <Route path="/hajj" element={<Hajj />} />
-          <Route path="/donation" element={<Donate />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/zakat" element={<Zakat />} />
+            <Route path="/fasting" element={<Fasting />} />
+            <Route path="/hajj" element={<Hajj />} />
+            <Route path="/donation" element={<Donate />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AudioProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

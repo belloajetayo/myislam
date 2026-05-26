@@ -163,7 +163,7 @@ export const useQuranData = () => {
     const cacheKey = `surah_${surahNumber}_${audioEdition}`;
     const cached = getCachedData<SurahDetail>(cacheKey);
     
-    if (cached) {
+    if (cached && cached.number === surahNumber) {
       // If online, refresh in background
       if (!isOffline) {
         fetchAndCacheSurahDetail(surahNumber, audioEdition, cacheKey);
@@ -194,7 +194,11 @@ export const useQuranData = () => {
         audioRes.json()
       ]);
 
-      if (arabicData.code === 200 && translationData.code === 200) {
+      if (
+        arabicData.code === 200 && 
+        translationData.code === 200 && 
+        arabicData.data.number === surahNumber
+      ) {
         const ayahsWithAudio = arabicData.data.ayahs.map((ayah: Ayah, index: number) => ({
           ...ayah,
           audio: audioData.code === 200 ? audioData.data.ayahs[index]?.audio : undefined
