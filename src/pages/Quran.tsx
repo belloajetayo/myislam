@@ -453,6 +453,7 @@ const Quran: React.FC = () => {
     togglePlayPause,
     playNext,
     playPrevious,
+    audioProgress,
   } = useAudio();
 
   const { addQuranPages } = useProgress();
@@ -733,10 +734,17 @@ const Quran: React.FC = () => {
               >
                 <SkipForward className="w-4 h-4 text-primary" />
               </button>
-              <div className="flex-1 text-center">
-                <p className="text-xs text-muted-foreground">
+              <div className="flex-1 text-center relative pt-1">
+                <p className="text-xs text-muted-foreground mb-1">
                   Ayah {(isViewingCurrentSurah ? currentAyahIndex : 0) + 1} of {selectedSurah.ayahs.length}
                 </p>
+                {/* Progress Bar for the entire Surah */}
+                <div className="h-1 bg-primary/10 rounded-full overflow-hidden w-full">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300 ease-linear"
+                    style={{ width: `${isViewingCurrentSurah ? audioProgress : 0}%` }}
+                  />
+                </div>
               </div>
               <Select
                 value={selectedReciter}

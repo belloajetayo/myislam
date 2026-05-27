@@ -13,6 +13,7 @@ interface AudioContextType {
   playNext: () => void;
   playPrevious: () => void;
   setCurrentAyahIndex: (index: number) => void;
+  audioProgress: number;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedReciter, setSelectedReciter] = useState<string>(() => {
     return localStorage.getItem("myislam_selected_reciter") || "ar.alafasy";
   });
+  const [audioProgress, setAudioProgress] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentAyahIndexRef = useRef<number>(0);
@@ -79,15 +81,28 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsPlaying(true);
     };
 
+    const handleTimeUpdate = () => {
+      const surah = currentSurahRef.current;
+      if (surah && audio.duration) {
+        const totalAyahs = surah.ayahs.length;
+        const currentAyah = currentAyahIndexRef.current;
+        const ayahProgress = audio.currentTime / audio.duration;
+        const totalProgress = ((currentAyah + ayahProgress) / totalAyahs) * 100;
+        setAudioProgress(totalProgress);
+      }
+    };
+
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("pause", handlePause);
     audio.addEventListener("play", handlePlay);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
 
     return () => {
       audio.pause();
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
   }, []);
 
@@ -238,6 +253,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         playNext,
         playPrevious,
         setCurrentAyahIndex,
+        audioProgress,
       }}
     >
       {children}

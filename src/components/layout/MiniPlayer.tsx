@@ -2,6 +2,7 @@ import React from "react";
 import { useAudio } from "@/context/AudioContext";
 import { Play, Pause, SkipForward, X, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
 
 const MiniPlayer: React.FC = () => {
   const {
@@ -10,6 +11,7 @@ const MiniPlayer: React.FC = () => {
     currentAyahIndex,
     togglePlayPause,
     playNext,
+    audioProgress,
   } = useAudio();
   
   const navigate = useNavigate();
@@ -57,6 +59,14 @@ const MiniPlayer: React.FC = () => {
             <SkipForward className="w-4 h-4" />
           </button>
         </div>
+      </div>
+      
+      {/* Progress Bar for the entire Surah */}
+      <div className="absolute -bottom-1 left-4 right-4 h-1 bg-primary/10 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300 ease-linear"
+          style={{ width: `${audioProgress}%` }}
+        />
       </div>
     </div>
   );

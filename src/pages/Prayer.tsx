@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import {
   ChevronLeft,
@@ -17,7 +17,7 @@ import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const prayerConfig = [
+const PRAYER_UI_CONFIG = [
   { name: "Fajr", arabic: "الفجر", color: "from-indigo-500 to-purple-600" },
   { name: "Sunrise", arabic: "الشروق", color: "from-orange-400 to-pink-500" },
   { name: "Dhuhr", arabic: "الظهر", color: "from-amber-400 to-orange-500" },
@@ -36,7 +36,7 @@ const Prayer: React.FC = () => {
     currentPrayer,
     nextPrayer,
   } = usePrayerTimes();
-  const { notificationsEnabled, toggleNotifications } =
+  const { notificationsEnabled, toggleNotifications, prayerConfig, togglePrayerNotification } =
     useNotifications(prayerTimes);
   const { isSubscribed: pushEnabled, isSupported: pushSupported, isLoading: pushLoading, toggle: togglePush } =
     usePushNotifications();
@@ -44,6 +44,15 @@ const Prayer: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const { progress, togglePrayer: toggleGlobalPrayer } = useProgress();
   const [testLoading, setTestLoading] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  const ADMIN_EMAIL = "ayodejiibrahim09@gmail.com";
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUserEmail(session?.user?.email ?? null);
+    });
+  }, []);
 
   const handleSendTestNotification = async () => {
     try {
@@ -75,11 +84,32 @@ const Prayer: React.FC = () => {
       if (response.ok && result.sent > 0) {
         toast.success("Test notification sent! Check your device.");
       } else {
-        toast.error(result.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
+        // Fallback to local notification test if backend failed
+        if (Notification.permission === "granted") {
+          new Notification("🕌 Test Prayer Notification", {
+            body: "This is a test notification. Your browser notifications are working!",
+            icon: "/favicon.ico",
+          });
+          const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
+          audio.play().catch(e => console.error(e));
+          toast.success("Local test notification sent.");
+        } else {
+          toast.error(result.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
+        }
       }
     } catch (e) {
       console.error(e);
-      toast.error("An error occurred while sending the test notification.");
+      if (Notification.permission === "granted") {
+        new Notification("🕌 Test Prayer Notification", {
+          body: "This is a test notification. Your browser notifications are working!",
+          icon: "/favicon.ico",
+        });
+        const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
+        audio.play().catch(e => console.error(e));
+        toast.success("Local test notification sent.");
+      } else {
+        toast.error("An error occurred while sending the test notification.");
+      }
     } finally {
       setTestLoading(false);
     }
@@ -119,7 +149,7 @@ const Prayer: React.FC = () => {
   };
 
   // Get prayers with real times
-  const prayers = prayerConfig.map((p) => ({
+  const prayers = PRAYER_UI_CONFIG.map((p) => ({
     ...p,
     time: prayerTimes
       ? formatTime(prayerTimes[p.name as keyof typeof prayerTimes])
@@ -286,7 +316,7 @@ const Prayer: React.FC = () => {
                   {currentPrayer || "--"}
                 </h2>
                 <p className="text-primary-foreground/90 font-arabic text-lg">
-                  {prayerConfig.find((p) => p.name === currentPrayer)?.arabic ||
+                  {PRAYER_UI_CONFIG.find((p) => p.name === currentPrayer)?.arabic ||
                     ""}
                 </p>
               </div>
@@ -306,7 +336,7 @@ const Prayer: React.FC = () => {
           )}
         </div>
 
-        {pushSupported && pushEnabled && (
+        {pushSupported && pushEnabled && currentUserEmail === ADMIN_EMAIL && (
           <div className="glass rounded-3xl p-4 border border-islamic-gold/20 bg-islamic-gold/5 flex items-center justify-between animate-slide-up">
             <div className="flex-1 pr-2">
               <h4 className="font-semibold text-foreground text-sm">
@@ -380,16 +410,33 @@ const Prayer: React.FC = () => {
                     <span className="font-semibold text-foreground">
                       {prayer.time}
                     </span>
-                    <button
-                      onClick={() => togglePrayed(prayer.name)}
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                        isPrayed
-                          ? "bg-islamic-green text-white"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {notificationsEnabled && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePrayerNotification(prayer.name);
+                          }}
+                          className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 bg-muted/30 text-muted-foreground hover:bg-muted"
+                        >
+                          {prayerConfig && prayerConfig[prayer.name] ? (
+                            <BellRing className="w-3.5 h-3.5 text-islamic-gold" />
+                          ) : (
+                            <Bell className="w-3.5 h-3.5 opacity-50" />
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => togglePrayed(prayer.name)}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          isPrayed
+                            ? "bg-islamic-green text-white"
+                            : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

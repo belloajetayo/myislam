@@ -179,6 +179,7 @@ export function usePrayerTimes() {
 // ─── Prayer Notification Hook ────────────────────────────────────────────────
 
 const NOTIF_STORAGE_KEY = "prayer_notifications_enabled";
+const PRAYER_CONFIG_KEY = "prayer_notifications_config";
 
 const PRAYER_NAMES_FOR_NOTIF = [
   "Fajr",
@@ -188,13 +189,24 @@ const PRAYER_NAMES_FOR_NOTIF = [
   "Isha",
 ] as const;
 
-function scheduleNotifications(prayerTimes: PrayerTimes): () => void {
+function scheduleNotifications(prayerTimes: PrayerTimes, config: Record<string, boolean>): () => void {
   const timers: ReturnType<typeof setTimeout>[] = [];
   const now = new Date();
   const nowMs = now.getTime();
 
+  // Auto-reschedule at midnight
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const msUntilMidnight = midnight.getTime() - nowMs;
+  const resetTimer = setTimeout(() => {
+    window.dispatchEvent(new Event("prayer-reschedule"));
+  }, msUntilMidnight);
+  timers.push(resetTimer);
+
   for (const name of PRAYER_NAMES_FOR_NOTIF) {
+    if (!config[name]) continue;
     const raw = prayerTimes[name as keyof PrayerTimes];
+    if (!raw) continue;
     const clean = raw.split(" ")[0]; // strip timezone suffix  e.g. "(+01:00)"
     const [h, m] = clean.split(":").map(Number);
     const target = new Date();
@@ -210,6 +222,8 @@ function scheduleNotifications(prayerTimes: PrayerTimes): () => void {
           icon: "/favicon.ico",
           tag: `prayer-${name}`,
         });
+        const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
+        audio.play().catch(e => console.error("Adhan play blocked", e));
       }
     }, msUntil);
 
@@ -220,16 +234,27 @@ function scheduleNotifications(prayerTimes: PrayerTimes): () => void {
 }
 
 export function useNotifications(prayerTimes: PrayerTimes | null) {
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
-    () => {
-      return localStorage.getItem(NOTIF_STORAGE_KEY) === "true";
-    },
-  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    return localStorage.getItem(NOTIF_STORAGE_KEY) === "true";
+  });
+  
+  const [prayerConfig, setPrayerConfig] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem(PRAYER_CONFIG_KEY);
+    if (saved) return JSON.parse(saved);
+    return { Fajr: true, Dhuhr: true, Asr: true, Maghrib: true, Isha: true };
+  });
+
+  const [rescheduleTrigger, setRescheduleTrigger] = useState(0);
   const cleanupRef = useRef<(() => void) | null>(null);
 
-  // Schedule (or cancel) whenever enabled state or prayerTimes changes
   useEffect(() => {
-    // Cancel any existing timers
+    const handleReschedule = () => setRescheduleTrigger(prev => prev + 1);
+    window.addEventListener("prayer-reschedule", handleReschedule);
+    return () => window.removeEventListener("prayer-reschedule", handleReschedule);
+  }, []);
+
+  // Schedule (or cancel) whenever enabled state, config, or prayerTimes changes
+  useEffect(() => {
     if (cleanupRef.current) {
       cleanupRef.current();
       cleanupRef.current = null;
@@ -239,19 +264,18 @@ export function useNotifications(prayerTimes: PrayerTimes | null) {
       prayerTimes &&
       Notification.permission === "granted"
     ) {
-      cleanupRef.current = scheduleNotifications(prayerTimes);
+      cleanupRef.current = scheduleNotifications(prayerTimes, prayerConfig);
     }
     return () => {
       if (cleanupRef.current) cleanupRef.current();
     };
-  }, [notificationsEnabled, prayerTimes]);
+  }, [notificationsEnabled, prayerTimes, prayerConfig, rescheduleTrigger]);
 
   const toggleNotifications = useCallback(async () => {
     if (!notificationsEnabled) {
-      // Request permission first
       if (Notification.permission === "default") {
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") return false; // user denied
+        if (permission !== "granted") return false;
       }
       if (Notification.permission === "denied") return false;
       setNotificationsEnabled(true);
@@ -264,5 +288,13 @@ export function useNotifications(prayerTimes: PrayerTimes | null) {
     }
   }, [notificationsEnabled]);
 
-  return { notificationsEnabled, toggleNotifications };
+  const togglePrayerNotification = useCallback((prayerName: string) => {
+    setPrayerConfig(prev => {
+      const next = { ...prev, [prayerName]: !prev[prayerName] };
+      localStorage.setItem(PRAYER_CONFIG_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  return { notificationsEnabled, toggleNotifications, prayerConfig, togglePrayerNotification };
 }
