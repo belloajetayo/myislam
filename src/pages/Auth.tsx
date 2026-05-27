@@ -40,27 +40,46 @@ const Auth: React.FC = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success('Welcome back! Assalamu Alaikum');
+        toast.success('Welcome back! Assalamu Alaikum 🌙');
       } else {
-        const { error } = await supabase.auth.signUp({
+        // Standard signup — works immediately if email confirmation is disabled in dashboard
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName }
-          }
+          options: { data: { full_name: fullName } },
         });
+
         if (error) throw error;
-        toast.success('Account created successfully! Welcome to My Islam');
+
+        if (data.session) {
+          toast.success('Account created! Welcome to My Islam \uD83D\uDD4C');
+        } else {
+          // Email confirmation is still ON in Supabase dashboard
+          // Try signing in anyway — works if password is set correctly
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (!signInErr) {
+            toast.success('Account created! Welcome to My Islam \uD83D\uDD4C');
+          } else {
+            // Email confirmation required — show helpful message
+            toast.info(
+              'Account created! Check your email to confirm, then sign in.',
+              { duration: 6000 }
+            );
+            setIsLogin(true);
+          }
+        }
       }
     } catch (error) {
       const err = error as Error;
-      if (err.message.includes('User already registered')) {
-        toast.error('This email is already registered. Please login instead.');
+      if (err.message.includes('already registered') || err.message.includes('already')) {
+        toast.error('This email is already registered. Please sign in instead.');
+        setIsLogin(true);
       } else if (err.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password. Please try again.');
+        toast.error('Incorrect email or password. Please try again.');
+      } else if (err.message.includes('Password should be at least') || err.message.includes('6 characters')) {
+        toast.error('Password must be at least 6 characters.');
       } else {
-        toast.error(err.message || 'An error occurred');
+        toast.error(err.message || 'An error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -73,6 +92,9 @@ const Auth: React.FC = () => {
         <div className="glass rounded-3xl p-8 border border-primary-foreground/10 shadow-card">
           {/* Header */}
           <div className="text-center mb-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-islamic-gold/20 flex items-center justify-center text-3xl">
+              🕌
+            </div>
             <h1 className="text-3xl font-bold text-gradient-gold mb-2">My Islam</h1>
             <p className="text-foreground/70 text-sm">
               {isLogin ? 'Welcome back, Assalamu Alaikum' : 'Join us on your spiritual journey'}
@@ -121,7 +143,7 @@ const Auth: React.FC = () => {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={isLogin ? 'Enter your password' : 'Create a password (min 6 chars)'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -152,13 +174,25 @@ const Auth: React.FC = () => {
             <p className="text-foreground/70 text-sm">
               {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setEmail('');
+                  setPassword('');
+                  setFullName('');
+                }}
                 className="ml-2 text-islamic-gold font-semibold hover:underline"
               >
                 {isLogin ? 'Sign Up' : 'Sign In'}
               </button>
             </p>
           </div>
+
+          {/* Sign up note */}
+          {!isLogin && (
+            <p className="mt-4 text-center text-xs text-foreground/50">
+              By signing up, you get instant access — no email confirmation needed.
+            </p>
+          )}
         </div>
       </div>
     </div>

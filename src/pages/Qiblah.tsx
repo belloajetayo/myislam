@@ -75,9 +75,14 @@ const Qiblah: React.FC = () => {
   const watchId = useRef<number | null>(null);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const listenersAdded = useRef(false);
+  // DOM refs for direct animation — avoids 60fps React re-renders
+  const compassRingRef = useRef<HTMLDivElement | null>(null);
+  const compassNeedleRef = useRef<HTMLDivElement | null>(null);
+  const turnTextRef = useRef<HTMLParagraphElement | null>(null);
+  const facingRingRef = useRef<HTMLDivElement | null>(null);
+  const qiblahDirectionRef = useRef<number>(0);
   const [qiblahDirection, setQiblahDirection] = useState<number>(0);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
-  const [smoothedHeading, setSmoothedHeading] = useState<number>(0);
   const [calibrating, setCalibrating] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -115,12 +120,24 @@ const Qiblah: React.FC = () => {
     return calculateQiblaBearing(lat, lng);
   }, []);
 
-  // Sync ref with state for use in orientation handler without causing re-binds
+  // Sync refs with state
   useEffect(() => {
     userLocationRef.current = userLocation;
   }, [userLocation]);
 
-  // Smooth animation loop using requestAnimationFrame
+  useEffect(() => {
+    qiblahDirectionRef.current = qiblahDirection;
+  }, [qiblahDirection]);
+
+  // Throttle deviceHeading display to ~5fps to avoid triggering re-renders on every orientation event
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDeviceHeading(deviceHeadingRef.current);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Smooth animation loop — uses direct DOM manipulation (NO setState) to avoid 60fps React re-renders
   useEffect(() => {
     const animate = () => {
       const target = targetHeadingRef.current;
@@ -130,10 +147,33 @@ const Qiblah: React.FC = () => {
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
 
-      // Lerp with 0.12 factor at ~60fps for buttery smooth movement
       const next = (current + diff * 0.12 + 360) % 360;
       smoothedHeadingRef.current = next;
-      setSmoothedHeading(next);
+
+      // Direct DOM updates — zero React re-renders
+      if (compassRingRef.current) {
+        compassRingRef.current.style.transform = `rotate(${-next}deg)`;
+      }
+      const compassRot = qiblahDirectionRef.current - next;
+      if (compassNeedleRef.current) {
+        compassNeedleRef.current.style.transform = `rotate(${compassRot}deg)`;
+      }
+      const normRot = ((compassRot % 360) + 360) % 360;
+      const facing = normRot < 2 || normRot > 358;
+      if (facingRingRef.current) {
+        facingRingRef.current.style.display = facing ? 'block' : 'none';
+      }
+      if (turnTextRef.current) {
+        if (facing) {
+          turnTextRef.current.textContent = '✓ You are facing Qiblah!';
+          turnTextRef.current.className = 'text-xs text-emerald-400 font-semibold';
+        } else {
+          const turn = normRot > 180 ? 360 - normRot : normRot;
+          const dir = normRot > 180 ? 'left' : 'right';
+          turnTextRef.current.textContent = `Turn ${Math.round(turn)}° ${dir}`;
+          turnTextRef.current.className = 'text-xs text-primary-foreground/60';
+        }
+      }
 
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -146,12 +186,11 @@ const Qiblah: React.FC = () => {
     };
   }, []);
 
-  // Handle device orientation for compass — just update the target heading
+  // Handle device orientation — only update refs (no setState here, display throttled via interval)
   const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
     let heading: number;
     const extEvent = event as DeviceOrientationEventiOS;
 
-    // 1. iOS True North or Android absolute event type
     if (
       "webkitCompassHeading" in event &&
       typeof extEvent.webkitCompassHeading === "number"
@@ -166,10 +205,7 @@ const Qiblah: React.FC = () => {
       heading = 360 - event.alpha;
       const cachedLoc = userLocationRef.current;
       if (cachedLoc) {
-        const declination = getMagneticDeclination(
-          cachedLoc.lat,
-          cachedLoc.lng,
-        );
+        const declination = getMagneticDeclination(cachedLoc.lat, cachedLoc.lng);
         heading = (heading + declination + 360) % 360;
       }
     } else {
@@ -178,7 +214,6 @@ const Qiblah: React.FC = () => {
 
     deviceHeadingRef.current = heading;
     targetHeadingRef.current = heading;
-    setDeviceHeading(heading);
   }, []);
 
   // Request compass permission (especially for iOS 13+)
@@ -491,30 +526,18 @@ const Qiblah: React.FC = () => {
     };
   }, [handleOrientation]);
 
-  // Calculate the rotation needed for the compass needle
-  // The needle should point toward Qiblah relative to the device's current heading
-  // Use smoothed heading for butter-smooth animation
-  const compassRotation = qiblahDirection - smoothedHeading;
-
-  // Check if facing Qiblah (within ±2 degrees) with proper modulo normalization
-  const normalizedRotation = ((compassRotation % 360) + 360) % 360;
-  const isFacingQiblah = normalizedRotation < 2 || normalizedRotation > 358;
+  // Compass rotation and facing are now computed inside the RAF loop via DOM refs
+  // These values are only used for the calibrate button handler
+  const getCompassRotation = () => qiblahDirectionRef.current - smoothedHeadingRef.current;
 
   const handleCalibrate = () => {
     setCalibrating(true);
     requestCompassPermission();
-
     if (userLocation) {
-      const direction = calculateQiblahDirection(
-        userLocation.lat,
-        userLocation.lng,
-      );
+      const direction = calculateQiblahDirection(userLocation.lat, userLocation.lng);
       setQiblahDirection(Math.round(direction * 100) / 100);
     }
-
-    setTimeout(() => {
-      setCalibrating(false);
-    }, 2000);
+    setTimeout(() => setCalibrating(false), 2000);
   };
 
   // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
@@ -871,12 +894,9 @@ const Qiblah: React.FC = () => {
           <div className="relative animate-scale-in my-8">
             {/* Outer Ring with Cardinal Points and Degree Markings */}
             <div
+              ref={compassRingRef}
               className="w-72 h-72 rounded-full glass border-4 border-islamic-gold/30 flex items-center justify-center shadow-2xl relative z-10"
-              style={{
-                transform: `rotate(${-smoothedHeading}deg)`,
-                transition: "transform 0.15s ease-out",
-                willChange: "transform",
-              }}
+              style={{ willChange: "transform" }}
             >
               {/* Dial with Map Background */}
               <div className="absolute inset-2 rounded-full overflow-hidden border border-primary/20 bg-emerald-500/5">
@@ -922,12 +942,9 @@ const Qiblah: React.FC = () => {
 
             {/* Free-Moving Needle with Qiblah Arrow */}
             <div
-              className={`absolute inset-0 flex items-center justify-center z-20 pointer-events-none`}
-              style={{
-                transform: `rotate(${compassRotation}deg)`,
-                transition: "transform 0.15s ease-out",
-                willChange: "transform",
-              }}
+              ref={compassNeedleRef}
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+              style={{ willChange: "transform" }}
             >
               <div className="relative w-12 h-64 flex flex-col items-center justify-center">
                 {/* Needle Shape */}
@@ -965,10 +982,12 @@ const Qiblah: React.FC = () => {
               </div>
             </div>
 
-            {/* Checkmark indicator for being on target */}
-            {isFacingQiblah && (
-              <div className="absolute -inset-4 rounded-full border-4 border-emerald-400/50 animate-pulse z-0" />
-            )}
+            {/* Checkmark indicator for being on target — visibility toggled via ref in RAF */}
+            <div
+              ref={facingRingRef}
+              className="absolute -inset-4 rounded-full border-4 border-emerald-400/50 animate-pulse z-0"
+              style={{ display: 'none' }}
+            />
 
             {/* Calibrating Indicator */}
             {calibrating && (
@@ -1021,17 +1040,9 @@ const Qiblah: React.FC = () => {
                 </p>
               </div>
             </div>
-            <p
-              className={`text-xs ${isFacingQiblah ? "text-emerald-400 font-semibold" : "text-primary-foreground/60"}`}
-            >
-              {isFacingQiblah
-                ? "✓ You are facing Qiblah!"
-                : (() => {
-                    const r = ((compassRotation % 360) + 360) % 360;
-                    const turn = r > 180 ? 360 - r : r;
-                    const dir = r > 180 ? "left" : "right";
-                    return `Turn ${Math.round(turn)}° ${dir}`;
-                  })()}
+            {/* Turn text is updated directly via ref in the RAF loop — no re-render needed */}
+            <p ref={turnTextRef} className="text-xs text-primary-foreground/60">
+              Calculating direction...
             </p>
           </div>
 

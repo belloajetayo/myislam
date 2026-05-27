@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import {
   ArrowLeft,
-  User,
+
   Mail,
   Calendar,
   LogOut,
@@ -506,18 +506,16 @@ const Profile: React.FC = () => {
                 return (
                   <div
                     key={badge.id}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all duration-300 ${
-                      earned
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all duration-300 ${earned
                         ? "glass border-primary/20 shadow-soft"
                         : "bg-muted/30 border-transparent opacity-40"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        earned
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${earned
                           ? `bg-gradient-to-br ${badge.color} shadow`
                           : "bg-muted"
-                      }`}
+                        }`}
                     >
                       <badge.icon
                         className={`w-5 h-5 ${earned ? "text-white" : "text-muted-foreground"}`}

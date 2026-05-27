@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-prayer-push]
 verify_jwt = false
+
+[functions.admin-signup]
+verify_jwt = false

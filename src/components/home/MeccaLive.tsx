@@ -13,14 +13,14 @@ const MeccaLive: React.FC = () => {
   useEffect(() => {
     const updateMakkahTime = () => {
       const now = new Date();
-      const makkahTime = new Intl.DateTimeFormat('en-US', {
+      const formatted = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Riyadh',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true,
       }).format(now);
-      setMakkahTime(makkahTime);
+      setMakkahTime(formatted);
     };
 
     updateMakkahTime();
@@ -36,11 +36,17 @@ const MeccaLive: React.FC = () => {
     wind: 12,
   };
 
-  // Saudi Quran TV Channel live stream — only autoplay AFTER user clicks play
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/AR6W-jWe85k?autoplay=1&mute=${isMuted ? 1 : 0}&rel=0&modestbranding=1&playsinline=1`;
+  // Saudi Quran TV Channel live stream.
+  // Use `key` to remount the iframe whenever mute state changes so YouTube applies the new `mute` param.
+  const muteParam = isMuted ? 1 : 0;
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/AR6W-jWe85k?autoplay=1&mute=${muteParam}&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
 
   return (
-    <div className={`relative bg-card rounded-3xl overflow-hidden shadow-card border border-border animate-slide-up ${isTheaterMode ? 'fixed inset-4 z-50' : ''}`}>
+    <div
+      className={`relative bg-card rounded-3xl overflow-hidden shadow-card border border-border animate-slide-up ${
+        isTheaterMode ? 'fixed inset-4 z-50' : ''
+      }`}
+    >
       {/* Islamic geometric pattern overlay */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(212,175,55,0.3)_0%,transparent_50%)]" />
@@ -67,7 +73,7 @@ const MeccaLive: React.FC = () => {
             size="icon"
             onClick={() => {
               if (!hasStarted) setHasStarted(true);
-              setIsMuted(!isMuted);
+              setIsMuted((prev) => !prev);
             }}
             className="h-8 w-8"
             title={isMuted ? 'Unmute' : 'Mute'}
@@ -77,7 +83,7 @@ const MeccaLive: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsTheaterMode(!isTheaterMode)}
+            onClick={() => setIsTheaterMode((prev) => !prev)}
             className="h-8 w-8"
             title={isTheaterMode ? 'Exit Theater Mode' : 'Theater Mode'}
           >
@@ -90,12 +96,15 @@ const MeccaLive: React.FC = () => {
       <div className={`relative ${isTheaterMode ? 'h-[60vh]' : 'aspect-video'} bg-black`}>
         {hasStarted ? (
           <>
+            {/* key remounts iframe so YouTube picks up the new mute param immediately */}
             <iframe
+              key={`mecca-${isMuted ? 'muted' : 'unmuted'}`}
               src={youtubeEmbedUrl}
               className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               title="Mecca Live Stream - Saudi Quran TV"
+              loading="eager"
             />
             {isMuted && (
               <div className="absolute bottom-4 left-4 right-4 flex justify-center pointer-events-none">
@@ -206,9 +215,9 @@ const MeccaLive: React.FC = () => {
 
       {/* Theater mode backdrop */}
       {isTheaterMode && (
-        <div 
-          className="fixed inset-0 bg-black/80 -z-10" 
-          onClick={() => setIsTheaterMode(false)} 
+        <div
+          className="fixed inset-0 bg-black/80 -z-10"
+          onClick={() => setIsTheaterMode(false)}
         />
       )}
     </div>

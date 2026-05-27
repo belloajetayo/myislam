@@ -163,11 +163,13 @@ const HajjVideoGuides: React.FC = () => {
           <div className="aspect-video w-full bg-black">
             {selectedVideo && (
               <iframe
-                src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1`}
+                key={selectedVideo.youtubeId}
+                src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1&playsinline=1&rel=0`}
                 title={selectedVideo.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 className="w-full h-full"
+                loading="eager"
               />
             )}
           </div>
