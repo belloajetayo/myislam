@@ -310,25 +310,36 @@ Deno.serve(async (req) => {
         if (!timeStr) continue;
         const [h, m] = timeStr.split(":").map(Number);
         const prayerMinutes = h * 60 + m;
+        const diff = currentMinutes - prayerMinutes;
 
-        // Send notification if within 1-minute window of prayer time
-        if (Math.abs(currentMinutes - prayerMinutes) <= 1) {
-          console.log(`Sending ${prayer} push to ${sub.endpoint.slice(0, 40)}...`);
+        // Pre-adhan reminder: 10 minutes before prayer (window ±1 min)
+        // At-adhan notification: at prayer time (window ±1 min)
+        let notif: { title: string; body: string; tag: string } | null = null;
+        if (Math.abs(diff + 10) <= 1) {
+          notif = {
+            title: `🕌 ${prayer} in ~10 minutes`,
+            body: `Get ready for ${prayer} prayer. Make wudu and prepare your heart.`,
+            tag: `prayer-${prayer}-pre`,
+          };
+        } else if (Math.abs(diff) <= 1) {
+          notif = {
+            title: `🕌 ${prayer} Prayer Time`,
+            body: `It is time for ${prayer} prayer. May Allah accept your salah.`,
+            tag: `prayer-${prayer}`,
+          };
+        }
+
+        if (notif) {
+          console.log(`Sending ${notif.tag} push to ${sub.endpoint.slice(0, 40)}...`);
           const success = await sendPushNotification(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-            {
-              title: `🕌 ${prayer} Prayer Time`,
-              body: `It is time for ${prayer} prayer. May Allah accept your salah.`,
-              tag: `prayer-${prayer}`,
-              icon: "/pwa-icons/icon-192.svg",
-            },
+            { ...notif, icon: "/pwa-icons/icon-192.svg" },
             vapidPrivateKey
           );
 
           if (success) {
             sent++;
           } else {
-            // Clean up dead subscriptions
             console.log(`Cleaning up dead subscription: ${sub.id}`);
             await supabase.from("push_subscriptions").delete().eq("id", sub.id);
             cleaned++;
@@ -336,6 +347,7 @@ Deno.serve(async (req) => {
           }
         }
       }
+
     }
 
     return new Response(

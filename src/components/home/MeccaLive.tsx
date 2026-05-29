@@ -37,9 +37,10 @@ const MeccaLive: React.FC = () => {
   };
 
   // Saudi Quran TV Channel live stream.
-  // Use `key` to remount the iframe whenever mute state changes so YouTube applies the new `mute` param.
+  // Makkah Live HD channel — uses YouTube's `live_stream` embed which auto-picks the current live broadcast,
+  // avoiding "video is private/unavailable" errors when a specific video ID expires.
   const muteParam = isMuted ? 1 : 0;
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/AR6W-jWe85k?autoplay=1&mute=${muteParam}&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/live_stream?channel=UCxQg2bDLN-WUTKsoBLDQRpA&autoplay=1&mute=${muteParam}&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
 
   return (
     <div

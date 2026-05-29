@@ -11,10 +11,11 @@ import MeccaLive from "@/components/home/MeccaLive";
 import CommunityFeed from "@/components/community/CommunityFeed";
 // RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
 // import RamadanCountdown from "@/components/home/RamadanCountdown";
-import { User, Sparkles } from "lucide-react";
+import { User as UserIcon, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { type User } from "@supabase/supabase-js";
+
 import { toast } from "sonner";
 import { useMIAChat } from "@/hooks/useMIAChat";
 
@@ -122,7 +123,8 @@ const Index: React.FC = () => {
                 className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
                 title="Sign In"
               >
-                <User className="w-5 h-5 text-primary-foreground" />
+                <UserIcon className="w-5 h-5 text-primary-foreground" />
+
               </button>
             )}
           </div>
