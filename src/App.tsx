@@ -14,6 +14,7 @@ import Zakat from "./pages/Zakat";
 import Fasting from "./pages/Fasting";
 import Hajj from "./pages/Hajj";
 import Donate from "./pages/Donate";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AudioProvider } from "./context/AudioContext";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/quran" element={<Quran />} />
 
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/zakat" element={<Zakat />} />
             <Route path="/fasting" element={<Fasting />} />
