@@ -108,6 +108,7 @@ const Qiblah: React.FC = () => {
   const mosqueMapContainer = useRef<HTMLDivElement>(null);
   const mosqueMap = useRef<mapboxgl.Map | null>(null);
   const [loadingMosques, setLoadingMosques] = useState(false);
+  const [mosqueSearchStatus, setMosqueSearchStatus] = useState<"idle" | "timeout" | "error" | "empty">("idle");
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
@@ -547,6 +548,7 @@ const Qiblah: React.FC = () => {
       if (mosquesLoaded.current) return;
 
       setLoadingMosques(true);
+      setMosqueSearchStatus("idle");
       mosquesLoaded.current = true;
 
       const radius = 20000; // 20km
@@ -576,13 +578,18 @@ const Qiblah: React.FC = () => {
       type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
 
       let elements: OverpassElement[] | null = null;
+      let sawTimeout = false;
       for (const url of endpoints) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
         try {
           const response = await fetch(url, {
             method: "POST",
             body: `data=${encodeURIComponent(query)}`,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            signal: controller.signal,
           });
+          window.clearTimeout(timeoutId);
           if (!response.ok) continue;
           const data = await response.json();
           if (data?.elements?.length) {
@@ -590,6 +597,10 @@ const Qiblah: React.FC = () => {
             break;
           }
         } catch (e) {
+          window.clearTimeout(timeoutId);
+          if (e instanceof DOMException && e.name === "AbortError") {
+            sawTimeout = true;
+          }
           console.warn(`Overpass mirror failed (${url}):`, e);
         }
       }
@@ -622,8 +633,10 @@ const Qiblah: React.FC = () => {
 
         mosques.sort((a, b) => a.distanceNum - b.distanceNum);
         setNearbyMosques(mosques.slice(0, 10));
+        setMosqueSearchStatus("idle");
       } else {
         setNearbyMosques([]);
+        setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
         // Allow retry on next open since we got no results
         mosquesLoaded.current = false;
       }
