@@ -36,11 +36,10 @@ const MeccaLive: React.FC = () => {
     wind: 12,
   };
 
-  // Saudi Quran TV Channel live stream.
-  // Makkah Live HD channel — uses YouTube's `live_stream` embed which auto-picks the current live broadcast,
-  // avoiding "video is private/unavailable" errors when a specific video ID expires.
+  // Official KSA Qur'an TV Makkah livestream.
+  // This is the active embeddable live video surfaced by the official SaudiQuranTv live page.
   const muteParam = isMuted ? 1 : 0;
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/live_stream?channel=UCxQg2bDLN-WUTKsoBLDQRpA&autoplay=1&mute=${muteParam}&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+  const youtubeEmbedUrl = `https://www.youtube.com/embed/moQtMet7F7w?autoplay=1&mute=${muteParam}&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
 
   return (
     <div
@@ -203,7 +202,7 @@ const MeccaLive: React.FC = () => {
         <div className="flex items-center justify-center gap-2 pt-2 border-t border-border/50">
           <span className="text-[10px] text-muted-foreground">Stream by Saudi Quran TV</span>
           <a
-            href="https://www.youtube.com/channel/UCG_6fU7v_T3Yn_K9XpU_fCw"
+            href="https://www.youtube.com/user/SaudiQuranTv/live"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-[10px] text-primary hover:underline"
