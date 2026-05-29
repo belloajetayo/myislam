@@ -14,6 +14,7 @@ const Auth: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,6 +87,26 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Enter your email first, then tap reset password.');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Password reset link sent. Please check your email.');
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not send reset link.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen gradient-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -137,7 +158,19 @@ const Auth: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground/90">Password</Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="password" className="text-foreground/90">Password</Label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetLoading || loading}
+                    className="text-xs font-semibold text-islamic-gold hover:underline disabled:opacity-60"
+                  >
+                    {resetLoading ? 'Sending...' : 'Forgot password?'}
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
                 <Input

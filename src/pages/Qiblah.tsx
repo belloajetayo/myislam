@@ -108,6 +108,7 @@ const Qiblah: React.FC = () => {
   const mosqueMapContainer = useRef<HTMLDivElement>(null);
   const mosqueMap = useRef<mapboxgl.Map | null>(null);
   const [loadingMosques, setLoadingMosques] = useState(false);
+  const [mosqueSearchStatus, setMosqueSearchStatus] = useState<"idle" | "timeout" | "error" | "empty">("idle");
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
@@ -547,6 +548,7 @@ const Qiblah: React.FC = () => {
       if (mosquesLoaded.current) return;
 
       setLoadingMosques(true);
+      setMosqueSearchStatus("idle");
       mosquesLoaded.current = true;
 
       const radius = 20000; // 20km
@@ -576,13 +578,18 @@ const Qiblah: React.FC = () => {
       type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
 
       let elements: OverpassElement[] | null = null;
+      let sawTimeout = false;
       for (const url of endpoints) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
         try {
           const response = await fetch(url, {
             method: "POST",
             body: `data=${encodeURIComponent(query)}`,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            signal: controller.signal,
           });
+          window.clearTimeout(timeoutId);
           if (!response.ok) continue;
           const data = await response.json();
           if (data?.elements?.length) {
@@ -590,6 +597,10 @@ const Qiblah: React.FC = () => {
             break;
           }
         } catch (e) {
+          window.clearTimeout(timeoutId);
+          if (e instanceof DOMException && e.name === "AbortError") {
+            sawTimeout = true;
+          }
           console.warn(`Overpass mirror failed (${url}):`, e);
         }
       }
@@ -622,8 +633,10 @@ const Qiblah: React.FC = () => {
 
         mosques.sort((a, b) => a.distanceNum - b.distanceNum);
         setNearbyMosques(mosques.slice(0, 10));
+        setMosqueSearchStatus("idle");
       } else {
         setNearbyMosques([]);
+        setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
         // Allow retry on next open since we got no results
         mosquesLoaded.current = false;
       }
@@ -1129,8 +1142,10 @@ const Qiblah: React.FC = () => {
                 <>
                   <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                     {loadingMosques ? (
-                      <div className="flex items-center justify-center py-8">
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                        <p className="mt-3 text-sm text-muted-foreground">Searching nearby mosques...</p>
+                        <p className="mt-1 text-xs text-muted-foreground">This will stop automatically if map data is slow.</p>
                       </div>
                     ) : nearbyMosques.length > 0 ? (
                       nearbyMosques.map((mosque, index) => (
@@ -1160,10 +1175,20 @@ const Qiblah: React.FC = () => {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No mosques found nearby</p>
+                        <p className="text-sm">
+                          {mosqueSearchStatus === "timeout"
+                            ? "Mosque map data is taking too long"
+                            : "No mosques found nearby"}
+                        </p>
                         <p className="text-xs mt-1">
                           Try searching in Google Maps
                         </p>
+                        <button
+                          onClick={() => userLocation && fetchNearbyMosques(userLocation)}
+                          className="mt-4 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                        >
+                          Try again
+                        </button>
                       </div>
                     )}
                   </div>
