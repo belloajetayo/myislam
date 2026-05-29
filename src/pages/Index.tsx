@@ -123,7 +123,8 @@ const Index: React.FC = () => {
                 className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
                 title="Sign In"
               >
-                <User className="w-5 h-5 text-primary-foreground" />
+                <UserIcon className="w-5 h-5 text-primary-foreground" />
+
               </button>
             )}
           </div>
