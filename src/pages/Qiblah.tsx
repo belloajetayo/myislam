@@ -541,6 +541,7 @@ const Qiblah: React.FC = () => {
   };
 
   // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
+  // Fetch nearby mosques using OpenStreetMap Overpass API with mirror fallback
   const fetchNearbyMosques = useCallback(
     async (location: { lat: number; lng: number }) => {
       if (mosquesLoaded.current) return;
@@ -548,10 +549,8 @@ const Qiblah: React.FC = () => {
       setLoadingMosques(true);
       mosquesLoaded.current = true;
 
-      try {
-        // Use Overpass API to find actual mosques within 20km radius
-        const radius = 20000; // 20km in meters
-        const query = `
+      const radius = 20000; // 20km
+      const query = `
         [out:json][timeout:25];
         (
           node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
@@ -562,79 +561,78 @@ const Qiblah: React.FC = () => {
         out center body;
       `;
 
-        const response = await fetch(
-          "https://overpass-api.de/api/interpreter",
-          {
+      const endpoints = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.openstreetmap.fr/api/interpreter",
+      ];
+
+      type OverpassElement = {
+        lat?: number;
+        lon?: number;
+        center?: { lat: number; lon: number };
+        tags?: Record<string, string>;
+      };
+      type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
+
+      let elements: OverpassElement[] | null = null;
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, {
             method: "POST",
             body: `data=${encodeURIComponent(query)}`,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          },
-        );
-
-        const data = await response.json();
-
-        type OverpassElement = {
-          lat?: number;
-          lon?: number;
-          center?: { lat: number; lon: number };
-          tags?: Record<string, string>;
-        };
-        type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
-
-        if (data.elements && data.elements.length > 0) {
-          const mosques = (data.elements as OverpassElement[])
-            .map((element): MosqueEntry | null => {
-              // Get coordinates (nodes have lat/lon directly, ways have center)
-              const lat = element.lat ?? element.center?.lat;
-              const lng = element.lon ?? element.center?.lon;
-
-              if (!lat || !lng) return null;
-
-              const distanceKm = calculateDistance(
-                location.lat,
-                location.lng,
-                lat,
-                lng,
-              );
-              const name =
-                element.tags?.name ||
-                element.tags?.["name:en"] ||
-                element.tags?.["name:ar"] ||
-                "Mosque";
-              const address = element.tags?.["addr:street"]
-                ? `${element.tags?.["addr:street"]}, ${element.tags?.["addr:city"] || ""}`
-                : element.tags?.["addr:full"] || "Address not available";
-
-              return {
-                name,
-                address,
-                distance:
-                  distanceKm < 1
-                    ? `${Math.round(distanceKm * 1000)}m`
-                    : `${distanceKm.toFixed(1)}km`,
-                distanceNum: distanceKm,
-                lat,
-                lng,
-              };
-            })
-            .filter((m): m is MosqueEntry => m !== null);
-
-          // Sort by distance and limit to 10
-          mosques.sort((a, b) => a.distanceNum - b.distanceNum);
-          setNearbyMosques(mosques.slice(0, 10));
-        } else {
-          setNearbyMosques([]);
+          });
+          if (!response.ok) continue;
+          const data = await response.json();
+          if (data?.elements?.length) {
+            elements = data.elements as OverpassElement[];
+            break;
+          }
+        } catch (e) {
+          console.warn(`Overpass mirror failed (${url}):`, e);
         }
-      } catch (error) {
-        console.error("Failed to fetch mosques:", error);
-        setNearbyMosques([]);
-        mosquesLoaded.current = false; // Allow retry on error
-      } finally {
-        setLoadingMosques(false);
       }
+
+      if (elements && elements.length > 0) {
+        const mosques = elements
+          .map((element): MosqueEntry | null => {
+            const lat = element.lat ?? element.center?.lat;
+            const lng = element.lon ?? element.center?.lon;
+            if (!lat || !lng) return null;
+            const distanceKm = calculateDistance(location.lat, location.lng, lat, lng);
+            const name =
+              element.tags?.name ||
+              element.tags?.["name:en"] ||
+              element.tags?.["name:ar"] ||
+              "Mosque";
+            const address = element.tags?.["addr:street"]
+              ? `${element.tags?.["addr:street"]}, ${element.tags?.["addr:city"] || ""}`
+              : element.tags?.["addr:full"] || "Address not available";
+            return {
+              name,
+              address,
+              distance: distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`,
+              distanceNum: distanceKm,
+              lat,
+              lng,
+            };
+          })
+          .filter((m): m is MosqueEntry => m !== null);
+
+        mosques.sort((a, b) => a.distanceNum - b.distanceNum);
+        setNearbyMosques(mosques.slice(0, 10));
+      } else {
+        setNearbyMosques([]);
+        // Allow retry on next open since we got no results
+        mosquesLoaded.current = false;
+      }
+
+      setLoadingMosques(false);
     },
-    [], // Stable - uses ref-guarded mosquesLoaded.current
+    [],
   );
+
 
   const openMosqueInMaps = (lat: number, lng: number, name: string) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
