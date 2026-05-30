@@ -67,7 +67,9 @@ const CommunityFeed: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch posts
+  const seedingRef = useRef(false);
+
+  // Fetch posts (auto-seeds when empty)
   const fetchPosts = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -77,7 +79,27 @@ const CommunityFeed: React.FC = () => {
         .limit(20);
 
       if (error) throw error;
-      setPosts((data as Post[]) || []);
+      const list = (data as Post[]) || [];
+      setPosts(list);
+
+      if (list.length === 0 && !seedingRef.current) {
+        seedingRef.current = true;
+        try {
+          await Promise.all([
+            supabase.functions.invoke('generate-community-post'),
+            supabase.functions.invoke('generate-community-post'),
+            supabase.functions.invoke('generate-community-post'),
+          ]);
+          const { data: refreshed } = await supabase
+            .from('community_posts')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+          setPosts((refreshed as Post[]) || []);
+        } catch (e) {
+          console.warn('Auto-seed failed:', e);
+        }
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
