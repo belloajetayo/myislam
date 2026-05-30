@@ -17,6 +17,7 @@ const Auth: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -161,6 +162,26 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Enter your email first, then tap reset password.');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Password reset link sent. Please check your email.');
+    } catch (error) {
+      toast.error((error as Error).message || 'Could not send reset link.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen gradient-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -175,10 +196,10 @@ const Auth: React.FC = () => {
               {isRecoveryMode
                 ? 'Enter your new password'
                 : isForgotPassword
-                ? 'Receive a password reset link'
-                : isLogin
-                ? 'Welcome back, Assalamu Alaikum'
-                : 'Join us on your spiritual journey'}
+                  ? 'Receive a password reset link'
+                  : isLogin
+                    ? 'Welcome back, Assalamu Alaikum'
+                    : 'Join us on your spiritual journey'}
             </p>
           </div>
 
@@ -285,6 +306,58 @@ const Auth: React.FC = () => {
               </>
             )}
 
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground/90">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="password" className="text-foreground/90">Password</Label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetLoading || loading}
+                    className="text-xs font-semibold text-islamic-gold hover:underline disabled:opacity-60"
+                  >
+                    {resetLoading ? 'Sending...' : 'Forgot password?'}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={isLogin ? 'Enter your password' : 'Create a password (min 6 chars)'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="pl-10 pr-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
             <Button
               type="submit"
               disabled={loading}
@@ -293,12 +366,12 @@ const Auth: React.FC = () => {
               {loading
                 ? 'Please wait...'
                 : isRecoveryMode
-                ? 'Reset Password'
-                : isForgotPassword
-                ? 'Send Reset Link'
-                : isLogin
-                ? 'Sign In'
-                : 'Create Account'}
+                  ? 'Reset Password'
+                  : isForgotPassword
+                    ? 'Send Reset Link'
+                    : isLogin
+                      ? 'Sign In'
+                      : 'Create Account'}
             </Button>
           </form>
 

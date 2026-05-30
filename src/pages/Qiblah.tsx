@@ -108,6 +108,7 @@ const Qiblah: React.FC = () => {
   const mosqueMapContainer = useRef<HTMLDivElement>(null);
   const mosqueMap = useRef<mapboxgl.Map | null>(null);
   const [loadingMosques, setLoadingMosques] = useState(false);
+  const [mosqueSearchStatus, setMosqueSearchStatus] = useState<"idle" | "timeout" | "error" | "empty">("idle");
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
@@ -578,17 +579,17 @@ const Qiblah: React.FC = () => {
   };
 
   // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
+  // Fetch nearby mosques using OpenStreetMap Overpass API with mirror fallback
   const fetchNearbyMosques = useCallback(
     async (location: { lat: number; lng: number }) => {
       if (mosquesLoaded.current) return;
 
       setLoadingMosques(true);
+      setMosqueSearchStatus("idle");
       mosquesLoaded.current = true;
 
-      try {
-        // Use Overpass API to find actual mosques within 20km radius
-        const radius = 20000; // 20km in meters
-        const query = `
+      const radius = 20000; // 20km
+      const query = `
         [out:json][timeout:25];
         (
           node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
@@ -599,79 +600,89 @@ const Qiblah: React.FC = () => {
         out center body;
       `;
 
-        const response = await fetch(
-          "https://overpass-api.de/api/interpreter",
-          {
+      const endpoints = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.openstreetmap.fr/api/interpreter",
+      ];
+
+      type OverpassElement = {
+        lat?: number;
+        lon?: number;
+        center?: { lat: number; lon: number };
+        tags?: Record<string, string>;
+      };
+      type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
+
+      let elements: OverpassElement[] | null = null;
+      let sawTimeout = false;
+      for (const url of endpoints) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(url, {
             method: "POST",
             body: `data=${encodeURIComponent(query)}`,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          },
-        );
-
-        const data = await response.json();
-
-        type OverpassElement = {
-          lat?: number;
-          lon?: number;
-          center?: { lat: number; lon: number };
-          tags?: Record<string, string>;
-        };
-        type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
-
-        if (data.elements && data.elements.length > 0) {
-          const mosques = (data.elements as OverpassElement[])
-            .map((element): MosqueEntry | null => {
-              // Get coordinates (nodes have lat/lon directly, ways have center)
-              const lat = element.lat ?? element.center?.lat;
-              const lng = element.lon ?? element.center?.lon;
-
-              if (!lat || !lng) return null;
-
-              const distanceKm = calculateDistance(
-                location.lat,
-                location.lng,
-                lat,
-                lng,
-              );
-              const name =
-                element.tags?.name ||
-                element.tags?.["name:en"] ||
-                element.tags?.["name:ar"] ||
-                "Mosque";
-              const address = element.tags?.["addr:street"]
-                ? `${element.tags?.["addr:street"]}, ${element.tags?.["addr:city"] || ""}`
-                : element.tags?.["addr:full"] || "Address not available";
-
-              return {
-                name,
-                address,
-                distance:
-                  distanceKm < 1
-                    ? `${Math.round(distanceKm * 1000)}m`
-                    : `${distanceKm.toFixed(1)}km`,
-                distanceNum: distanceKm,
-                lat,
-                lng,
-              };
-            })
-            .filter((m): m is MosqueEntry => m !== null);
-
-          // Sort by distance and limit to 10
-          mosques.sort((a, b) => a.distanceNum - b.distanceNum);
-          setNearbyMosques(mosques.slice(0, 10));
-        } else {
-          setNearbyMosques([]);
+            signal: controller.signal,
+          });
+          window.clearTimeout(timeoutId);
+          if (!response.ok) continue;
+          const data = await response.json();
+          if (data?.elements?.length) {
+            elements = data.elements as OverpassElement[];
+            break;
+          }
+        } catch (e) {
+          window.clearTimeout(timeoutId);
+          if (e instanceof DOMException && e.name === "AbortError") {
+            sawTimeout = true;
+          }
+          console.warn(`Overpass mirror failed (${url}):`, e);
         }
-      } catch (error) {
-        console.error("Failed to fetch mosques:", error);
-        setNearbyMosques([]);
-        mosquesLoaded.current = false; // Allow retry on error
-      } finally {
-        setLoadingMosques(false);
       }
+
+      if (elements && elements.length > 0) {
+        const mosques = elements
+          .map((element): MosqueEntry | null => {
+            const lat = element.lat ?? element.center?.lat;
+            const lng = element.lon ?? element.center?.lon;
+            if (!lat || !lng) return null;
+            const distanceKm = calculateDistance(location.lat, location.lng, lat, lng);
+            const name =
+              element.tags?.name ||
+              element.tags?.["name:en"] ||
+              element.tags?.["name:ar"] ||
+              "Mosque";
+            const address = element.tags?.["addr:street"]
+              ? `${element.tags?.["addr:street"]}, ${element.tags?.["addr:city"] || ""}`
+              : element.tags?.["addr:full"] || "Address not available";
+            return {
+              name,
+              address,
+              distance: distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m` : `${distanceKm.toFixed(1)}km`,
+              distanceNum: distanceKm,
+              lat,
+              lng,
+            };
+          })
+          .filter((m): m is MosqueEntry => m !== null);
+
+        mosques.sort((a, b) => a.distanceNum - b.distanceNum);
+        setNearbyMosques(mosques.slice(0, 10));
+        setMosqueSearchStatus("idle");
+      } else {
+        setNearbyMosques([]);
+        setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
+        // Allow retry on next open since we got no results
+        mosquesLoaded.current = false;
+      }
+
+      setLoadingMosques(false);
     },
-    [], // Stable - uses ref-guarded mosquesLoaded.current
+    [],
   );
+
 
   const openMosqueInMaps = (lat: number, lng: number, name: string) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
@@ -1177,8 +1188,10 @@ const Qiblah: React.FC = () => {
                 <>
                   <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                     {loadingMosques ? (
-                      <div className="flex items-center justify-center py-8">
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                        <p className="mt-3 text-sm text-muted-foreground">Searching nearby mosques...</p>
+                        <p className="mt-1 text-xs text-muted-foreground">This will stop automatically if map data is slow.</p>
                       </div>
                     ) : nearbyMosques.length > 0 ? (
                       nearbyMosques.map((mosque, index) => (
@@ -1208,10 +1221,20 @@ const Qiblah: React.FC = () => {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No mosques found nearby</p>
+                        <p className="text-sm">
+                          {mosqueSearchStatus === "timeout"
+                            ? "Mosque map data is taking too long"
+                            : "No mosques found nearby"}
+                        </p>
                         <p className="text-xs mt-1">
                           Try searching in Google Maps
                         </p>
+                        <button
+                          onClick={() => userLocation && fetchNearbyMosques(userLocation)}
+                          className="mt-4 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                        >
+                          Try again
+                        </button>
                       </div>
                     )}
                   </div>
