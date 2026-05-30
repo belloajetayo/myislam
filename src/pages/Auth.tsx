@@ -9,11 +9,8 @@ import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,32 +18,15 @@ const Auth: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if URL has recovery parameters
-    const hash = window.location.hash || '';
-    if (hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
-      setIsRecoveryMode(true);
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecoveryMode(true);
-      } else if (session?.user) {
-        // Prevent redirecting if we are in recovery mode
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const isRec = hashParams.get('type') === 'recovery' || window.location.search.includes('type=recovery');
-        if (!isRec) {
-          navigate('/');
-        }
+      if (session?.user) {
+        navigate('/');
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const isRec = hashParams.get('type') === 'recovery' || window.location.search.includes('type=recovery');
-        if (!isRec) {
-          navigate('/');
-        }
+        navigate('/');
       }
     });
 
@@ -58,29 +38,6 @@ const Auth: React.FC = () => {
     setLoading(true);
 
     try {
-      if (isRecoveryMode) {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) throw error;
-        toast.success('Your password has been successfully reset! Sign in with your new password.');
-        setIsRecoveryMode(false);
-        setIsLogin(true);
-        setPassword('');
-        setNewPassword('');
-        navigate('/auth');
-        return;
-      }
-
-      if (isForgotPassword) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth?type=recovery`,
-        });
-        if (error) throw error;
-        toast.success('Password reset email sent! Check your inbox.');
-        setIsForgotPassword(false);
-        setIsLogin(true);
-        return;
-      }
-
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -193,117 +150,27 @@ const Auth: React.FC = () => {
             </div>
             <h1 className="text-3xl font-bold text-gradient-gold mb-2">My Islam</h1>
             <p className="text-foreground/70 text-sm">
-              {isRecoveryMode
-                ? 'Enter your new password'
-                : isForgotPassword
-                  ? 'Receive a password reset link'
-                  : isLogin
-                    ? 'Welcome back, Assalamu Alaikum'
-                    : 'Join us on your spiritual journey'}
+              {isLogin ? 'Welcome back, Assalamu Alaikum' : 'Join us on your spiritual journey'}
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {isRecoveryMode ? (
+            {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="newPassword" className="text-foreground/90">New Password</Label>
+                <Label htmlFor="fullName" className="text-foreground/90">Full Name</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
                   <Input
-                    id="newPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your new password (min 6 chars)"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="pl-10 pr-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter your name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
               </div>
-            ) : (
-              <>
-                {!isLogin && !isForgotPassword && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-foreground/90">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="Enter your name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground/90">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="pl-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
-                    />
-                  </div>
-                </div>
-
-                {!isForgotPassword && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="password" className="text-foreground/90">Password</Label>
-                      {isLogin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsForgotPassword(true);
-                            setIsLogin(false);
-                          }}
-                          className="text-xs text-islamic-gold font-semibold hover:underline"
-                        >
-                          Forgot Password?
-                        </button>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
-                      <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder={isLogin ? 'Enter your password' : 'Create a password (min 6 chars)'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="pl-10 pr-10 glass border-foreground/20 text-foreground placeholder:text-foreground/40"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
             )}
 
             <div className="space-y-2">
@@ -363,56 +230,31 @@ const Auth: React.FC = () => {
               disabled={loading}
               className="w-full gradient-accent text-primary-foreground font-semibold py-6 rounded-2xl shadow-soft hover:scale-[1.02] transition-transform"
             >
-              {loading
-                ? 'Please wait...'
-                : isRecoveryMode
-                  ? 'Reset Password'
-                  : isForgotPassword
-                    ? 'Send Reset Link'
-                    : isLogin
-                      ? 'Sign In'
-                      : 'Create Account'}
+              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
             </Button>
           </form>
 
           {/* Toggle */}
-          {!isRecoveryMode && (
-            <div className="mt-6 text-center">
-              <p className="text-foreground/70 text-sm">
-                {isForgotPassword ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsForgotPassword(false);
-                      setIsLogin(true);
-                    }}
-                    className="text-islamic-gold font-semibold hover:underline"
-                  >
-                    Back to Sign In
-                  </button>
-                ) : (
-                  <>
-                    {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsLogin(!isLogin);
-                        setEmail('');
-                        setPassword('');
-                        setFullName('');
-                      }}
-                      className="ml-2 text-islamic-gold font-semibold hover:underline"
-                    >
-                      {isLogin ? 'Sign Up' : 'Sign In'}
-                    </button>
-                  </>
-                )}
-              </p>
-            </div>
-          )}
+          <div className="mt-6 text-center">
+            <p className="text-foreground/70 text-sm">
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setEmail('');
+                  setPassword('');
+                  setFullName('');
+                }}
+                className="ml-2 text-islamic-gold font-semibold hover:underline"
+              >
+                {isLogin ? 'Sign Up' : 'Sign In'}
+              </button>
+            </p>
+          </div>
 
           {/* Sign up note */}
-          {!isLogin && !isForgotPassword && !isRecoveryMode && (
+          {!isLogin && (
             <p className="mt-4 text-center text-xs text-foreground/50">
               By signing up, you get instant access — no email confirmation needed.
             </p>
