@@ -7,7 +7,7 @@ import QuickShortcuts from "@/components/home/QuickShortcuts";
 import ProgressTracker from "@/components/home/ProgressTracker";
 import DailyReminders from "@/components/home/DailyReminders";
 import DailyTeachingsCarousel from "@/components/home/DailyTeachingsCarousel";
-import MeccaLive from "@/components/home/MeccaLive";
+
 import CommunityFeed from "@/components/community/CommunityFeed";
 // RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
 // import RamadanCountdown from "@/components/home/RamadanCountdown";
@@ -147,9 +147,6 @@ const Index: React.FC = () => {
 
         {/* Islamic Calendar with AI Sync */}
         <IslamicCalendar onAskMIA={handleAskMIA} />
-
-        {/* Mecca Live Stream */}
-        <MeccaLive />
 
         {/* Community Feed - AI Generated Posts */}
         <CommunityFeed />

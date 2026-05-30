@@ -296,11 +296,7 @@ const DailyTeachingsCarousel: React.FC = () => {
   };
 
   if (teachings.length === 0) {
-    return (
-      <div className="bg-card rounded-3xl p-6 shadow-card border border-border animate-pulse">
-        <div className="h-64 bg-muted rounded-2xl" />
-      </div>
-    );
+    return null;
   }
 
   const currentCard = cards.get(currentIndex);

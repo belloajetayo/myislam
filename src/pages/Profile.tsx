@@ -274,12 +274,7 @@ const Profile: React.FC = () => {
     toast.success("Name updated!");
   };
 
-  // ── Sign out ──
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out. Ma'a salama!");
-    navigate("/auth");
-  };
+
 
   // ── Change password ──
   const handleChangePassword = async () => {

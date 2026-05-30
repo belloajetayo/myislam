@@ -300,6 +300,39 @@ const Qiblah: React.FC = () => {
     if (locationFetched.current) return;
     locationFetched.current = true;
 
+    const fallbackToIPOrMakkah = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-user-location");
+        if (!error && data && data.latitude && data.longitude) {
+          const lat = Math.round(data.latitude * 1000000) / 1000000;
+          const lng = Math.round(data.longitude * 1000000) / 1000000;
+          const loc = { lat, lng };
+          setUserLocation(loc);
+          const direction = calculateQiblahDirection(lat, lng);
+          const roundedDir = Math.round(direction * 100) / 100;
+          setQiblahDirection(roundedDir);
+          setLocationName(data.city ? `${data.city}, ${data.country}` : "Location detected");
+          localStorage.setItem("lastLocation", JSON.stringify(loc));
+          localStorage.setItem("lastQiblahDirection", String(roundedDir));
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to fallback to IP location:", err);
+      }
+
+      // Final default fallback (Makkah)
+      const lat = 21.4224779;
+      const lng = 39.8251832;
+      const loc = { lat, lng };
+      setUserLocation(loc);
+      const direction = calculateQiblahDirection(lat, lng);
+      const roundedDir = Math.round(direction * 100) / 100;
+      setQiblahDirection(roundedDir);
+      setLocationName("Makkah, Saudi Arabia");
+      localStorage.setItem("lastLocation", JSON.stringify(loc));
+      localStorage.setItem("lastQiblahDirection", String(roundedDir));
+    };
+
     if (!navigator.geolocation) {
       const cached = localStorage.getItem("lastLocation");
       if (cached) {
@@ -309,6 +342,8 @@ const Qiblah: React.FC = () => {
           parseFloat(localStorage.getItem("lastQiblahDirection") || "0"),
         );
         setLocationName("Cached location (GPS unavailable)");
+      } else {
+        fallbackToIPOrMakkah();
       }
       return;
     }
@@ -375,6 +410,8 @@ const Qiblah: React.FC = () => {
             if (cached) {
               setUserLocation(JSON.parse(cached));
               setLocationName("Last known location");
+            } else {
+              fallbackToIPOrMakkah();
             }
             if (cachedDirection) {
               setQiblahDirection(parseFloat(cachedDirection));
@@ -742,9 +779,11 @@ const Qiblah: React.FC = () => {
     [mapboxToken, userLocation],
   );
 
-  // Load mosques when dialog opens (only once)
+  // Load mosques when dialog opens (reset guard so re-opens work)
   useEffect(() => {
-    if (showMosqueMap && userLocation && !mosquesLoaded.current) {
+    if (showMosqueMap && userLocation) {
+      // Allow refetch each time dialog opens
+      mosquesLoaded.current = false;
       fetchNearbyMosques(userLocation);
     }
   }, [showMosqueMap, userLocation, fetchNearbyMosques]);
@@ -1095,11 +1134,18 @@ const Qiblah: React.FC = () => {
 
               {selectedMosque ? (
                 <div className="space-y-3">
-                  {/* In-app map with direction line */}
-                  <div
-                    ref={mosqueMapContainer}
-                    className="w-full h-64 rounded-xl overflow-hidden border border-primary/20"
-                  />
+                  {/* In-app map with direction line — only when Mapbox token available */}
+                  {mapboxToken ? (
+                    <div
+                      ref={mosqueMapContainer}
+                      className="w-full h-64 rounded-xl overflow-hidden border border-primary/20"
+                    />
+                  ) : (
+                    <div className="w-full h-32 rounded-xl border border-primary/20 bg-muted/30 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <MapPin className="w-8 h-8 opacity-40" />
+                      <p className="text-xs">Map preview unavailable</p>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <button
                       onClick={() => {

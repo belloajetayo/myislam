@@ -64,27 +64,16 @@ const Prayer: React.FC = () => {
         return;
       }
 
-      const response = await fetch(
-        "https://lhdksrflshusknopsrzz.supabase.co/functions/v1/send-prayer-push",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoZGtzcmZsc2h1c2tub3Bzcnp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjEzMTMsImV4cCI6MjA4MTIzNzMxM30.ojA3qY26fY9zGFR55EuaDOX0ZClleccwH6y71KdovAg"
-          },
-          body: JSON.stringify({
-            is_test: true,
-            user_id: session.user.id,
-          }),
-        }
+      // Use supabase.functions.invoke so credentials always come from .env
+      const { data: result, error: fnError } = await supabase.functions.invoke(
+        "send-prayer-push",
+        { body: { is_test: true, user_id: session.user.id } }
       );
 
-      const result = await response.json();
-      if (response.ok && result.sent > 0) {
+      if (!fnError && result?.sent > 0) {
         toast.success("Test notification sent! Check your device.");
       } else {
-        // Fallback to local notification test if backend failed
+        // Fallback to local browser notification
         if (Notification.permission === "granted") {
           new Notification("🕌 Test Prayer Notification", {
             body: "This is a test notification. Your browser notifications are working!",
@@ -94,7 +83,7 @@ const Prayer: React.FC = () => {
           audio.play().catch(e => console.error(e));
           toast.success("Local test notification sent.");
         } else {
-          toast.error(result.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
+          toast.error(result?.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
         }
       }
     } catch (e) {
