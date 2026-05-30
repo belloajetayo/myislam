@@ -295,6 +295,17 @@ const Profile: React.FC = () => {
     setShowDeleteConfirm(false);
   };
 
+  // ── Sign out ──
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Failed to sign out");
+      return;
+    }
+    toast.success("Signed out. Ma'a salama!");
+    navigate("/auth");
+  };
+
   if (loading) {
     return (
       <MobileLayout showNav={false}>
