@@ -22,32 +22,61 @@ export interface LocationData {
   longitude: number;
 }
 
+const PT_CACHE_KEY = "prayer_times_cache_v1";
+const PT_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+interface CachedPT {
+  ts: number;
+  date: string; // YYYY-MM-DD
+  prayerTimes: PrayerTimes;
+  hijriDate: HijriDateData;
+  location: LocationData;
+}
+
+function readCache(): CachedPT | null {
+  try {
+    const raw = localStorage.getItem(PT_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedPT;
+    const today = new Date().toISOString().split("T")[0];
+    if (parsed.date !== today) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export function usePrayerTimes() {
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
-  const [location, setLocation] = useState<LocationData | null>(null);
-  const [hijriDate, setHijriDate] = useState<HijriDateData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = typeof window !== "undefined" ? readCache() : null;
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(cached?.prayerTimes ?? null);
+  const [location, setLocation] = useState<LocationData | null>(cached?.location ?? null);
+  const [hijriDate, setHijriDate] = useState<HijriDateData | null>(cached?.hijriDate ?? null);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const [currentPrayer, setCurrentPrayer] = useState<string>("");
   const [nextPrayer, setNextPrayer] = useState<string>("");
 
   useEffect(() => {
+    // If cache is still fresh, skip refetch
+    if (cached && Date.now() - cached.ts < PT_CACHE_TTL_MS) {
+      return;
+    }
+
     const fetchPrayerTimes = async (lat: number, lon: number) => {
       try {
-        // Get location name
         const geoResponse = await fetch(
           `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
         );
         const geoData = await geoResponse.json();
 
-        setLocation({
+        const loc: LocationData = {
           city: geoData.city || geoData.locality || "Unknown",
           country: geoData.countryName || "Unknown",
           latitude: lat,
           longitude: lon,
-        });
+        };
+        setLocation(loc);
 
-        // Get prayer times
         const date = new Date();
         const response = await fetch(
           `https://api.aladhan.com/v1/timings/${Math.floor(date.getTime() / 1000)}?latitude=${lat}&longitude=${lon}&method=2`,
@@ -56,22 +85,34 @@ export function usePrayerTimes() {
 
         if (data.code === 200) {
           const timings = data.data.timings;
-          setPrayerTimes({
+          const pt: PrayerTimes = {
             Fajr: timings.Fajr,
             Sunrise: timings.Sunrise,
             Dhuhr: timings.Dhuhr,
             Asr: timings.Asr,
             Maghrib: timings.Maghrib,
             Isha: timings.Isha,
-          });
+          };
+          setPrayerTimes(pt);
 
-          // Also extract Hijri date from the same API response
           const hijri = data.data.date.hijri;
-          setHijriDate({
+          const hd: HijriDateData = {
             day: parseInt(hijri.day),
             month: hijri.month,
             year: parseInt(hijri.year),
-          });
+          };
+          setHijriDate(hd);
+
+          try {
+            const today = new Date().toISOString().split("T")[0];
+            localStorage.setItem(PT_CACHE_KEY, JSON.stringify({
+              ts: Date.now(),
+              date: today,
+              prayerTimes: pt,
+              hijriDate: hd,
+              location: loc,
+            } satisfies CachedPT));
+          } catch { /* ignore quota */ }
         }
       } catch (err) {
         setError("Failed to fetch prayer times");
@@ -81,7 +122,12 @@ export function usePrayerTimes() {
       }
     };
 
-    // Get user location with high accuracy GPS
+    // Reuse cached coords immediately if present to avoid waiting for geolocation
+    if (cached?.location) {
+      fetchPrayerTimes(cached.location.latitude, cached.location.longitude);
+      return;
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -89,34 +135,24 @@ export function usePrayerTimes() {
         },
         (error) => {
           console.warn("Geolocation error:", error.message);
-          // Try with lower accuracy as fallback
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              fetchPrayerTimes(
-                position.coords.latitude,
-                position.coords.longitude,
-              );
+              fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
             },
             () => {
-              // Default to Makkah if all location methods fail
               fetchPrayerTimes(21.4225, 39.8262);
-              setError(
-                "Location access denied. Using default location (Makkah).",
-              );
+              setError("Location access denied. Using default location (Makkah).");
             },
             { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
           );
         },
-        {
-          enableHighAccuracy: true, // Force GPS for precise coordinates
-          timeout: 15000, // Wait up to 15s for GPS fix
-          maximumAge: 0, // Always get fresh location
-        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
       );
     } else {
       fetchPrayerTimes(21.4225, 39.8262);
       setError("Geolocation not supported. Using default location (Makkah).");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Calculate current and next prayer
