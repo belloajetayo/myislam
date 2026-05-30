@@ -578,8 +578,7 @@ const Qiblah: React.FC = () => {
     setTimeout(() => setCalibrating(false), 2000);
   };
 
-  // Fetch nearby mosques using OpenStreetMap Overpass API for actual mosque POIs
-  // Fetch nearby mosques using OpenStreetMap Overpass API with mirror fallback
+  // Fetch nearby mosques using OpenStreetMap Overpass API (with cache + mirror fallback)
   const fetchNearbyMosques = useCallback(
     async (location: { lat: number; lng: number }) => {
       if (mosquesLoaded.current) return;
@@ -588,7 +587,23 @@ const Qiblah: React.FC = () => {
       setMosqueSearchStatus("idle");
       mosquesLoaded.current = true;
 
-      const radius = 20000; // 20km
+      type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
+
+      // Cache key rounded to ~1km grid
+      const cacheKey = `mosques_${location.lat.toFixed(2)}_${location.lng.toFixed(2)}`;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as { ts: number; mosques: MosqueEntry[] };
+          if (Date.now() - parsed.ts < 24 * 60 * 60 * 1000 && parsed.mosques.length) {
+            setNearbyMosques(parsed.mosques);
+            setLoadingMosques(false);
+            return;
+          }
+        }
+      } catch { /* ignore */ }
+
+      const radius = 20000; // 20km around user
       const query = `
         [out:json][timeout:25];
         (
@@ -612,13 +627,12 @@ const Qiblah: React.FC = () => {
         center?: { lat: number; lon: number };
         tags?: Record<string, string>;
       };
-      type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
 
       let elements: OverpassElement[] | null = null;
       let sawTimeout = false;
       for (const url of endpoints) {
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+        const timeoutId = window.setTimeout(() => controller.abort(), 20000);
         try {
           const response = await fetch(url, {
             method: "POST",
@@ -669,12 +683,15 @@ const Qiblah: React.FC = () => {
           .filter((m): m is MosqueEntry => m !== null);
 
         mosques.sort((a, b) => a.distanceNum - b.distanceNum);
-        setNearbyMosques(mosques.slice(0, 10));
+        const top = mosques.slice(0, 10);
+        setNearbyMosques(top);
         setMosqueSearchStatus("idle");
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), mosques: top }));
+        } catch { /* ignore */ }
       } else {
         setNearbyMosques([]);
         setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
-        // Allow retry on next open since we got no results
         mosquesLoaded.current = false;
       }
 
