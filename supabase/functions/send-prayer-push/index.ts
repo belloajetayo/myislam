@@ -5,7 +5,8 @@ const corsHeaders = {
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 
-const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
+// Use env var, falling back to the app's built-in public key
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "BGNiIskKFEbs4Fpzoi-F_-_n1D7BNGTVGldFCJd8k0XItL27r6DPrU9wogKC29342IPwkXy0YsS-r3YecBtVX3w";
 
 // Web Push requires signing JWTs with ES256 (P-256 / ECDSA)
 async function importVapidPrivateKey(base64url: string): Promise<CryptoKey> {
@@ -146,39 +147,59 @@ async function sendPushNotification(
   payload: object,
   vapidPrivateKey: CryptoKey
 ): Promise<boolean> {
-  try {
-    const payloadStr = JSON.stringify(payload);
-    const { encrypted } = await encryptPayload(payloadStr, subscription.p256dh, subscription.auth);
+  const maxAttempts = 3;
+  const baseDelay = 1000; // ms
 
-    const url = new URL(subscription.endpoint);
-    const audience = `${url.protocol}//${url.host}`;
-    const jwt = await createVapidJwt(audience, vapidPrivateKey);
+  const payloadStr = JSON.stringify(payload);
+  const { encrypted } = await encryptPayload(payloadStr, subscription.p256dh, subscription.auth);
+  const url = new URL(subscription.endpoint);
+  const audience = `${url.protocol}//${url.host}`;
+  const jwt = await createVapidJwt(audience, vapidPrivateKey);
 
-    const response = await fetch(subscription.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-        "Content-Encoding": "aes128gcm",
-        "TTL": "86400",
-        "Authorization": `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
-      },
-      body: encrypted,
-    });
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(subscription.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Encoding": "aes128gcm",
+          "TTL": "86400",
+          "Authorization": `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
+        },
+        body: encrypted,
+      });
 
-    if (response.status === 410 || response.status === 404) {
-      console.log(`Subscription expired/invalid: ${subscription.endpoint.slice(0, 50)}`);
-      return false; // subscription gone
+      if (response.status === 410 || response.status === 404) {
+        console.log(`Subscription expired/invalid: ${subscription.endpoint.slice(0, 50)}`);
+        return false; // subscription gone
+      }
+
+      if (response.ok) {
+        if (attempt > 1) console.log(`Push succeeded on attempt ${attempt}`);
+        return true;
+      }
+
+      // Treat 5xx as transient and retry, otherwise log and stop
+      if (response.status >= 500 && response.status < 600) {
+        console.warn(`Transient push failure (status ${response.status}), attempt ${attempt}`);
+      } else {
+        const body = await response.text().catch(() => "");
+        console.error(`Push failed (non-retryable): ${response.status} ${body}`);
+        return false;
+      }
+    } catch (err) {
+      console.error(`Push send error on attempt ${attempt}:`, err);
     }
 
-    if (!response.ok) {
-      console.error(`Push failed: ${response.status} ${await response.text()}`);
+    // Backoff before retrying
+    if (attempt < maxAttempts) {
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      await new Promise((r) => setTimeout(r, delay));
     }
-
-    return response.ok;
-  } catch (err) {
-    console.error("Push send error:", err);
-    return false;
   }
+
+  console.error(`Push failed after ${maxAttempts} attempts for ${subscription.endpoint.slice(0,50)}`);
+  return false;
 }
 
 // Fetch prayer times for a location with memoization

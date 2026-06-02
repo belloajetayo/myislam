@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { type User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
 // RamadanCountdown temporarily hidden — will return ~1 month before next Ramadan
 // import RamadanCountdown from "@/components/home/RamadanCountdown";
 import RamadanTracker from "@/components/fasting/RamadanTracker";
@@ -280,17 +281,17 @@ const Fasting: React.FC = () => {
       }
     };
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => fetchData(p.coords.latitude, p.coords.longitude),
-        () => {
-          fetchData(21.4225, 39.8262);
-        }, // fallback Makkah
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-      );
-    } else {
-      fetchData(21.4225, 39.8262);
-    }
+    (async () => {
+      const startLocation = await resolveExactLocation({ allowBrowser: true, preferCache: true });
+      if (startLocation.city && startLocation.country) {
+        setLocation({
+          city: startLocation.city,
+          country: startLocation.country,
+        });
+      }
+      saveLastLocation(startLocation);
+      await fetchData(startLocation.latitude, startLocation.longitude);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentional: run once on mount to get location
 

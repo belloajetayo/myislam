@@ -68,6 +68,7 @@ const Qiblah: React.FC = () => {
   const mapInitialized = useRef(false);
   const locationCached = useRef(false);
   const mosquesLoaded = useRef(false);
+  const mosquesFetchedForLocation = useRef<{ lat: number; lng: number } | null>(null);
   const deviceHeadingRef = useRef<number>(0);
   const targetHeadingRef = useRef<number>(0);
   const smoothedHeadingRef = useRef<number>(0);
@@ -580,12 +581,23 @@ const Qiblah: React.FC = () => {
 
   // Fetch nearby mosques using OpenStreetMap Overpass API (with cache + mirror fallback)
   const fetchNearbyMosques = useCallback(
-    async (location: { lat: number; lng: number }) => {
-      if (mosquesLoaded.current) return;
+    async (location: { lat: number; lng: number }, force = false) => {
+      // Guard: skip if already fetching for this same location (within 1km)
+      if (!force && mosquesLoaded.current) {
+        const prev = mosquesFetchedForLocation.current;
+        if (prev) {
+          const drift = calculateDistance(prev.lat, prev.lng, location.lat, location.lng);
+          if (drift < 1) return; // Same area, don't re-fetch
+        } else {
+          // If a request was started but no location was recorded yet, avoid duplicate requests until it resolves.
+          return;
+        }
+      }
 
       setLoadingMosques(true);
       setMosqueSearchStatus("idle");
       mosquesLoaded.current = true;
+      mosquesFetchedForLocation.current = location;
 
       type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
 
@@ -595,7 +607,7 @@ const Qiblah: React.FC = () => {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached) as { ts: number; mosques: MosqueEntry[] };
-          if (Date.now() - parsed.ts < 24 * 60 * 60 * 1000 && parsed.mosques.length) {
+          if (!force && Date.now() - parsed.ts < 24 * 60 * 60 * 1000 && parsed.mosques.length) {
             setNearbyMosques(parsed.mosques);
             setLoadingMosques(false);
             return;
@@ -693,6 +705,7 @@ const Qiblah: React.FC = () => {
         setNearbyMosques([]);
         setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
         mosquesLoaded.current = false;
+        mosquesFetchedForLocation.current = null;
       }
 
       setLoadingMosques(false);
@@ -701,8 +714,8 @@ const Qiblah: React.FC = () => {
   );
 
 
-  const openMosqueInMaps = (lat: number, lng: number, name: string) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
+  const openMosqueInMaps = (lat: number, lng: number) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
     window.open(url, "_blank");
   };
 
@@ -807,14 +820,31 @@ const Qiblah: React.FC = () => {
     [mapboxToken, userLocation],
   );
 
-  // Load mosques when dialog opens (reset guard so re-opens work)
+  // Load mosques when dialog opens or when real GPS location arrives
+  const isLikelyFallback = (loc: { lat: number; lng: number }) =>
+    Math.abs(loc.lat - 21.4224779) < 0.1 && Math.abs(loc.lng - 39.8251832) < 0.1;
+
   useEffect(() => {
-    if (showMosqueMap && userLocation) {
-      // Allow refetch each time dialog opens
-      mosquesLoaded.current = false;
-      fetchNearbyMosques(userLocation);
+    if (!showMosqueMap || !userLocation) return;
+
+    // If we have a previously-fetched location and it's within 1km of current, skip
+    const prev = mosquesFetchedForLocation.current;
+    if (prev && !isLikelyFallback(userLocation)) {
+      const drift = calculateDistance(prev.lat, prev.lng, userLocation.lat, userLocation.lng);
+      if (drift < 1 && nearbyMosques.length > 0) return; // Already have good results
     }
-  }, [showMosqueMap, userLocation, fetchNearbyMosques]);
+
+    // If we only have the Makkah fallback, wait — GPS may still be arriving
+    if (isLikelyFallback(userLocation)) {
+      // Still show loader and wait for real GPS
+      setLoadingMosques(true);
+      return;
+    }
+
+    // Real GPS is available — reset guard and fetch
+    mosquesLoaded.current = false;
+    fetchNearbyMosques(userLocation);
+  }, [showMosqueMap, userLocation, fetchNearbyMosques, nearbyMosques.length]);
 
   return (
     <MobileLayout>
@@ -1247,7 +1277,13 @@ const Qiblah: React.FC = () => {
                           Try searching in Google Maps
                         </p>
                         <button
-                          onClick={() => userLocation && fetchNearbyMosques(userLocation)}
+                          onClick={() => {
+                            if (userLocation) {
+                              mosquesLoaded.current = false;
+                              mosquesFetchedForLocation.current = null;
+                              fetchNearbyMosques(userLocation, true);
+                            }
+                          }}
                           className="mt-4 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
                         >
                           Try again

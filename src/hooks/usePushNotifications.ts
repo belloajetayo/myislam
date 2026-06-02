@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getStoredLastLocation, resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
 
-const VAPID_PUBLIC_KEY = "BObpc8J1cBRpX-WCRS-yQS0tXVW6S0SrD4rRlQF7ta0gptZhwGTjaujo5Yx4Pt9UmhzLX40Xk79jN4kl16gqNgY";
+const VAPID_PUBLIC_KEY = "BGNiIskKFEbs4Fpzoi-F_-_n1D7BNGTVGldFCJd8k0XItL27r6DPrU9wogKC29342IPwkXy0YsS-r3YecBtVX3w";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -11,6 +12,35 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const outputArray = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
+}
+
+async function savePushSubscriptionToDb(
+  userId: string,
+  subscription: PushSubscriptionJSON,
+  latitude: number,
+  longitude: number,
+  timezone: string,
+) {
+  if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+    throw new Error("Invalid push subscription payload");
+  }
+
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: userId,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+      latitude,
+      longitude,
+      timezone,
+    },
+    { onConflict: "user_id,endpoint" },
+  );
+
+  if (error) {
+    throw error;
+  }
 }
 
 export function usePushNotifications() {
@@ -57,7 +87,6 @@ export function usePushNotifications() {
 
       // Register the push service worker
       const registration = await navigator.serviceWorker.register("/push-sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
 
       // Request notification permission
       const permission = await Notification.requestPermission();
@@ -70,45 +99,25 @@ export function usePushNotifications() {
       });
 
       const subJson = subscription.toJSON();
-
-      // Get user location
-      let lat: number | null = null;
-      let lon: number | null = null;
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-          });
-        });
-        lat = pos.coords.latitude;
-        lon = pos.coords.longitude;
-      } catch {
-        // Default to Makkah
-        lat = 21.4225;
-        lon = 39.8262;
+      if (!subJson.keys?.p256dh || !subJson.keys?.auth || !subJson.endpoint) {
+        throw new Error("Unable to read push subscription keys");
       }
+
+      // Resolve the best available exact location for this user.
+      const resolvedLocation = await resolveExactLocation({ allowBrowser: true, preferCache: true });
+      saveLastLocation(resolvedLocation);
+      const lat = resolvedLocation.latitude;
+      const lon = resolvedLocation.longitude;
 
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Save to database
-      const { error } = await supabase.from("push_subscriptions").upsert(
-        {
-          user_id: session.user.id,
-          endpoint: subJson.endpoint!,
-          p256dh: subJson.keys!.p256dh,
-          auth: subJson.keys!.auth,
-          latitude: lat,
-          longitude: lon,
-          timezone,
-        },
-        { onConflict: "user_id,endpoint" }
+      await savePushSubscriptionToDb(
+        session.user.id,
+        subJson,
+        lat,
+        lon,
+        timezone,
       );
-
-      if (error) {
-        console.error("Failed to save push subscription:", error);
-        return false;
-      }
 
       setIsSubscribed(true);
       return true;
@@ -127,7 +136,6 @@ export function usePushNotifications() {
       if (registration) {
         const sub = await registration.pushManager.getSubscription();
         if (sub) {
-          // Remove from DB
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             await supabase

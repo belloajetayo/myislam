@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
 
 export interface PrayerTimes {
   Fajr: string;
@@ -76,6 +78,7 @@ export function usePrayerTimes() {
           longitude: lon,
         };
         setLocation(loc);
+        saveLastLocation(loc);
 
         const date = new Date();
         const response = await fetch(
@@ -122,36 +125,19 @@ export function usePrayerTimes() {
       }
     };
 
-    // Reuse cached coords immediately if present to avoid waiting for geolocation
-    if (cached?.location) {
-      fetchPrayerTimes(cached.location.latitude, cached.location.longitude);
-      return;
-    }
+    (async () => {
+      const startLocation = await resolveExactLocation({ allowBrowser: true, preferCache: true });
+      await fetchPrayerTimes(startLocation.latitude, startLocation.longitude);
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.warn("Geolocation error:", error.message);
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              fetchPrayerTimes(position.coords.latitude, position.coords.longitude);
-            },
-            () => {
-              fetchPrayerTimes(21.4225, 39.8262);
-              setError("Location access denied. Using default location (Makkah).");
-            },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-          );
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-      );
-    } else {
-      fetchPrayerTimes(21.4225, 39.8262);
-      setError("Geolocation not supported. Using default location (Makkah).");
-    }
+      if (startLocation.city && startLocation.country) {
+        setLocation({
+          city: startLocation.city,
+          country: startLocation.country,
+          latitude: startLocation.latitude,
+          longitude: startLocation.longitude,
+        });
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -252,14 +238,20 @@ function scheduleNotifications(prayerTimes: PrayerTimes, config: Record<string, 
     if (msUntil <= 0) continue; // prayer already passed today
 
     const timer = setTimeout(() => {
-      if (Notification.permission === "granted") {
+        if (Notification.permission === "granted") {
         new Notification(`🕌 ${name} Prayer Time`, {
           body: `It is time for ${name} prayer. May Allah accept your salah.`,
           icon: "/favicon.ico",
           tag: `prayer-${name}`,
         });
-        const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
-        audio.play().catch(e => console.error("Adhan play blocked", e));
+        try {
+          // Use shared adhan player to avoid overlapping audio
+          import("@/lib/adhanPlayer")
+            .then(({ playAdhan }) => playAdhan("https://www.islamcan.com/audio/adhan/azan2.mp3"))
+            .catch((e) => console.error("Adhan play failed:", e));
+        } catch (e) {
+          console.error("Adhan play failed:", e);
+        }
       }
     }, msUntil);
 

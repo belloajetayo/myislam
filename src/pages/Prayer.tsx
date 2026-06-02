@@ -46,7 +46,13 @@ const Prayer: React.FC = () => {
   const [testLoading, setTestLoading] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const ADMIN_EMAIL = "ayodejiibrahim09@gmail.com";
+  const ADMIN_EMAILS = [
+    "ayodejiibrahim@gmail.com",
+    "ayodejiibrahim09@gmail.com",
+  ];
+  const isAdmin = currentUserEmail
+    ? ADMIN_EMAILS.includes(currentUserEmail.toLowerCase().trim())
+    : false;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -79,8 +85,12 @@ const Prayer: React.FC = () => {
             body: "This is a test notification. Your browser notifications are working!",
             icon: "/favicon.ico",
           });
-          const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
-          audio.play().catch(e => console.error(e));
+          try {
+            const { playAdhan } = await import("@/lib/adhanPlayer");
+            playAdhan("https://www.islamcan.com/audio/adhan/azan2.mp3");
+          } catch (e) {
+            console.error(e);
+          }
           toast.success("Local test notification sent.");
         } else {
           toast.error(result?.message || "Failed to send test notification. Make sure your browser has notifications enabled.");
@@ -93,8 +103,12 @@ const Prayer: React.FC = () => {
           body: "This is a test notification. Your browser notifications are working!",
           icon: "/favicon.ico",
         });
-        const audio = new Audio("https://www.islamcan.com/audio/adhan/azan2.mp3");
-        audio.play().catch(e => console.error(e));
+        try {
+          const { playAdhan } = await import("@/lib/adhanPlayer");
+          playAdhan("https://www.islamcan.com/audio/adhan/azan2.mp3");
+        } catch (e) {
+          console.error(e);
+        }
         toast.success("Local test notification sent.");
       } else {
         toast.error("An error occurred while sending the test notification.");
@@ -325,7 +339,7 @@ const Prayer: React.FC = () => {
           )}
         </div>
 
-        {pushSupported && pushEnabled && currentUserEmail === ADMIN_EMAIL && (
+        {pushSupported && isAdmin && (
           <div className="glass rounded-3xl p-4 border border-islamic-gold/20 bg-islamic-gold/5 flex items-center justify-between animate-slide-up">
             <div className="flex-1 pr-2">
               <h4 className="font-semibold text-foreground text-sm">
