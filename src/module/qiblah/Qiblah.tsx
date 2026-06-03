@@ -83,6 +83,11 @@ type OverpassElement = {
 const isLikelyFallbackLocation = (loc: { lat: number; lng: number }) =>
   Math.abs(loc.lat - 21.4225) < 0.1 && Math.abs(loc.lng - 39.8262) < 0.1;
 
+const getDeviceOrientationEvent = () => {
+  if (typeof DeviceOrientationEvent === "undefined") return null;
+  return DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
+};
+
 const Qiblah: React.FC = () => {
   const navigate = useNavigate();
   const { location: sharedLocation, refreshLocation } = useSharedLocation();
@@ -150,6 +155,8 @@ const Qiblah: React.FC = () => {
   const [compassSupported, setCompassSupported] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const canRequestCompassPermission =
+    typeof getDeviceOrientationEvent()?.requestPermission === "function";
 
   // Calculate Qiblah direction from user location to Kaaba
   const calculateQiblahDirection = useCallback((lat: number, lng: number) => {
@@ -256,8 +263,11 @@ const Qiblah: React.FC = () => {
   const requestCompassPermission = useCallback(async () => {
     if (listenersAdded.current) return;
 
-    const DeviceOrientationEventTyped =
-      DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
+    const DeviceOrientationEventTyped = getDeviceOrientationEvent();
+    if (!DeviceOrientationEventTyped) {
+      setCompassSupported(false);
+      return;
+    }
 
     if (typeof DeviceOrientationEventTyped.requestPermission === "function") {
       // iOS 13+ requires explicit user gesture
@@ -308,8 +318,12 @@ const Qiblah: React.FC = () => {
 
   // Auto-start listener on mount (works for Android; iOS still needs tap)
   useEffect(() => {
-    const DeviceOrientationEventTyped =
-      DeviceOrientationEvent as unknown as DeviceOrientationEventiOS;
+    const DeviceOrientationEventTyped = getDeviceOrientationEvent();
+    if (!DeviceOrientationEventTyped) {
+      setCompassSupported(false);
+      return;
+    }
+
     // Only auto-start when requestPermission API is NOT present (non-iOS)
     if (typeof DeviceOrientationEventTyped.requestPermission !== "function") {
       requestCompassPermission();
@@ -997,7 +1011,7 @@ const Qiblah: React.FC = () => {
 
     // If we have a previously-fetched location and it's within 1km of current, skip
     const prev = mosquesFetchedForLocation.current;
-    if (prev && !isLikelyFallback(userLocation)) {
+    if (prev && !isLikelyFallbackLocation(userLocation)) {
       const drift = calculateDistance(prev.lat, prev.lng, userLocation.lat, userLocation.lng);
       if (drift < 1 && nearbyMosques.length > 0) return; // Already have good results
     }
@@ -1126,10 +1140,7 @@ const Qiblah: React.FC = () => {
           </header>
 
           {/* Compass permission notice — iOS only (requires explicit user gesture) */}
-          {!permissionGranted &&
-            typeof (
-              DeviceOrientationEvent as unknown as DeviceOrientationEventiOS
-            ).requestPermission === "function" && (
+          {!permissionGranted && canRequestCompassPermission && (
               <button
                 onClick={requestCompassPermission}
                 className="mb-4 flex items-center gap-2 px-4 py-2 bg-islamic-gold/20 border border-islamic-gold/30 rounded-xl text-sm text-islamic-gold animate-pulse"
