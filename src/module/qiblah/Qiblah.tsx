@@ -61,9 +61,31 @@ const calculateDistance = (
   return R * c;
 };
 
+const MOSQUE_SEARCH_RADIUS_METERS = 20000;
+const MOSQUE_SEARCH_RADIUS_KM = MOSQUE_SEARCH_RADIUS_METERS / 1000;
+
+type MosqueEntry = {
+  name: string;
+  address: string;
+  distance: string;
+  distanceNum: number;
+  lat: number;
+  lng: number;
+};
+
+type OverpassElement = {
+  lat?: number;
+  lon?: number;
+  center?: { lat: number; lon: number };
+  tags?: Record<string, string>;
+};
+
+const isLikelyFallbackLocation = (loc: { lat: number; lng: number }) =>
+  Math.abs(loc.lat - 21.4225) < 0.1 && Math.abs(loc.lng - 39.8262) < 0.1;
+
 const Qiblah: React.FC = () => {
   const navigate = useNavigate();
-  const { location: sharedLocation } = useSharedLocation();
+  const { location: sharedLocation, refreshLocation } = useSharedLocation();
   const { cacheLocation } = useLocationCache();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -110,14 +132,7 @@ const Qiblah: React.FC = () => {
   );
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [nearbyMosques, setNearbyMosques] = useState<
-    Array<{
-      name: string;
-      address: string;
-      distance: string;
-      distanceNum: number;
-      lat: number;
-      lng: number;
-    }>
+    MosqueEntry[]
   >([]);
   const [selectedMosque, setSelectedMosque] = useState<{
     name: string;
@@ -131,6 +146,7 @@ const Qiblah: React.FC = () => {
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
+  const [refreshingMosqueLocation, setRefreshingMosqueLocation] = useState(false);
   const [compassSupported, setCompassSupported] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -650,8 +666,6 @@ const Qiblah: React.FC = () => {
       mosquesLoaded.current = true;
       mosquesFetchedForLocation.current = location;
 
-      type MosqueEntry = { name: string; address: string; distance: string; distanceNum: number; lat: number; lng: number };
-
       // Cache key rounded to ~1km grid
       const cacheKey = `mosques_${location.lat.toFixed(2)}_${location.lng.toFixed(2)}`;
       try {
@@ -666,21 +680,24 @@ const Qiblah: React.FC = () => {
         }
       } catch { /* ignore */ }
 
-      const radius = 20000; // 20km around user
-      const query = `
-        [out:json][timeout:25];
+      const radius = MOSQUE_SEARCH_RADIUS_METERS;
+      const primaryQuery = `
+        [out:json][timeout:18];
         (
-          node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
-          way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
-          relation["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
-          node["building"="mosque"](around:${radius},${location.lat},${location.lng});
-          way["building"="mosque"](around:${radius},${location.lat},${location.lng});
-          relation["building"="mosque"](around:${radius},${location.lat},${location.lng});
-          node["amenity"="mosque"](around:${radius},${location.lat},${location.lng});
-          way["amenity"="mosque"](around:${radius},${location.lat},${location.lng});
-          relation["amenity"="mosque"](around:${radius},${location.lat},${location.lng});
+          nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${location.lat},${location.lng});
+          nwr["building"="mosque"](around:${radius},${location.lat},${location.lng});
+          nwr["amenity"="mosque"](around:${radius},${location.lat},${location.lng});
+          nwr["religion"="muslim"]["name"~"mosque|masjid|juma|jummah|islamic centre|islamic center",i](around:${radius},${location.lat},${location.lng});
         );
-        out center body;
+        out center tags;
+      `;
+
+      const nameFallbackQuery = `
+        [out:json][timeout:18];
+        (
+          nwr["name"~"mosque|masjid|juma|jummah|islamic centre|islamic center",i](around:${radius},${location.lat},${location.lng});
+        );
+        out center tags;
       `;
 
       const endpoints = [
@@ -689,57 +706,90 @@ const Qiblah: React.FC = () => {
         "https://overpass.openstreetmap.fr/api/interpreter",
       ];
 
-      type OverpassElement = {
-        lat?: number;
-        lon?: number;
-        center?: { lat: number; lon: number };
-        tags?: Record<string, string>;
-      };
-
-      let elements: OverpassElement[] | null = null;
-      let sawTimeout = false;
-      for (const url of endpoints) {
+      const fetchOverpassEndpoint = async (url: string, queryText: string) => {
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+        const timeoutId = window.setTimeout(() => controller.abort(), 18000);
         try {
           const response = await fetch(url, {
             method: "POST",
-            body: `data=${encodeURIComponent(query)}`,
+            body: `data=${encodeURIComponent(queryText)}`,
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             signal: controller.signal,
           });
-          window.clearTimeout(timeoutId);
-          if (!response.ok) continue;
+
+          if (!response.ok) {
+            return { elements: [] as OverpassElement[], timedOut: false, failed: true };
+          }
+
           const data = await response.json();
-          if (data?.elements?.length) {
-            elements = data.elements as OverpassElement[];
-            break;
-          }
+          return {
+            elements: Array.isArray(data?.elements) ? (data.elements as OverpassElement[]) : [],
+            timedOut: false,
+            failed: false,
+          };
         } catch (e) {
-          window.clearTimeout(timeoutId);
-          if (e instanceof DOMException && e.name === "AbortError") {
-            sawTimeout = true;
-          }
+          const timedOut = e instanceof DOMException && e.name === "AbortError";
           console.warn(`Overpass mirror failed (${url}):`, e);
+          return { elements: [] as OverpassElement[], timedOut, failed: !timedOut };
+        } finally {
+          window.clearTimeout(timeoutId);
         }
+      };
+
+      const fetchFromMirrors = async (queryText: string) => {
+        const results = await Promise.all(
+          endpoints.map((endpoint) => fetchOverpassEndpoint(endpoint, queryText)),
+        );
+        return {
+          elements: results.find((result) => result.elements.length > 0)?.elements ?? [],
+          sawTimeout: results.some((result) => result.timedOut),
+          sawError: results.some((result) => result.failed),
+        };
+      };
+
+      let elements: OverpassElement[] = [];
+      let sawTimeout = false;
+      let sawError = false;
+
+      const primaryResult = await fetchFromMirrors(primaryQuery);
+      elements = primaryResult.elements;
+      sawTimeout = primaryResult.sawTimeout;
+      sawError = primaryResult.sawError;
+
+      if (elements.length === 0) {
+        const fallbackResult = await fetchFromMirrors(nameFallbackQuery);
+        elements = fallbackResult.elements;
+        sawTimeout = sawTimeout || fallbackResult.sawTimeout;
+        sawError = sawError || fallbackResult.sawError;
       }
 
-      if (elements && elements.length > 0) {
+      if (elements.length > 0) {
         const seen = new Set<string>();
         const mosques = elements
           .map((element): MosqueEntry | null => {
             const lat = element.lat ?? element.center?.lat;
             const lng = element.lon ?? element.center?.lon;
-            if (!lat || !lng) return null;
+            if (typeof lat !== "number" || typeof lng !== "number") return null;
             const distanceKm = calculateDistance(location.lat, location.lng, lat, lng);
+            if (distanceKm > MOSQUE_SEARCH_RADIUS_KM) return null;
+            const tags = element.tags ?? {};
+            const rawName = tags.name || tags["name:en"] || tags["name:ar"] || "";
+            const mosqueLike =
+              tags.religion === "muslim" ||
+              tags.amenity === "mosque" ||
+              tags.building === "mosque" ||
+              /mosque|masjid|juma|jummah|islamic centre|islamic center/i.test(rawName);
+            if (!mosqueLike) return null;
             const name =
-              element.tags?.name ||
-              element.tags?.["name:en"] ||
-              element.tags?.["name:ar"] ||
+              rawName ||
               "Mosque";
-            const address = element.tags?.["addr:street"]
-              ? `${element.tags?.["addr:street"]}, ${element.tags?.["addr:city"] || ""}`
-              : element.tags?.["addr:full"] || "Address not available";
+            const addressParts = [
+              tags["addr:housenumber"],
+              tags["addr:street"],
+              tags["addr:suburb"],
+              tags["addr:city"],
+            ].filter(Boolean);
+            const address = tags["addr:full"] || addressParts.join(", ") || "Address not available";
             return {
               name,
               address,
@@ -751,24 +801,30 @@ const Qiblah: React.FC = () => {
           })
           .filter((m): m is MosqueEntry => m !== null)
           .filter((mosque) => {
-            const key = `${mosque.lat.toFixed(6)}|${mosque.lng.toFixed(6)}|${mosque.name}`;
+            const key = `${mosque.lat.toFixed(5)}|${mosque.lng.toFixed(5)}|${mosque.name.toLowerCase()}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
           });
 
         mosques.sort((a, b) => a.distanceNum - b.distanceNum);
-        const top = mosques.slice(0, 10);
+        const top = mosques.slice(0, 20);
         setNearbyMosques(top);
-        setMosqueSearchStatus("idle");
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), mosques: top }));
-        } catch {
-          // Cache writes can fail in private browsing or storage pressure.
+        if (top.length > 0) {
+          setMosqueSearchStatus("idle");
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), mosques: top }));
+          } catch {
+            // Cache writes can fail in private browsing or storage pressure.
+          }
+        } else {
+          setMosqueSearchStatus(sawTimeout || sawError ? "timeout" : "empty");
+          mosquesLoaded.current = false;
+          mosquesFetchedForLocation.current = null;
         }
       } else {
         setNearbyMosques([]);
-        setMosqueSearchStatus(sawTimeout ? "timeout" : "empty");
+        setMosqueSearchStatus(sawTimeout || sawError ? "timeout" : "empty");
         mosquesLoaded.current = false;
         mosquesFetchedForLocation.current = null;
       }
@@ -777,6 +833,55 @@ const Qiblah: React.FC = () => {
     },
     [],
   );
+
+  const requestPreciseMosqueLocation = useCallback(async () => {
+    setRefreshingMosqueLocation(true);
+    setShowMosqueMap(true);
+    try {
+      const resolved = await refreshLocation({ preferCache: false });
+      const nextLocation = { lat: resolved.latitude, lng: resolved.longitude };
+      setUserLocation(nextLocation);
+
+      const direction = calculateQiblahDirection(nextLocation.lat, nextLocation.lng);
+      const roundedDir = Math.round(direction * 100) / 100;
+      setQiblahDirection(roundedDir);
+      localStorage.setItem("lastQiblahDirection", String(roundedDir));
+
+      setLocationName(
+        resolved.city
+          ? `${resolved.city}, ${resolved.country || ""}`.trim()
+          : resolved.source === "default"
+            ? "Precise location unavailable"
+            : "Location detected",
+      );
+
+      mosquesLoaded.current = false;
+      mosquesFetchedForLocation.current = null;
+
+      if (resolved.source === "default" || isLikelyFallbackLocation(nextLocation)) {
+        setNearbyMosques([]);
+        setLoadingMosques(false);
+        setMosqueSearchStatus("error");
+        return;
+      }
+
+      await fetchNearbyMosques(nextLocation, true);
+    } catch (err) {
+      console.warn("Unable to refresh mosque search location:", err);
+      setNearbyMosques([]);
+      setLoadingMosques(false);
+      setMosqueSearchStatus("error");
+    } finally {
+      setRefreshingMosqueLocation(false);
+    }
+  }, [calculateQiblahDirection, fetchNearbyMosques, refreshLocation]);
+
+  const openMosqueDialog = () => {
+    setShowMosqueMap(true);
+    if (!userLocation || isLikelyFallbackLocation(userLocation)) {
+      void requestPreciseMosqueLocation();
+    }
+  };
 
 
   const openMosqueInMaps = (lat: number, lng: number, name?: string) => {
@@ -788,7 +893,7 @@ const Qiblah: React.FC = () => {
   const openGoogleMapsSearch = () => {
     if (userLocation) {
       window.open(
-        `https://www.google.com/maps/search/mosque/@${userLocation.lat},${userLocation.lng},14z`,
+        `https://www.google.com/maps/search/mosque/@${userLocation.lat},${userLocation.lng},12z`,
         "_blank",
       );
     } else {
@@ -887,9 +992,6 @@ const Qiblah: React.FC = () => {
   );
 
   // Load mosques when dialog opens or when real GPS location arrives
-  const isLikelyFallback = (loc: { lat: number; lng: number }) =>
-    Math.abs(loc.lat - 21.4224779) < 0.1 && Math.abs(loc.lng - 39.8251832) < 0.1;
-
   useEffect(() => {
     if (!showMosqueMap || !userLocation) return;
 
@@ -900,17 +1002,19 @@ const Qiblah: React.FC = () => {
       if (drift < 1 && nearbyMosques.length > 0) return; // Already have good results
     }
 
-    // If we only have the Makkah fallback, wait — GPS may still be arriving
-    if (isLikelyFallback(userLocation)) {
-      // Still show loader and wait for real GPS
-      setLoadingMosques(true);
+    // If we only have the Makkah fallback, ask the user for a precise location instead of searching Makkah.
+    if (isLikelyFallbackLocation(userLocation)) {
+      setLoadingMosques(refreshingMosqueLocation);
+      if (!refreshingMosqueLocation) {
+        setMosqueSearchStatus("error");
+      }
       return;
     }
 
     // Real GPS is available — reset guard and fetch
     mosquesLoaded.current = false;
     fetchNearbyMosques(userLocation);
-  }, [showMosqueMap, userLocation, fetchNearbyMosques, nearbyMosques.length]);
+  }, [showMosqueMap, userLocation, fetchNearbyMosques, nearbyMosques.length, refreshingMosqueLocation]);
 
   return (
     <MobileLayout>
@@ -1227,7 +1331,7 @@ const Qiblah: React.FC = () => {
 
             {!isOffline && (
               <button
-                onClick={() => setShowMosqueMap(true)}
+                onClick={openMosqueDialog}
                 className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform"
               >
                 <Building2 className="w-5 h-5" />
@@ -1303,8 +1407,12 @@ const Qiblah: React.FC = () => {
                     {loadingMosques ? (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                        <p className="mt-3 text-sm text-muted-foreground">Searching nearby mosques...</p>
-                        <p className="mt-1 text-xs text-muted-foreground">This will stop automatically if map data is slow.</p>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                          {refreshingMosqueLocation ? "Getting your precise location..." : "Searching mosques within 20km..."}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Results are sorted by distance from your current location.
+                        </p>
                       </div>
                     ) : nearbyMosques.length > 0 ? (
                       nearbyMosques.map((mosque, index) => (
@@ -1337,11 +1445,20 @@ const Qiblah: React.FC = () => {
                         <p className="text-sm">
                           {mosqueSearchStatus === "timeout"
                             ? "Mosque map data is taking too long"
+                            : mosqueSearchStatus === "error"
+                              ? "Precise location is needed to find nearby mosques"
                             : "No mosques found nearby"}
                         </p>
                         <p className="text-xs mt-1">
-                          Try searching in Google Maps
+                          Search uses a 20km radius from your actual location
                         </p>
+                        <button
+                          onClick={requestPreciseMosqueLocation}
+                          disabled={refreshingMosqueLocation}
+                          className="mt-4 px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors disabled:opacity-60"
+                        >
+                          {refreshingMosqueLocation ? "Checking location..." : "Use precise location"}
+                        </button>
                         <button
                           onClick={() => {
                             if (userLocation) {
@@ -1350,7 +1467,7 @@ const Qiblah: React.FC = () => {
                               fetchNearbyMosques(userLocation, true);
                             }
                           }}
-                          className="mt-4 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                          className="mt-2 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
                         >
                           Try again
                         </button>
