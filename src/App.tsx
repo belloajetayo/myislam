@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,17 +18,58 @@ import Donate from "./pages/Donate";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AudioProvider } from "./context/AudioContext";
+import { resolveExactLocation, saveLastLocation } from "./hooks/useExactLocation";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AudioProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+const playNotificationAdhan = async () => {
+  const { playAdhan } = await import("./lib/adhanPlayer");
+  await playAdhan();
+};
+
+const App = () => {
+  useEffect(() => {
+    (async () => {
+      try {
+        const location = await resolveExactLocation({ allowBrowser: true, preferCache: true });
+        saveLastLocation(location);
+      } catch (err) {
+        console.error("Location prefetch failed:", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const playFromUrl = new URLSearchParams(window.location.search).get("playAdhan") === "1";
+    if (playFromUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("playAdhan");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      void playNotificationAdhan();
+    }
+
+    if (!("serviceWorker" in navigator)) return;
+
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === "PLAY_ADHAN_FROM_NOTIFICATION") {
+        void playNotificationAdhan();
+      }
+    };
+
+    navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AudioProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/prayer" element={<Prayer />} />
             <Route path="/qiblah" element={<Qiblah />} />
@@ -46,6 +88,6 @@ const App = () => (
       </AudioProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
-
+  );
+};
 export default App;

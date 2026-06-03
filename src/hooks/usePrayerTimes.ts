@@ -238,16 +238,22 @@ function scheduleNotifications(prayerTimes: PrayerTimes, config: Record<string, 
     if (msUntil <= 0) continue; // prayer already passed today
 
     const timer = setTimeout(() => {
-        if (Notification.permission === "granted") {
-        new Notification(`🕌 ${name} Prayer Time`, {
+      if (Notification.permission === "granted") {
+        const notification = new Notification(`🕌 ${name} Prayer Time`, {
           body: `It is time for ${name} prayer. May Allah accept your salah.`,
           icon: "/favicon.ico",
           tag: `prayer-${name}`,
         });
+        notification.onclick = () => {
+          window.focus();
+          import("@/lib/adhanPlayer")
+            .then(({ playAdhan }) => playAdhan())
+            .catch((e) => console.error("Adhan play failed:", e));
+        };
         try {
           // Use shared adhan player to avoid overlapping audio
           import("@/lib/adhanPlayer")
-            .then(({ playAdhan }) => playAdhan("https://www.islamcan.com/audio/adhan/azan2.mp3"))
+            .then(({ playAdhan }) => playAdhan())
             .catch((e) => console.error("Adhan play failed:", e));
         } catch (e) {
           console.error("Adhan play failed:", e);

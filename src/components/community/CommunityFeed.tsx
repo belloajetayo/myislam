@@ -58,6 +58,7 @@ const POST_TYPE_CONFIG: Record<string, { label: string; icon: string; gradient: 
 };
 
 const INITIAL_VISIBLE = 3;
+const LIKED_POSTS_KEY = 'myislam_liked_community_posts';
 
 const CommunityFeed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -66,6 +67,13 @@ const CommunityFeed: React.FC = () => {
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [isLoading, setIsLoading] = useState(true);
+  const [likedPostIds, setLikedPostIds] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(LIKED_POSTS_KEY) || '[]'));
+    } catch {
+      return new Set();
+    }
+  });
 
   const seedingRef = useRef(false);
 
@@ -220,6 +228,71 @@ const CommunityFeed: React.FC = () => {
     }
   };
 
+  const persistLikedPostIds = (next: Set<string>) => {
+    localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(Array.from(next)));
+  };
+
+  const handleLike = async (post: Post) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast.error('Please sign in to like posts.');
+      return;
+    }
+
+    const wasLiked = likedPostIds.has(post.id);
+    const optimisticLiked = !wasLiked;
+    const optimisticDelta = optimisticLiked ? 1 : -1;
+
+    setLikedPostIds(prev => {
+      const next = new Set(prev);
+      if (optimisticLiked) {
+        next.add(post.id);
+      } else {
+        next.delete(post.id);
+      }
+      persistLikedPostIds(next);
+      return next;
+    });
+
+    setPosts(prev =>
+      prev.map(item =>
+        item.id === post.id
+          ? { ...item, likes_count: Math.max(item.likes_count + optimisticDelta, 0) }
+          : item,
+      ),
+    );
+
+    try {
+      const { data, error } = await supabase.rpc('toggle_community_post_like', {
+        post_id_input: post.id,
+      });
+
+      if (error) throw error;
+
+      const synced = data?.[0];
+      if (!synced) return;
+
+      setLikedPostIds(prev => {
+        const next = new Set(prev);
+        if (synced.liked) {
+          next.add(post.id);
+        } else {
+          next.delete(post.id);
+        }
+        persistLikedPostIds(next);
+        return next;
+      });
+
+      setPosts(prev =>
+        prev.map(item =>
+          item.id === post.id ? { ...item, likes_count: synced.likes_count } : item,
+        ),
+      );
+    } catch (error) {
+      console.warn('Like sync failed, keeping local like state:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4 animate-pulse">
@@ -302,8 +375,16 @@ const CommunityFeed: React.FC = () => {
 
               {/* Actions */}
               <div className="px-4 py-3 border-t border-border/30 flex items-center gap-4 bg-background/20">
-                <button className="flex items-center gap-1.5 text-muted-foreground hover:text-red-400 transition-colors">
-                  <Heart className="w-5 h-5" />
+                <button
+                  onClick={() => handleLike(post)}
+                  aria-pressed={likedPostIds.has(post.id)}
+                  className={`flex items-center gap-1.5 transition-colors ${
+                    likedPostIds.has(post.id)
+                      ? 'text-red-500'
+                      : 'text-muted-foreground hover:text-red-400'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${likedPostIds.has(post.id) ? 'fill-current' : ''}`} />
                   <span className="text-sm">{post.likes_count}</span>
                 </button>
                 <button

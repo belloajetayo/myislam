@@ -1,28 +1,38 @@
+export const DEFAULT_ADHAN_URL = "https://www.islamcan.com/audio/adhan/azan2.mp3";
+
 let adhanAudio: HTMLAudioElement | null = null;
 
-export function playAdhan(url: string) {
+export async function playAdhan(url: string = DEFAULT_ADHAN_URL): Promise<boolean> {
   try {
-    // Stop previous adhan if playing
-    if (adhanAudio) {
-      try { adhanAudio.pause(); } catch {}
-      try { adhanAudio.src = ""; } catch {}
-      adhanAudio = null;
-    }
+    stopAdhan();
 
-    adhanAudio = new Audio(url);
-    adhanAudio.preload = "auto";
-    adhanAudio.play().catch((e) => {
-      console.error("Adhan playback blocked:", e);
+    const audio = new Audio(url);
+    adhanAudio = audio;
+    audio.preload = "auto";
+    audio.volume = 0.9;
+
+    const loadError = new Promise<never>((_, reject) => {
+      audio.addEventListener(
+        "error",
+        () => reject(new Error(`Unable to load adhan audio: ${url}`)),
+        { once: true },
+      );
     });
+
+    await Promise.race([audio.play(), loadError]);
+    return true;
   } catch (e) {
-    console.error("Failed to play adhan:", e);
+    stopAdhan();
+    console.error("Adhan playback failed:", e);
+    return false;
   }
 }
 
 export function stopAdhan() {
   if (adhanAudio) {
-    try { adhanAudio.pause(); } catch {}
-    try { adhanAudio.src = ""; } catch {}
+    adhanAudio.pause();
+    adhanAudio.removeAttribute("src");
+    adhanAudio.load();
     adhanAudio = null;
   }
 }

@@ -23,16 +23,27 @@ export function getStoredLastLocation(): ExactLocation | null {
   try {
     const raw = localStorage.getItem(LAST_LOCATION_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { latitude: number; longitude: number };
-    if (
-      typeof parsed.latitude !== "number" ||
-      typeof parsed.longitude !== "number"
-    ) {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const latitude =
+      typeof parsed.latitude === "number"
+        ? parsed.latitude
+        : typeof parsed.lat === "number"
+        ? parsed.lat
+        : null;
+    const longitude =
+      typeof parsed.longitude === "number"
+        ? parsed.longitude
+        : typeof parsed.lng === "number"
+        ? parsed.lng
+        : null;
+
+    if (latitude === null || longitude === null) {
       return null;
     }
+
     return {
-      latitude: parsed.latitude,
-      longitude: parsed.longitude,
+      latitude,
+      longitude,
       source: "cache",
     };
   } catch {
@@ -101,6 +112,13 @@ export async function resolveExactLocation(opts?: {
   const allowBrowser = opts?.allowBrowser ?? true;
   const preferCache = opts?.preferCache ?? true;
 
+  if (preferCache) {
+    const cached = getStoredLastLocation();
+    if (cached) {
+      return cached;
+    }
+  }
+
   if (allowBrowser) {
     const browserLocation = await getBrowserLocation();
     if (browserLocation) {
@@ -109,7 +127,7 @@ export async function resolveExactLocation(opts?: {
     }
   }
 
-  if (preferCache) {
+  if (!preferCache) {
     const cached = getStoredLastLocation();
     if (cached) {
       return cached;

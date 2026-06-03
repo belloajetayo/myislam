@@ -1,6 +1,6 @@
 import React from "react";
 import { useAudio } from "@/context/AudioContext";
-import { Play, Pause, SkipForward, X, Volume2 } from "lucide-react";
+import { Play, Pause, SkipForward, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 
@@ -19,11 +19,15 @@ const MiniPlayer: React.FC = () => {
   if (!currentSurah) return null;
 
   const currentAyah = currentSurah.ayahs[currentAyahIndex];
+  const openCurrentAyah = () => {
+    const ayahNumber = currentAyah?.numberInSurah ?? currentAyahIndex + 1;
+    navigate(`/quran?surah=${currentSurah.number}&ayah=${ayahNumber}`);
+  };
 
   return (
     <div className="fixed bottom-[96px] left-4 right-4 z-40 animate-slide-up">
       <div 
-        onClick={() => navigate("/quran")}
+        onClick={openCurrentAyah}
         className="glass border border-primary/20 rounded-2xl p-3 shadow-lg flex items-center justify-between gap-3 cursor-pointer bg-background/80 backdrop-blur-md hover:bg-background/90 transition-all duration-300 active:scale-[0.99]"
       >
         <div className="flex items-center gap-3 min-w-0">

@@ -286,6 +286,7 @@ Deno.serve(async (req) => {
             body: `Assalamu Alaikum! Your My Islam prayer notification system is working perfectly.`,
             tag: `prayer-test`,
             icon: "/pwa-icons/icon-192.svg",
+            playAdhan: true,
           },
           vapidPrivateKey
         );
@@ -335,18 +336,20 @@ Deno.serve(async (req) => {
 
         // Pre-adhan reminder: 10 minutes before prayer (window ±1 min)
         // At-adhan notification: at prayer time (window ±1 min)
-        let notif: { title: string; body: string; tag: string } | null = null;
+        let notif: { title: string; body: string; tag: string; playAdhan: boolean } | null = null;
         if (Math.abs(diff + 10) <= 1) {
           notif = {
             title: `🕌 ${prayer} in ~10 minutes`,
             body: `Get ready for ${prayer} prayer. Make wudu and prepare your heart.`,
             tag: `prayer-${prayer}-pre`,
+            playAdhan: false,
           };
         } else if (Math.abs(diff) <= 1) {
           notif = {
             title: `🕌 ${prayer} Prayer Time`,
             body: `It is time for ${prayer} prayer. May Allah accept your salah.`,
             tag: `prayer-${prayer}`,
+            playAdhan: true,
           };
         }
 
