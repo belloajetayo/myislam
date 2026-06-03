@@ -18,7 +18,7 @@ import Donate from "./pages/Donate";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AudioProvider } from "./context/AudioContext";
-import { resolveExactLocation, saveLastLocation } from "./hooks/useExactLocation";
+import { LocationProvider } from "./context/LocationContext";
 
 const queryClient = new QueryClient();
 
@@ -28,17 +28,6 @@ const playNotificationAdhan = async () => {
 };
 
 const App = () => {
-  useEffect(() => {
-    (async () => {
-      try {
-        const location = await resolveExactLocation({ allowBrowser: true, preferCache: true });
-        saveLastLocation(location);
-      } catch (err) {
-        console.error("Location prefetch failed:", err);
-      }
-    })();
-  }, []);
-
   useEffect(() => {
     const playFromUrl = new URLSearchParams(window.location.search).get("playAdhan") === "1";
     if (playFromUrl) {
@@ -66,25 +55,27 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AudioProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/prayer" element={<Prayer />} />
-            <Route path="/qiblah" element={<Qiblah />} />
-            <Route path="/quran" element={<Quran />} />
+          <LocationProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/prayer" element={<Prayer />} />
+              <Route path="/qiblah" element={<Qiblah />} />
+              <Route path="/quran" element={<Quran />} />
 
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/zakat" element={<Zakat />} />
-            <Route path="/fasting" element={<Fasting />} />
-            <Route path="/hajj" element={<Hajj />} />
-            <Route path="/donation" element={<Donate />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/zakat" element={<Zakat />} />
+              <Route path="/fasting" element={<Fasting />} />
+              <Route path="/hajj" element={<Hajj />} />
+              <Route path="/donation" element={<Donate />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </LocationProvider>
       </AudioProvider>
     </TooltipProvider>
   </QueryClientProvider>

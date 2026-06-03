@@ -16,7 +16,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { playAdhan } from "@/lib/adhanPlayer";
+import { playAdhan, primeAdhan } from "@/lib/adhanPlayer";
 
 const PRAYER_UI_CONFIG = [
   { name: "Fajr", arabic: "الفجر", color: "from-indigo-500 to-purple-600" },
@@ -88,6 +88,7 @@ const Prayer: React.FC = () => {
   const handleSendTestNotification = async () => {
     try {
       setTestLoading(true);
+      void primeAdhan();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         toast.error("Please sign in to test notifications.");
@@ -213,6 +214,7 @@ const Prayer: React.FC = () => {
           <button
             aria-label={pushEnabled || notificationsEnabled ? "Disable prayer notifications" : "Enable prayer notifications"}
             onClick={async () => {
+              void primeAdhan();
               if (pushSupported) {
                 const result = await togglePush();
                 if (result) {

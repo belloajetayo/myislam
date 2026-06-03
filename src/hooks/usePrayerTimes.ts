@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
+import { ExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
+import { useSharedLocation } from "@/context/useSharedLocation";
 
 export interface PrayerTimes {
   Fajr: string;
@@ -35,13 +35,21 @@ interface CachedPT {
   location: LocationData;
 }
 
-function readCache(): CachedPT | null {
+function isSameLocation(a: ExactLocation, b: LocationData) {
+  return (
+    Math.abs(a.latitude - b.latitude) < 0.05 &&
+    Math.abs(a.longitude - b.longitude) < 0.05
+  );
+}
+
+function readCache(location: ExactLocation): CachedPT | null {
   try {
     const raw = localStorage.getItem(PT_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CachedPT;
     const today = new Date().toISOString().split("T")[0];
     if (parsed.date !== today) return null;
+    if (!parsed.location || !isSameLocation(location, parsed.location)) return null;
     return parsed;
   } catch {
     return null;
@@ -49,22 +57,39 @@ function readCache(): CachedPT | null {
 }
 
 export function usePrayerTimes() {
-  const cached = typeof window !== "undefined" ? readCache() : null;
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(cached?.prayerTimes ?? null);
-  const [location, setLocation] = useState<LocationData | null>(cached?.location ?? null);
-  const [hijriDate, setHijriDate] = useState<HijriDateData | null>(cached?.hijriDate ?? null);
-  const [loading, setLoading] = useState(!cached);
+  const { location: sharedLocation, loading: locationLoading } = useSharedLocation();
+  const sharedLatitude = sharedLocation?.latitude;
+  const sharedLongitude = sharedLocation?.longitude;
+  const sharedSource = sharedLocation?.source;
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [location, setLocation] = useState<LocationData | null>(null);
+  const [hijriDate, setHijriDate] = useState<HijriDateData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPrayer, setCurrentPrayer] = useState<string>("");
   const [nextPrayer, setNextPrayer] = useState<string>("");
 
   useEffect(() => {
-    // If cache is still fresh, skip refetch
+    if (sharedLatitude === undefined || sharedLongitude === undefined) return;
+
+    const requestLocation: ExactLocation = {
+      latitude: sharedLatitude,
+      longitude: sharedLongitude,
+      source: sharedSource,
+    };
+
+    const cached = typeof window !== "undefined" ? readCache(requestLocation) : null;
     if (cached && Date.now() - cached.ts < PT_CACHE_TTL_MS) {
+      setPrayerTimes(cached.prayerTimes);
+      setLocation(cached.location);
+      setHijriDate(cached.hijriDate);
+      setLoading(false);
       return;
     }
 
     const fetchPrayerTimes = async (lat: number, lon: number) => {
+      setLoading(true);
+      setError(null);
       try {
         const geoResponse = await fetch(
           `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
@@ -78,7 +103,9 @@ export function usePrayerTimes() {
           longitude: lon,
         };
         setLocation(loc);
-        saveLastLocation(loc);
+        if (sharedSource !== "default") {
+          saveLastLocation(loc);
+        }
 
         const date = new Date();
         const response = await fetch(
@@ -125,21 +152,8 @@ export function usePrayerTimes() {
       }
     };
 
-    (async () => {
-      const startLocation = await resolveExactLocation({ allowBrowser: true, preferCache: true });
-      await fetchPrayerTimes(startLocation.latitude, startLocation.longitude);
-
-      if (startLocation.city && startLocation.country) {
-        setLocation({
-          city: startLocation.city,
-          country: startLocation.country,
-          latitude: startLocation.latitude,
-          longitude: startLocation.longitude,
-        });
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void fetchPrayerTimes(sharedLatitude, sharedLongitude);
+  }, [sharedLatitude, sharedLongitude, sharedSource]);
 
   // Calculate current and next prayer
   useEffect(() => {
@@ -192,6 +206,7 @@ export function usePrayerTimes() {
     location,
     hijriDate,
     loading,
+    locationLoading,
     error,
     currentPrayer,
     nextPrayer,

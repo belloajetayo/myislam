@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { type User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
+import { useSharedLocation } from "@/context/useSharedLocation";
 // RamadanCountdown temporarily hidden — will return ~1 month before next Ramadan
 // import RamadanCountdown from "@/components/home/RamadanCountdown";
 import RamadanTracker from "@/components/fasting/RamadanTracker";
@@ -208,6 +208,7 @@ const rewardedActions = [
 // ─── Component ────────────────────────────────────────────────────────────────
 const Fasting: React.FC = () => {
   const navigate = useNavigate();
+  const { location: sharedLocation } = useSharedLocation();
 
   // Auth
   const [user, setUser] = useState<User | null>(null);
@@ -246,6 +247,8 @@ const Fasting: React.FC = () => {
 
   // Get Hijri date + location (reuse prayer-times API with GPS)
   useEffect(() => {
+    if (!sharedLocation) return;
+
     const fetchData = async (lat: number, lon: number) => {
       try {
         // Location name
@@ -281,19 +284,16 @@ const Fasting: React.FC = () => {
       }
     };
 
-    (async () => {
-      const startLocation = await resolveExactLocation({ allowBrowser: true, preferCache: true });
-      if (startLocation.city && startLocation.country) {
-        setLocation({
-          city: startLocation.city,
-          country: startLocation.country,
-        });
-      }
-      saveLastLocation(startLocation);
-      await fetchData(startLocation.latitude, startLocation.longitude);
-    })();
+    if (sharedLocation.city || sharedLocation.country) {
+      setLocation({
+        city: sharedLocation.city || "Your city",
+        country: sharedLocation.country || "",
+      });
+    }
+
+    void fetchData(sharedLocation.latitude, sharedLocation.longitude);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentional: run once on mount to get location
+  }, [sharedLocation?.latitude, sharedLocation?.longitude]);
 
   // Derived: is it Ramadan?
   const isRamadan = hijriInfo?.month === 9;

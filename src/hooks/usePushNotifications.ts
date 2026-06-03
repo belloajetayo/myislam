@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getStoredLastLocation, resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
+import { resolveExactLocation, saveLastLocation } from "@/hooks/useExactLocation";
 
 const VAPID_PUBLIC_KEY = "BGNiIskKFEbs4Fpzoi-F_-_n1D7BNGTVGldFCJd8k0XItL27r6DPrU9wogKC29342IPwkXy0YsS-r3YecBtVX3w";
 

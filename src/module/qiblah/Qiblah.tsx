@@ -19,6 +19,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredLastLocation, saveLastLocation } from "@/hooks/useExactLocation";
+import { useSharedLocation } from "@/context/useSharedLocation";
 import { useLocationCache } from "@/hooks/useLocationCache";
 import {
   Dialog,
@@ -62,6 +63,7 @@ const calculateDistance = (
 
 const Qiblah: React.FC = () => {
   const navigate = useNavigate();
+  const { location: sharedLocation } = useSharedLocation();
   const { cacheLocation } = useLocationCache();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -83,7 +85,7 @@ const Qiblah: React.FC = () => {
   const turnTextRef = useRef<HTMLParagraphElement | null>(null);
   const facingRingRef = useRef<HTMLDivElement | null>(null);
   const qiblahDirectionRef = useRef<number>(0);
-  const cachedExactLocation = getStoredLastLocation();
+  const cachedExactLocation = sharedLocation ?? getStoredLastLocation();
   const cachedUserLocation = cachedExactLocation
     ? { lat: cachedExactLocation.latitude, lng: cachedExactLocation.longitude }
     : null;
@@ -100,7 +102,11 @@ const Qiblah: React.FC = () => {
     lng: number;
   } | null>(cachedUserLocation);
   const [locationName, setLocationName] = useState(
-    cachedUserLocation ? "Cached location" : "Locating...",
+    cachedExactLocation?.city
+      ? `${cachedExactLocation.city}, ${cachedExactLocation.country || ""}`.trim()
+      : cachedUserLocation
+        ? "Cached location"
+        : "Locating...",
   );
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [nearbyMosques, setNearbyMosques] = useState<
@@ -314,6 +320,22 @@ const Qiblah: React.FC = () => {
     if (locationFetched.current) return;
     locationFetched.current = true;
 
+    if (sharedLocation) {
+      const loc = { lat: sharedLocation.latitude, lng: sharedLocation.longitude };
+      const direction = calculateQiblahDirection(loc.lat, loc.lng);
+      const roundedDir = Math.round(direction * 100) / 100;
+      setUserLocation(loc);
+      setQiblahDirection(roundedDir);
+      setLocationName(
+        sharedLocation.city
+          ? `${sharedLocation.city}, ${sharedLocation.country || ""}`.trim()
+          : sharedLocation.source === "default"
+            ? "Makkah, Saudi Arabia"
+            : "Shared location",
+      );
+      localStorage.setItem("lastQiblahDirection", String(roundedDir));
+    }
+
     const fallbackToIPOrMakkah = async () => {
       try {
         const { data, error } = await supabase.functions.invoke("get-user-location");
@@ -464,7 +486,7 @@ const Qiblah: React.FC = () => {
         navigator.geolocation.clearWatch(watchId.current);
       }
     };
-  }, [calculateQiblahDirection, cacheLocation]);
+  }, [calculateQiblahDirection, cacheLocation, sharedLocation]);
 
   // Initialize map AFTER location is available
   useEffect(() => {
