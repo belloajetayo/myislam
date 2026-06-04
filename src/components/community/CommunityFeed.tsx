@@ -262,35 +262,8 @@ const CommunityFeed: React.FC = () => {
       ),
     );
 
-    try {
-      const { data, error } = await supabase.rpc('toggle_community_post_like', {
-        post_id_input: post.id,
-      });
-
-      if (error) throw error;
-
-      const synced = data?.[0];
-      if (!synced) return;
-
-      setLikedPostIds(prev => {
-        const next = new Set(prev);
-        if (synced.liked) {
-          next.add(post.id);
-        } else {
-          next.delete(post.id);
-        }
-        persistLikedPostIds(next);
-        return next;
-      });
-
-      setPosts(prev =>
-        prev.map(item =>
-          item.id === post.id ? { ...item, likes_count: synced.likes_count } : item,
-        ),
-      );
-    } catch (error) {
-      console.warn('Like sync failed, keeping local like state:', error);
-    }
+    // Likes are tracked locally via likedPostIds (persisted to localStorage).
+    // Server-side like aggregation is not yet implemented.
   };
 
   if (isLoading) {

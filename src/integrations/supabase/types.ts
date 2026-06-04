@@ -73,35 +73,6 @@ export type Database = {
           },
         ]
       }
-      community_post_likes: {
-        Row: {
-          created_at: string
-          id: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "community_post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "community_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       community_posts: {
         Row: {
           content: string
@@ -341,15 +312,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      toggle_community_post_like: {
-        Args: {
-          post_id_input: string
-        }
-        Returns: {
-          liked: boolean
-          likes_count: number
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
