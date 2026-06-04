@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import MosqueNearMe from "@/components/mosque/MosqueNearMe";
 
 import {
   KAABA_COORDS,
@@ -149,6 +150,7 @@ const Qiblah: React.FC = () => {
   const [loadingMosques, setLoadingMosques] = useState(false);
   const [mosqueSearchStatus, setMosqueSearchStatus] = useState<"idle" | "timeout" | "error" | "empty">("idle");
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [mapReady, setMapReady] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showMosqueMap, setShowMosqueMap] = useState(false);
   const [refreshingMosqueLocation, setRefreshingMosqueLocation] = useState(false);
@@ -214,7 +216,7 @@ const Qiblah: React.FC = () => {
           const turn = normRot > 180 ? 360 - normRot : normRot;
           const dir = normRot > 180 ? 'left' : 'right';
           turnTextRef.current.textContent = `Turn ${Math.round(turn)}° ${dir}`;
-          turnTextRef.current.className = 'text-xs text-primary-foreground/60';
+          turnTextRef.current.className = 'text-xs text-muted-foreground';
         }
       }
 
@@ -568,6 +570,7 @@ const Qiblah: React.FC = () => {
         .addTo(mapInstance);
 
       mapInstance.on("load", () => {
+        setMapReady(true);
         if (mapInstance) {
           mapInstance.addSource("qiblah-line", {
             type: "geojson",
@@ -630,6 +633,7 @@ const Qiblah: React.FC = () => {
     initMap();
 
     return () => {
+      setMapReady(false);
       mapInstance?.remove();
     };
   }, [userLocation, isOffline]);
@@ -890,12 +894,7 @@ const Qiblah: React.FC = () => {
     }
   }, [calculateQiblahDirection, fetchNearbyMosques, refreshLocation]);
 
-  const openMosqueDialog = () => {
-    setShowMosqueMap(true);
-    if (!userLocation || isLikelyFallbackLocation(userLocation)) {
-      void requestPreciseMosqueLocation();
-    }
-  };
+  const toggleMosquePanel = () => setShowMosqueMap((prev) => !prev);
 
 
   const openMosqueInMaps = (lat: number, lng: number, name?: string) => {
@@ -1033,18 +1032,96 @@ const Qiblah: React.FC = () => {
   return (
     <MobileLayout>
       <div className="relative min-h-[calc(100vh-80px)]">
-        {/* Map Background - only show when online */}
-        {!isOffline && (
-          <div ref={mapContainer} className="absolute inset-0 z-0" />
+        {/* === FALLBACK BACKGROUND: Rich Islamic geometric gradient === */}
+        {/* Always mounted so it shows immediately, hidden by Mapbox satellite once ready */}
+        {!mapReady && (
+          <div
+            className="absolute inset-0 z-0 overflow-hidden"
+            style={{
+              background: isOffline
+                ? 'linear-gradient(135deg, #0d2b1f 0%, #1a472a 25%, #0f3460 50%, #16213e 75%, #0d2b1f 100%)'
+                : 'linear-gradient(160deg, #0b1d2f 0%, #0d2b1f 20%, #1a1a2e 40%, #16213e 60%, #0d2b1f 80%, #0b1d2f 100%)',
+            }}
+          >
+            {/* Animated glowing orbs */}
+            <div
+              className="absolute rounded-full opacity-25 blur-3xl"
+              style={{
+                width: '320px', height: '320px',
+                background: 'radial-gradient(circle, #10b981 0%, transparent 70%)',
+                top: '-60px', left: '50%', transform: 'translateX(-50%)',
+                animation: 'pulse 6s ease-in-out infinite',
+              }}
+            />
+            <div
+              className="absolute rounded-full opacity-20 blur-3xl"
+              style={{
+                width: '220px', height: '220px',
+                background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)',
+                bottom: '80px', right: '-40px',
+                animation: 'pulse 8s ease-in-out infinite 2s',
+              }}
+            />
+            <div
+              className="absolute rounded-full opacity-15 blur-3xl"
+              style={{
+                width: '180px', height: '180px',
+                background: 'radial-gradient(circle, #8b5cf6 0%, transparent 70%)',
+                bottom: '180px', left: '-20px',
+                animation: 'pulse 7s ease-in-out infinite 4s',
+              }}
+            />
+
+            {/* Islamic geometric SVG pattern overlay */}
+            <div
+              className="absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%2310b981' stroke-width='0.8'%3E%3Cpolygon points='40,4 52,28 76,28 56,44 64,68 40,52 16,68 24,44 4,28 28,28' /%3E%3Ccircle cx='40' cy='40' r='20' /%3E%3Cpolygon points='40,16 48,36 68,36 52,48 58,68 40,56 22,68 28,48 12,36 32,36' fill='none' /%3E%3C/g%3E%3C/svg%3E")`,
+                backgroundSize: '80px 80px',
+              }}
+            />
+
+            {/* Subtle star field */}
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: `radial-gradient(1px 1px at 10% 15%, white, transparent),
+                  radial-gradient(1px 1px at 85% 8%, white, transparent),
+                  radial-gradient(1.5px 1.5px at 25% 40%, white, transparent),
+                  radial-gradient(1px 1px at 70% 55%, white, transparent),
+                  radial-gradient(1px 1px at 45% 80%, white, transparent),
+                  radial-gradient(1.5px 1.5px at 90% 70%, white, transparent),
+                  radial-gradient(1px 1px at 5% 65%, white, transparent),
+                  radial-gradient(1px 1px at 60% 20%, white, transparent),
+                  radial-gradient(1px 1px at 35% 90%, white, transparent),
+                  radial-gradient(1px 1px at 80% 85%, white, transparent)`,
+              }}
+            />
+
+            {/* Crescent moon silhouette top-right */}
+            <svg
+              className="absolute top-6 right-6 opacity-30"
+              width="48" height="48" viewBox="0 0 48 48"
+            >
+              <path
+                d="M24 4 C14 4, 6 12, 6 24 C6 36, 14 44, 24 44 C18 38, 14 31, 14 24 C14 17, 18 10, 24 4Z"
+                fill="#f59e0b"
+              />
+            </svg>
+          </div>
         )}
 
-        {/* Offline background */}
-        {isOffline && (
-          <div className="absolute inset-0 z-0 bg-gradient-to-br from-islamic-green/20 via-background to-islamic-gold/10" />
+        {/* Mapbox satellite map — loaded when online; sits on top of gradient */}
+        {!isOffline && (
+          <div ref={mapContainer} className="absolute inset-0 z-[1] transition-opacity duration-700" style={{ opacity: mapReady ? 1 : 0 }} />
         )}
 
         {/* Overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background/90 z-10" />
+        {!isOffline && mapReady ? (
+          <div className="absolute inset-0 bg-black/30 z-[2] pointer-events-none" />
+        ) : (
+          <div className="absolute inset-0 bg-black/5 z-[2] pointer-events-none" />
+        )}
 
         {/* Content */}
         <div className="relative z-20 p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
@@ -1072,8 +1149,8 @@ const Qiblah: React.FC = () => {
                   </h1>
                   <Dialog open={showInfo} onOpenChange={setShowInfo}>
                     <DialogTrigger asChild>
-                      <button className="p-1.5 rounded-full bg-primary/20 hover:bg-primary/30 transition-colors">
-                        <Info className="w-4 h-4 text-primary-foreground" />
+                      <button className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+                        <Info className="w-4 h-4 text-white" />
                       </button>
                     </DialogTrigger>
                     <DialogContent className="glass border-primary/20 max-w-sm mx-4">
@@ -1130,9 +1207,9 @@ const Qiblah: React.FC = () => {
                     </DialogContent>
                   </Dialog>
                 </div>
-                <div className="flex items-center justify-center gap-1 text-primary-foreground/90 mt-1">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{locationName}</span>
+                <div className="flex items-center justify-center gap-1 text-white/90 mt-1">
+                  <MapPin className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-semibold">{locationName}</span>
                 </div>
               </div>
               <div className="w-10" /> {/* Spacer for alignment */}
@@ -1155,14 +1232,14 @@ const Qiblah: React.FC = () => {
             <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 border border-amber-500/30">
               <Sunrise className="w-5 h-5 text-amber-400" />
               <div className="text-xs">
-                <p className="text-primary-foreground/60">Sunrise</p>
+                <p className="text-muted-foreground">Sunrise</p>
                 <p className="font-semibold text-amber-400">East (90°)</p>
               </div>
             </div>
             <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 border border-orange-500/30">
               <Sunset className="w-5 h-5 text-orange-400" />
               <div className="text-xs">
-                <p className="text-primary-foreground/60">Sunset</p>
+                <p className="text-muted-foreground">Sunset</p>
                 <p className="font-semibold text-orange-400">West (270°)</p>
               </div>
             </div>
@@ -1193,13 +1270,13 @@ const Qiblah: React.FC = () => {
                 <span className="absolute top-2 left-1/2 -translate-x-1/2 text-lg text-emerald-500">
                   N
                 </span>
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-lg text-primary-foreground/60">
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-lg text-muted-foreground">
                   S
                 </span>
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-lg text-primary-foreground/60">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">
                   W
                 </span>
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg text-primary-foreground/60">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">
                   E
                 </span>
               </div>
@@ -1208,7 +1285,7 @@ const Qiblah: React.FC = () => {
               {[...Array(72)].map((_, i) => (
                 <div
                   key={i}
-                  className={`absolute left-1/2 ${i % 9 === 0 ? "w-0.5 h-6 bg-islamic-gold/60" : i % 3 === 0 ? "w-px h-3 bg-primary-foreground/40" : "w-px h-1.5 bg-primary-foreground/20"}`}
+                  className={`absolute left-1/2 ${i % 9 === 0 ? "w-0.5 h-6 bg-islamic-gold/60" : i % 3 === 0 ? "w-px h-3 bg-muted-foreground/40" : "w-px h-1.5 bg-muted-foreground/20"}`}
                   style={{
                     transform: `translateX(-50%) rotate(${i * 5}deg)`,
                     transformOrigin: "50% 140px",
@@ -1294,32 +1371,32 @@ const Qiblah: React.FC = () => {
           <div className="mt-4 text-center glass rounded-3xl p-4 w-full max-w-xs shadow-card border border-primary/20 animate-slide-up backdrop-blur-md">
             <div className="flex justify-between items-center mb-2">
               <div>
-                <p className="text-xs text-primary-foreground/60">
+                <p className="text-xs text-muted-foreground">
                   Your Heading
                 </p>
-                <p className="text-lg font-bold text-primary-foreground">
+                <p className="text-lg font-bold text-foreground">
                   {Math.round(deviceHeading)}°
                 </p>
               </div>
               <div className="w-px h-8 bg-primary/30" />
               <div>
-                <p className="text-xs text-primary-foreground/60">Qiblah</p>
+                <p className="text-xs text-muted-foreground">Qiblah</p>
                 <p className="text-lg font-bold bg-gradient-to-r from-amber-400 to-purple-500 bg-clip-text text-transparent">
                   {qiblahDirection}°
                 </p>
               </div>
               <div className="w-px h-8 bg-primary/30" />
               <div>
-                <p className="text-xs text-primary-foreground/60">GPS</p>
+                <p className="text-xs text-muted-foreground">GPS</p>
                 <p
-                  className={`text-lg font-bold ${gpsAccuracy && gpsAccuracy < 10 ? "text-emerald-400" : gpsAccuracy && gpsAccuracy < 50 ? "text-amber-400" : "text-red-400"}`}
+                  className={`text-lg font-bold ${gpsAccuracy && gpsAccuracy < 10 ? "text-emerald-500" : gpsAccuracy && gpsAccuracy < 50 ? "text-amber-500" : "text-red-500"}`}
                 >
                   ±{gpsAccuracy || "--"}m
                 </p>
               </div>
             </div>
             {/* Turn text is updated directly via ref in the RAF loop — no re-render needed */}
-            <p ref={turnTextRef} className="text-xs text-primary-foreground/60">
+            <p ref={turnTextRef} className="text-xs text-muted-foreground">
               Calculating direction...
             </p>
           </div>
@@ -1342,161 +1419,30 @@ const Qiblah: React.FC = () => {
 
             {!isOffline && (
               <button
-                onClick={openMosqueDialog}
-                className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform"
+                onClick={toggleMosquePanel}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-all ${
+                  showMosqueMap
+                    ? 'bg-gradient-to-r from-teal-600 to-emerald-700 ring-2 ring-emerald-400/40'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                }`}
               >
                 <Building2 className="w-5 h-5" />
-                Mosque Near Me
+                {showMosqueMap ? 'Hide Mosques' : 'Mosque Near Me'}
               </button>
             )}
           </div>
 
-          {/* Mosque Map Dialog */}
-          <Dialog
-            open={showMosqueMap}
-            onOpenChange={(open) => {
-              setShowMosqueMap(open);
-              if (!open) {
-                setSelectedMosque(null);
-                mosqueMap.current?.remove();
-                mosqueMap.current = null;
-              }
-            }}
-          >
-            <DialogContent className="max-w-md w-[95vw] max-h-[85vh] overflow-hidden border-primary/20">
-              <DialogHeader className="pb-2">
-                <DialogTitle className="bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-emerald-500" />
-                  {selectedMosque ? selectedMosque.name : "Mosques Near You"}
-                </DialogTitle>
-              </DialogHeader>
-
-              {selectedMosque ? (
-                <div className="space-y-3">
-                  {/* In-app map with direction line — only when Mapbox token available */}
-                  {mapboxToken ? (
-                    <div
-                      ref={mosqueMapContainer}
-                      className="w-full h-64 rounded-xl overflow-hidden border border-primary/20"
-                    />
-                  ) : (
-                    <div className="w-full h-32 rounded-xl border border-primary/20 bg-muted/30 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <MapPin className="w-8 h-8 opacity-40" />
-                      <p className="text-xs">Map preview unavailable</p>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedMosque(null);
-                        mosqueMap.current?.remove();
-                        mosqueMap.current = null;
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-muted rounded-xl font-medium hover:bg-muted/80 transition-colors"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      Back to List
-                    </button>
-                    <button
-                      onClick={() =>
-                        openMosqueInMaps(
-                          selectedMosque.lat,
-                          selectedMosque.lng,
-                          selectedMosque.name,
-                        )
-                      }
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      Navigate
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-                    {loadingMosques ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                        <p className="mt-3 text-sm text-muted-foreground">
-                          {refreshingMosqueLocation ? "Getting your precise location..." : "Searching mosques within 20km..."}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Results are sorted by distance from your current location.
-                        </p>
-                      </div>
-                    ) : nearbyMosques.length > 0 ? (
-                      nearbyMosques.map((mosque, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleMosqueSelect(mosque)}
-                          className="w-full p-3 bg-muted/50 hover:bg-muted rounded-xl text-left transition-colors group"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-foreground truncate">
-                                {mosque.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {mosque.address}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-xs text-emerald-500 font-medium">
-                                {mosque.distance}
-                              </span>
-                              <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-                            </div>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">
-                          {mosqueSearchStatus === "timeout"
-                            ? "Mosque map data is taking too long"
-                            : mosqueSearchStatus === "error"
-                              ? "Precise location is needed to find nearby mosques"
-                            : "No mosques found nearby"}
-                        </p>
-                        <p className="text-xs mt-1">
-                          Search uses a 20km radius from your actual location
-                        </p>
-                        <button
-                          onClick={requestPreciseMosqueLocation}
-                          disabled={refreshingMosqueLocation}
-                          className="mt-4 px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors disabled:opacity-60"
-                        >
-                          {refreshingMosqueLocation ? "Checking location..." : "Use precise location"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (userLocation) {
-                              mosquesLoaded.current = false;
-                              mosquesFetchedForLocation.current = null;
-                              fetchNearbyMosques(userLocation, true);
-                            }
-                          }}
-                          className="mt-2 px-4 py-2 rounded-xl bg-muted text-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
-                        >
-                          Try again
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={openGoogleMapsSearch}
-                    className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:scale-[1.02] transition-transform"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Search in Google Maps
-                  </button>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+          {/* Mosque Inline Panel */}
+          {showMosqueMap && (
+            <div
+              className="w-full max-w-md mt-3 rounded-2xl overflow-hidden border border-emerald-500/30
+                bg-card/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-top-2 duration-300
+                flex flex-col"
+              style={{ height: '480px' }}
+            >
+              <MosqueNearMe userCoords={userLocation} />
+            </div>
+          )}
 
           {/* Instructions */}
           <p
