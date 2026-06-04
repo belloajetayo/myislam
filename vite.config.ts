@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ['pwa-icons/*.png', 'favicon.ico'],
       manifest: false, // Using external manifest.webmanifest
       workbox: {
+        skipWaiting: true,       // New SW activates immediately on deploy
+        clientsClaim: true,      // SW claims all open tabs right away
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
         navigateFallback: '/index.html',
