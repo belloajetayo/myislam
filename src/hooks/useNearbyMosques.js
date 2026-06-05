@@ -44,6 +44,9 @@ function buildQuery(lat, lng, radius) {
   );
 }
 
+/** True when running on a non-localhost origin (i.e. Vercel production) */
+const IS_PRODUCTION = !window.location.hostname.includes('localhost');
+
 /** Fire a single POST to one mirror; resolve with elements array or reject */
 function fetchMirror(url, query) {
   return new Promise((resolve, reject) => {
@@ -84,7 +87,7 @@ function raceMirrors(query) {
     MIRRORS.forEach((url) => {
       fetchMirror(url, query)
         .then((val) => resolve(val))
-        .catch((err) => {
+        .catch(() => {
           rejectCount++;
           if (rejectCount === total) {
             reject(new Error('all_mirrors_failed'));
@@ -94,7 +97,10 @@ function raceMirrors(query) {
   });
 }
 
-/** Race all mirrors with a hard overall ceiling. Returns elements array. */
+/**
+ * On production (Vercel), use our serverless /api/overpass proxy to avoid
+ * CORS blocks from Overpass mirrors. On localhost, query mirrors directly.
+ */
 async function fetchFromOverpass(query) {
   const t0 = Date.now();
 
@@ -103,7 +109,26 @@ async function fetchFromOverpass(query) {
   );
 
   try {
-    const elements = await Promise.race([raceMirrors(query), hardTimeout]);
+    let elements;
+
+    if (IS_PRODUCTION) {
+      // Use the Vercel serverless proxy — no CORS issues
+      const res = await Promise.race([
+        fetch('/api/overpass', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        }),
+        hardTimeout,
+      ]);
+      if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+      const json = await res.json();
+      elements = Array.isArray(json?.elements) ? json.elements : [];
+    } else {
+      // Development: query Overpass mirrors directly
+      elements = await Promise.race([raceMirrors(query), hardTimeout]);
+    }
+
     console.log(`[useNearbyMosques] Overpass responded in ${Date.now() - t0}ms, ${elements.length} elements`);
     return Array.isArray(elements) ? elements : [];
   } catch (e) {
