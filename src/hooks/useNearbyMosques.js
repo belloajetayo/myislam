@@ -98,10 +98,17 @@ function raceMirrors(query) {
 }
 
 /**
- * On production (Vercel), use our serverless /api/overpass proxy to avoid
- * CORS blocks from Overpass mirrors. On localhost, query mirrors directly.
+ * On production (Vercel), use our serverless /api/overpass proxy.
+ * The proxy tries Overpass GET first, then falls back to Nominatim —
+ * which does NOT block Vercel/AWS IP ranges.
+ * On localhost, query Overpass mirrors directly from the browser.
+ *
+ * @param {string} query    — raw Overpass QL
+ * @param {number} lat      — user latitude
+ * @param {number} lng      — user longitude
+ * @param {number} radiusM  — search radius in metres
  */
-async function fetchFromOverpass(query) {
+async function fetchFromOverpass(query, lat, lng, radiusM) {
   const t0 = Date.now();
 
   const hardTimeout = new Promise((_, reject) =>
@@ -112,27 +119,31 @@ async function fetchFromOverpass(query) {
     let elements;
 
     if (IS_PRODUCTION) {
-      // Use the Vercel serverless proxy — no CORS issues
+      // POST to our Vercel proxy — it will try Overpass GET then Nominatim
       const res = await Promise.race([
         fetch('/api/overpass', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({ query, lat, lng, radius: radiusM }),
         }),
         hardTimeout,
       ]);
-      if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(`Proxy HTTP ${res.status}: ${detail?.detail ?? ''}`);
+      }
       const json = await res.json();
       elements = Array.isArray(json?.elements) ? json.elements : [];
+      console.log(`[useNearbyMosques] Proxy responded in ${Date.now() - t0}ms, ${elements.length} elements (source: ${json._source ?? 'overpass'})`);
     } else {
-      // Development: query Overpass mirrors directly
+      // Development: hit Overpass mirrors directly from the browser
       elements = await Promise.race([raceMirrors(query), hardTimeout]);
+      console.log(`[useNearbyMosques] Overpass (direct) responded in ${Date.now() - t0}ms, ${elements.length} elements`);
     }
 
-    console.log(`[useNearbyMosques] Overpass responded in ${Date.now() - t0}ms, ${elements.length} elements`);
     return Array.isArray(elements) ? elements : [];
   } catch (e) {
-    console.warn(`[useNearbyMosques] Overpass query failed after ${Date.now() - t0}ms:`, e.message);
+    console.warn(`[useNearbyMosques] Fetch failed after ${Date.now() - t0}ms:`, e.message);
     throw e;
   }
 }
@@ -270,7 +281,7 @@ export default function useNearbyMosques(radiusMeters = 20000, initialCoords = n
 
       try {
         const query    = buildQuery(lat, lng, radiusMeters);
-        const elements = await fetchFromOverpass(query);
+        const elements = await fetchFromOverpass(query, lat, lng, radiusMeters);
 
         if (cancelled) return;
 
