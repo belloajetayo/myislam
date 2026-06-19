@@ -1,29 +1,18 @@
-import React from 'react';
-import BottomNavigation from './BottomNavigation';
-import MiniPlayer from './MiniPlayer';
+import React from "react";
+import { View, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface MobileLayoutProps {
   children: React.ReactNode;
   showNav?: boolean;
 }
 
-const MobileLayout: React.FC<MobileLayoutProps> = ({ children, showNav = true }) => {
+const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen max-w-md mx-auto relative overflow-hidden">
-      {/* Gradient Background */}
-      <div className="fixed inset-0 gradient-primary islamic-pattern -z-10" />
-      
-      {/* Content */}
-      <main className={`relative z-10 ${showNav ? 'pb-[100px]' : ''}`}>
-        {children}
-      </main>
-      
-      {/* Mini Player */}
-      {showNav && <MiniPlayer />}
-      
-      {/* Bottom Navigation */}
-      {showNav && <BottomNavigation />}
-    </div>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#110e24" }} edges={["top"]}>
+      <StatusBar barStyle="light-content" backgroundColor="#110e24" />
+      <View style={{ flex: 1 }}>{children}</View>
+    </SafeAreaView>
   );
 };
 

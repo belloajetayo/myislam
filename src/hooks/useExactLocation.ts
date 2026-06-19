@@ -1,3 +1,6 @@
+import * as Location from "expo-location";
+import { mmkv } from "@/utils/storage";
+import { appEvents } from "@/utils/events";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ExactLocation {
@@ -21,10 +24,8 @@ export const DEFAULT_LOCATION: ExactLocation = {
 };
 
 export function getStoredLastLocation(): ExactLocation | null {
-  if (typeof window === "undefined") return null;
-
   try {
-    const raw = localStorage.getItem(LAST_LOCATION_KEY);
+    const raw = mmkv.getString(LAST_LOCATION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const latitude =
@@ -39,10 +40,7 @@ export function getStoredLastLocation(): ExactLocation | null {
         : typeof parsed.lng === "number"
         ? parsed.lng
         : null;
-
-    if (latitude === null || longitude === null) {
-      return null;
-    }
+    if (latitude === null || longitude === null) return null;
 
     const looksLikeDefault =
       Math.abs(latitude - DEFAULT_LOCATION.latitude) < 0.001 &&
@@ -54,8 +52,10 @@ export function getStoredLastLocation(): ExactLocation | null {
       longitude,
       city: typeof parsed.city === "string" ? parsed.city : undefined,
       country: typeof parsed.country === "string" ? parsed.country : undefined,
-      source: parsed.source === "default" || looksLikeDefault ? "default" : "cache",
-      updatedAt: typeof parsed.updatedAt === "number" ? parsed.updatedAt : undefined,
+      source:
+        parsed.source === "default" || looksLikeDefault ? "default" : "cache",
+      updatedAt:
+        typeof parsed.updatedAt === "number" ? parsed.updatedAt : undefined,
     };
   } catch {
     return null;
@@ -63,81 +63,46 @@ export function getStoredLastLocation(): ExactLocation | null {
 }
 
 export function saveLastLocation(location: ExactLocation) {
-  if (typeof window === "undefined") return;
   if (location.source === "default") return;
-
-  const savedLocation: ExactLocation = {
+  const saved: ExactLocation = {
     ...location,
     latitude: Math.round(location.latitude * 1000000) / 1000000,
     longitude: Math.round(location.longitude * 1000000) / 1000000,
     updatedAt: Date.now(),
   };
-
   try {
-    localStorage.setItem(
-      LAST_LOCATION_KEY,
-      JSON.stringify(savedLocation),
-    );
-    window.dispatchEvent(
-      new CustomEvent<ExactLocation>(LOCATION_UPDATED_EVENT, {
-        detail: savedLocation,
-      }),
-    );
+    mmkv.set(LAST_LOCATION_KEY, JSON.stringify(saved));
+    appEvents.emit(LOCATION_UPDATED_EVENT, saved);
   } catch {
-    // ignore quota errors
+    // ignore
   }
 }
 
-export async function getBrowserLocation(timeout = 12000): Promise<ExactLocation | null> {
-  if (
-    typeof window === "undefined" ||
-    typeof navigator === "undefined" ||
-    !navigator.geolocation ||
-    !window.isSecureContext
-  ) {
+export async function getBrowserLocation(
+  timeout = 12000
+): Promise<ExactLocation | null> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") return null;
+
+    const position = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+      timeInterval: timeout,
+    });
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      source: "gps",
+    };
+  } catch {
     return null;
   }
-
-  return new Promise<ExactLocation | null>((resolve) => {
-    let resolved = false;
-    const timer = window.setTimeout(() => {
-      if (resolved) return;
-      resolved = true;
-      resolve(null);
-    }, timeout + 1000);
-
-    const onSuccess = (position: GeolocationPosition) => {
-      if (resolved) return;
-      resolved = true;
-      window.clearTimeout(timer);
-      resolve({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        source: "gps",
-      });
-    };
-
-    const onError = () => {
-      if (resolved) return;
-      resolved = true;
-      window.clearTimeout(timer);
-      resolve(null);
-    };
-
-    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
-      enableHighAccuracy: true,
-      timeout,
-      maximumAge: 300000,
-    });
-  });
 }
 
 export async function getServerLocation(): Promise<ExactLocation | null> {
   try {
     const { data, error } = await supabase.functions.invoke("get-user-location");
-    if (error) return null;
-    if (!data?.latitude || !data?.longitude) return null;
-
+    if (error || !data?.latitude || !data?.longitude) return null;
     return {
       latitude: data.latitude,
       longitude: data.longitude,
@@ -161,24 +126,20 @@ export async function resolveExactLocation(opts?: {
 
   if (preferCache) {
     const cached = getStoredLastLocation();
-    if (cached && cached.source !== "default") {
-      return cached;
-    }
+    if (cached && cached.source !== "default") return cached;
   }
 
   if (allowBrowser) {
-    const browserLocation = await getBrowserLocation(timeout);
-    if (browserLocation) {
-      saveLastLocation(browserLocation);
-      return browserLocation;
+    const gpsLocation = await getBrowserLocation(timeout);
+    if (gpsLocation) {
+      saveLastLocation(gpsLocation);
+      return gpsLocation;
     }
   }
 
   if (!preferCache) {
     const cached = getStoredLastLocation();
-    if (cached && cached.source !== "default") {
-      return cached;
-    }
+    if (cached && cached.source !== "default") return cached;
   }
 
   const serverLocation = await getServerLocation();

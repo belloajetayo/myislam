@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /home/weirdsoul/Desktop/Async/msgld -maxdepth 1 -type f -o -type d | head -50)",
+      "Read(//home/weirdsoul/Desktop/Async/**)",
+      "Bash(ls -la /home/weirdsoul/Desktop/)",
+      "Read(//home/weirdsoul/Desktop/**)",
+      "Bash(grep -E \"\\\\.\\(json|js|ts|jsx|tsx\\)$|^-.*\")",
+      "Bash(npx tsc *)",
+      "Bash(grep \"^expo$\")",
+      "Bash(npm install *)",
+      "Bash(npx expo *)",
+      "Bash(pkill -f \"expo start\")",
+      "Bash(node -e \"require\\('./metro.config.js'\\)\")",
+      "Bash(grep -v \"^#\\\\|^$\" /home/weirdsoul/Desktop/project/myislam/.env)",
+      "Bash(pkill -f \"expo start\" 2>/dev/null; sleep 1; npx expo start 2>&1 & *)",
+      "Read(//tmp/**)",
+      "Bash(jobs)"
+    ]
+  }
+}

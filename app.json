@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "My Islam",
+    "slug": "myislam",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/pwa-icons/icon-512.png",
+    "scheme": "myislam",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./public/pwa-icons/icon-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#110e24"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.myislam.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/pwa-icons/icon-512.png",
+        "backgroundColor": "#110e24"
+      },
+      "package": "com.myislam.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./public/favicon.ico"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow My Islam to access your location for accurate prayer times and Qiblah direction."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./public/pwa-icons/icon-192.png",
+          "color": "#F59E0B",
+          "sounds": []
+        }
+      ],
+      "expo-av",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
