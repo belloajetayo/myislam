@@ -293,8 +293,16 @@ const Qiblah: React.FC = () => {
 
       // Try deviceorientationabsolute first (True North on Android Chrome)
       let absoluteFired = false;
+      let anyEventFired = false;
+
       const onAbsolute = (e: DeviceOrientationEvent) => {
         absoluteFired = true;
+        anyEventFired = true;
+        handleOrientation(e);
+      };
+
+      const onOrientation = (e: DeviceOrientationEvent) => {
+        anyEventFired = true;
         handleOrientation(e);
       };
 
@@ -303,15 +311,16 @@ const Qiblah: React.FC = () => {
       // Fallback to standard deviceorientation if absolute never fires
       setTimeout(() => {
         if (!absoluteFired) {
-          window.addEventListener("deviceorientation", handleOrientation, true);
+          window.addEventListener("deviceorientation", onOrientation, true);
         }
       }, 500);
 
       listenersAdded.current = true;
 
-      // If nothing fires at all after 3s, mark as unsupported
+      // Only mark unsupported if NO orientation event fires at all after 3s.
+      // Do NOT check heading value — 0° is true north and a valid reading.
       setTimeout(() => {
-        if (deviceHeadingRef.current === 0 && !absoluteFired) {
+        if (!anyEventFired) {
           setCompassSupported(false);
         }
       }, 3000);
@@ -718,50 +727,69 @@ const Qiblah: React.FC = () => {
         out center tags;
       `;
 
-      const endpoints = [
-        "https://overpass-api.de/api/interpreter",
-        "https://overpass.kumi.systems/api/interpreter",
-        "https://overpass.openstreetmap.fr/api/interpreter",
-      ];
+      const IS_PRODUCTION = !window.location.hostname.includes("localhost");
 
-      const fetchOverpassEndpoint = async (url: string, queryText: string) => {
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 18000);
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            body: `data=${encodeURIComponent(queryText)}`,
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            signal: controller.signal,
-          });
-
-          if (!response.ok) {
-            return { elements: [] as OverpassElement[], timedOut: false, failed: true };
+      const fetchFromMirrors = async (queryText: string): Promise<{ elements: OverpassElement[]; sawTimeout: boolean; sawError: boolean }> => {
+        if (IS_PRODUCTION) {
+          // Use Vercel proxy (tries Overpass GET then Nominatim fallback)
+          try {
+            const ctrl = new AbortController();
+            const timer = window.setTimeout(() => ctrl.abort(), 15000);
+            const res = await fetch("/api/overpass", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query: queryText, lat: location.lat, lng: location.lng, radius }),
+              signal: ctrl.signal,
+            });
+            window.clearTimeout(timer);
+            if (res.ok) {
+              const json = await res.json();
+              return {
+                elements: Array.isArray(json?.elements) ? (json.elements as OverpassElement[]) : [],
+                sawTimeout: false,
+                sawError: false,
+              };
+            }
+            return { elements: [], sawTimeout: false, sawError: true };
+          } catch (e) {
+            const isTimeout = e instanceof DOMException && (e as DOMException).name === "AbortError";
+            console.warn("Overpass proxy failed:", e);
+            return { elements: [], sawTimeout: isTimeout, sawError: !isTimeout };
           }
-
-          const data = await response.json();
-          return {
-            elements: Array.isArray(data?.elements) ? (data.elements as OverpassElement[]) : [],
-            timedOut: false,
-            failed: false,
-          };
-        } catch (e) {
-          const timedOut = e instanceof DOMException && e.name === "AbortError";
-          console.warn(`Overpass mirror failed (${url}):`, e);
-          return { elements: [] as OverpassElement[], timedOut, failed: !timedOut };
-        } finally {
-          window.clearTimeout(timeoutId);
         }
-      };
 
-      const fetchFromMirrors = async (queryText: string) => {
+        // Dev / localhost: hit mirrors directly
+        const endpoints = [
+          "https://overpass-api.de/api/interpreter",
+          "https://overpass.kumi.systems/api/interpreter",
+          "https://overpass.openstreetmap.fr/api/interpreter",
+        ];
         const results = await Promise.all(
-          endpoints.map((endpoint) => fetchOverpassEndpoint(endpoint, queryText)),
+          endpoints.map(async (url) => {
+            const ctrl = new AbortController();
+            const timer = window.setTimeout(() => ctrl.abort(), 12000);
+            try {
+              const res = await fetch(url, {
+                method: "POST",
+                body: `data=${encodeURIComponent(queryText)}`,
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                signal: ctrl.signal,
+              });
+              window.clearTimeout(timer);
+              if (!res.ok) return { elements: [] as OverpassElement[], timedOut: false, failed: true };
+              const data = await res.json();
+              return { elements: Array.isArray(data?.elements) ? (data.elements as OverpassElement[]) : [], timedOut: false, failed: false };
+            } catch (e) {
+              window.clearTimeout(timer);
+              const timedOut = e instanceof DOMException && (e as DOMException).name === "AbortError";
+              return { elements: [] as OverpassElement[], timedOut, failed: !timedOut };
+            }
+          })
         );
         return {
-          elements: results.find((result) => result.elements.length > 0)?.elements ?? [],
-          sawTimeout: results.some((result) => result.timedOut),
-          sawError: results.some((result) => result.failed),
+          elements: results.find((r) => r.elements.length > 0)?.elements ?? [],
+          sawTimeout: results.some((r) => r.timedOut),
+          sawError: results.some((r) => r.failed),
         };
       };
 

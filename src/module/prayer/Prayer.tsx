@@ -347,7 +347,7 @@ const Prayer: React.FC = () => {
           )}
         </div>
 
-        {pushSupported && isAdmin && (
+        {isAdmin && (
           <div className="glass rounded-3xl p-4 border border-islamic-gold/20 bg-islamic-gold/5 flex items-center justify-between animate-slide-up">
             <div className="flex-1 pr-2">
               <h4 className="font-semibold text-foreground text-sm">

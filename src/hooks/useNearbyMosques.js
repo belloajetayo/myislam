@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
 
 /**
  * useNearbyMosques
@@ -15,8 +16,8 @@ const MIRRORS = [
   'https://overpass.openstreetmap.fr/api/interpreter',
 ];
 
-const MIRROR_TIMEOUT_MS = 6000;   // 6 seconds per mirror
-const OVERALL_TIMEOUT_MS = 8000;  // 8 seconds hard ceiling
+const MIRROR_TIMEOUT_MS = 10000;  // 10 seconds per mirror
+const OVERALL_TIMEOUT_MS = 15000; // 15 seconds hard ceiling
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6-hour cache
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -44,8 +45,12 @@ function buildQuery(lat, lng, radius) {
   );
 }
 
-/** True when running on a non-localhost origin (i.e. Vercel production) */
-const IS_PRODUCTION = !window.location.hostname.includes('localhost');
+/** True only on the Vercel web deployment — native apps call Overpass directly (no CORS). */
+const IS_WEB_PRODUCTION =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  window.location?.hostname != null &&
+  !window.location.hostname.includes('localhost');
 
 /** Fire a single POST to one mirror; resolve with elements array or reject */
 function fetchMirror(url, query) {
@@ -118,7 +123,7 @@ async function fetchFromOverpass(query, lat, lng, radiusM) {
   try {
     let elements;
 
-    if (IS_PRODUCTION) {
+    if (IS_WEB_PRODUCTION) {
       // POST to our Vercel proxy — it will try Overpass GET then Nominatim
       const res = await Promise.race([
         fetch('/api/overpass', {

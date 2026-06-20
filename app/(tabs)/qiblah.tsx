@@ -85,7 +85,10 @@ function CompassTab() {
   }, []);
 
   const qiblahBearing = location ? getQiblahBearing(location.latitude, location.longitude) : 0;
-  const compassHeading = magnetometer ? (Math.atan2(magnetometer.y, magnetometer.x) * 180) / Math.PI : 0;
+  // atan2(x, y) = clockwise angle from North; expo-sensors: x=East, y=North when phone is flat
+  const compassHeading = magnetometer
+    ? ((Math.atan2(magnetometer.x, magnetometer.y) * 180) / Math.PI + 360) % 360
+    : 0;
   const arrowAngle = (qiblahBearing - compassHeading + 360) % 360;
 
   useEffect(() => {

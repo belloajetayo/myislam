@@ -7,14 +7,18 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MapPin, Check, Bell, BellOff } from "lucide-react-native";
+import { MapPin, Check, Bell, BellOff, Send } from "lucide-react-native";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { useProgress } from "@/hooks/useProgress";
 import {
   schedulePrayerNotifications,
   cancelPrayerNotifications,
   arePrayerNotificationsEnabled,
+  requestNotificationPermission,
 } from "@/utils/prayerNotifications";
+import { supabase } from "@/integrations/supabase/client";
+
+const ADMIN_EMAILS = ["ayodejiibrahim09@gmail.com", "ayodejiibrahim@gmail.com"];
 
 const PRAYER_EMOJIS: Record<string, string> = {
   Fajr: "🌄",
@@ -49,10 +53,39 @@ export default function PrayerScreen() {
   const isToday = selectedDayIdx === 6;
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [testSending, setTestSending] = useState(false);
+  const [testSent, setTestSent] = useState(false);
 
   useEffect(() => {
     arePrayerNotificationsEnabled().then(setNotifEnabled);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
   }, []);
+
+  const isAdmin = userEmail !== null && ADMIN_EMAILS.includes(userEmail);
+
+  const sendTestNotification = async () => {
+    setTestSending(true);
+    try {
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+      const Notifications = await import("expo-notifications");
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "🕌 Test Notification",
+          body: "My Islam push notifications are working! Alhamdulillah.",
+          sound: "default",
+        },
+        trigger: null,
+      });
+      setTestSent(true);
+      setTimeout(() => setTestSent(false), 4000);
+    } finally {
+      setTestSending(false);
+    }
+  };
 
   const toggleNotifications = async () => {
     setNotifLoading(true);
@@ -263,6 +296,50 @@ export default function PrayerScreen() {
             <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, textAlign: "center" }}>
               You've completed all 5 daily prayers today. May Allah accept your worship.
             </Text>
+          </View>
+        )}
+
+        {/* Admin: Test Push Notification */}
+        {isAdmin && (
+          <View style={{ marginHorizontal: 20, marginTop: 16, padding: 16, backgroundColor: "rgba(245,158,11,0.06)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(245,158,11,0.2)" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+              <Send size={15} color="#F59E0B" style={{ marginRight: 8 }} />
+              <Text style={{ color: "#F59E0B", fontSize: 14, fontWeight: "700" }}>Test Push Notification</Text>
+            </View>
+            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginBottom: 14, lineHeight: 18 }}>
+              Send a test notification to verify push delivery is working on this device.
+            </Text>
+            <TouchableOpacity
+              onPress={sendTestNotification}
+              disabled={testSending}
+              activeOpacity={0.75}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                paddingVertical: 11,
+                borderRadius: 12,
+                backgroundColor: testSent ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)",
+                borderWidth: 1,
+                borderColor: testSent ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)",
+                opacity: testSending ? 0.6 : 1,
+              }}>
+              {testSending ? (
+                <ActivityIndicator size={14} color="#F59E0B" />
+              ) : testSent ? (
+                <Check size={14} color="#10B981" />
+              ) : (
+                <Send size={14} color="#F59E0B" />
+              )}
+              <Text style={{
+                color: testSent ? "#10B981" : "#F59E0B",
+                fontSize: 13,
+                fontWeight: "600",
+              }}>
+                {testSending ? "Sending…" : testSent ? "Notification Sent!" : "Send Test Notification"}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>

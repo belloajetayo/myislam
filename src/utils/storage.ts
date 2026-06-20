@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { MMKV } from "react-native-mmkv";
 
 // MMKV has a built-in web shim (createMMKV.web.js → localStorage).
@@ -6,12 +7,13 @@ const mmkvInstance = new MMKV({ id: "myislam-storage" });
 
 export const mmkv = mmkvInstance;
 
-// ─── In-memory sessionStorage ─────────────────────────────────────────────────
-const sessionData: Record<string, string> = {};
+// ─── Native-only polyfills ────────────────────────────────────────────────────
+// Web already has real localStorage / window / document / navigator.
+// Overriding global.localStorage on web creates a circular loop:
+//   our polyfill → mmkv.getString() → MMKV web shim → window.localStorage → polyfill
+if (Platform.OS !== "web" && typeof global !== "undefined") {
+  const sessionData: Record<string, string> = {};
 
-// ─── Global polyfills ─────────────────────────────────────────────────────────
-if (typeof global !== "undefined") {
-  // localStorage → MMKV (native) / localStorage shim (web)
   (global as any).localStorage = {
     getItem: (key: string): string | null => mmkvInstance.getString(key) ?? null,
     setItem: (key: string, value: string): void => mmkvInstance.set(key, value),

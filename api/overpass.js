@@ -20,7 +20,7 @@ const OVERPASS_MIRRORS = [
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
 const UA = 'MyIslamApp/1.0 (https://myislam-liard.vercel.app; contact@myislam.app)';
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 14000;
 
 // ─── Overpass via GET ─────────────────────────────────────────────────────────
 
