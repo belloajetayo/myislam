@@ -18,10 +18,12 @@ import { type User } from "@supabase/supabase-js";
 
 import { toast } from "sonner";
 import { useMIAChat } from "@/hooks/useMIAChat";
+import OnboardingScreen, { hasSeenOnboarding } from "@/components/onboarding/OnboardingScreen";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
   const {
     messages,
     isLoading,
@@ -51,7 +53,11 @@ const Index: React.FC = () => {
   };
 
   return (
-    <MobileLayout>
+    <>
+      {showOnboarding && (
+        <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+      )}
+      <MobileLayout>
       {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 -right-32 w-64 h-64 bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent rounded-full blur-3xl" />
@@ -175,7 +181,7 @@ const Index: React.FC = () => {
         />
       </div>
     </MobileLayout>
-  );
+  </>);
 };
 
 export default Index;
