@@ -18,10 +18,12 @@ import { type User } from "@supabase/supabase-js";
 
 import { toast } from "sonner";
 import { useMIAChat } from "@/hooks/useMIAChat";
+import OnboardingScreen, { hasSeenOnboarding } from "@/components/onboarding/OnboardingScreen";
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
   const {
     messages,
     isLoading,
