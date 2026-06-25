@@ -53,7 +53,6 @@ const slides = [
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
-  const navigate = useNavigate();
 
   const goToNext = useCallback(() => {
     if (currentSlide < slides.length - 1) {
