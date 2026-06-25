@@ -226,6 +226,8 @@ const PRAYER_NAMES_FOR_NOTIF = [
   "Isha",
 ] as const;
 
+const PRE_PRAYER_ADVANCE_MS = 10 * 60 * 1000; // 10 minutes
+
 function scheduleNotifications(prayerTimes: PrayerTimes, config: Record<string, boolean>): () => void {
   const timers: ReturnType<typeof setTimeout>[] = [];
   const now = new Date();
@@ -244,39 +246,54 @@ function scheduleNotifications(prayerTimes: PrayerTimes, config: Record<string, 
     if (!config[name]) continue;
     const raw = prayerTimes[name as keyof PrayerTimes];
     if (!raw) continue;
-    const clean = raw.split(" ")[0]; // strip timezone suffix  e.g. "(+01:00)"
+    const clean = raw.split(" ")[0]; // strip timezone suffix e.g. "(+01:00)"
     const [h, m] = clean.split(":").map(Number);
-    const target = new Date();
-    target.setHours(h, m, 0, 0);
+    const prayerTime = new Date();
+    prayerTime.setHours(h, m, 0, 0);
 
-    const msUntil = target.getTime() - nowMs;
-    if (msUntil <= 0) continue; // prayer already passed today
+    const msUntilPrayer = prayerTime.getTime() - nowMs;
 
-    const timer = setTimeout(() => {
+    // ── 10-minute early reminder ──────────────────────────────────────────────
+    const msUntilReminder = msUntilPrayer - PRE_PRAYER_ADVANCE_MS;
+    if (msUntilReminder > 0) {
+      const reminderTimer = setTimeout(() => {
+        if (Notification.permission === "granted") {
+          new Notification(`🕌 ${name} in 10 minutes`, {
+            body: `Get ready for ${name} prayer. Make wudu and prepare your heart.`,
+            icon: "/favicon.ico",
+            tag: `prayer-${name}-pre`,
+            silent: true, // no OS ping — the adhan will play at prayer time
+          });
+        }
+      }, msUntilReminder);
+      timers.push(reminderTimer);
+    }
+
+    // ── At-prayer-time notification + adhan ───────────────────────────────────
+    if (msUntilPrayer <= 0) continue; // prayer already passed today
+
+    const prayerTimer = setTimeout(() => {
       if (Notification.permission === "granted") {
         const notification = new Notification(`🕌 ${name} Prayer Time`, {
           body: `It is time for ${name} prayer. May Allah accept your salah.`,
           icon: "/favicon.ico",
           tag: `prayer-${name}`,
         });
+        // Also play adhan on notification click for cases where autoplay is blocked
         notification.onclick = () => {
           window.focus();
           import("@/lib/adhanPlayer")
             .then(({ playAdhan }) => playAdhan())
-            .catch((e) => console.error("Adhan play failed:", e));
+            .catch((e) => console.error("Adhan play failed on click:", e));
         };
-        try {
-          // Use shared adhan player to avoid overlapping audio
-          import("@/lib/adhanPlayer")
-            .then(({ playAdhan }) => playAdhan())
-            .catch((e) => console.error("Adhan play failed:", e));
-        } catch (e) {
-          console.error("Adhan play failed:", e);
-        }
       }
-    }, msUntil);
+      // Play adhan immediately at prayer time
+      import("@/lib/adhanPlayer")
+        .then(({ playAdhan }) => playAdhan())
+        .catch((e) => console.error("Adhan play failed:", e));
+    }, msUntilPrayer);
 
-    timers.push(timer);
+    timers.push(prayerTimer);
   }
 
   return () => timers.forEach(clearTimeout);

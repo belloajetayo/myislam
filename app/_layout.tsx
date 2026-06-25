@@ -27,11 +27,11 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AudioProvider>
             <LocationProvider>
-              <StatusBar style="light" />
+              <StatusBar style="dark" />
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  contentStyle: { backgroundColor: "#110e24" },
+                  contentStyle: { backgroundColor: "#FDFBF8" },
                   animation: "slide_from_right",
                 }}
               />

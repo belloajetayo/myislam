@@ -1,232 +1,500 @@
-import { ScrollView, View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useState } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePrayerTimes } from "@/hooks/usePrayerTimes";
-import { Moon, Sun } from "lucide-react-native";
-import { useState, useMemo } from "react";
-import { mmkv } from "@/utils/storage";
+import { Moon, Sun, Check, ChevronRight, Info, Star } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Colors, Font, Weight, Space, Radius, Shadow } from "@/theme/tokens";
+import { SectionHeader } from "@/shared";
 
-const FASTING_KEY = "fasting_days_v1";
+// ─── Sunnah fast data ─────────────────────────────────────────────────────────
 
-function getTodayKey() {
-  return new Date().toISOString().split("T")[0];
+const TODAY_DAY = new Date().getDay();
+const TODAY_DAY_NAME = [
+  "Sunday", "Monday", "Tuesday", "Wednesday",
+  "Thursday", "Friday", "Saturday",
+][TODAY_DAY];
+
+function daysUntilWeekday(target: number): number {
+  const diff = (target - TODAY_DAY + 7) % 7;
+  return diff === 0 ? 7 : diff;
 }
 
-function getStoredFastingDays(): Record<string, boolean> {
-  try {
-    const raw = mmkv.getString(FASTING_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
-
-function saveFastingDays(days: Record<string, boolean>) {
-  mmkv.set(FASTING_KEY, JSON.stringify(days));
-}
-
-// ─── Hijri conversion ──────────────────────────────────────────────────────────
-const HIJRI_MONTHS = [
-  "Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani",
-  "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
-  "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah",
+const SUNNAH_FASTS = [
+  {
+    name: "Monday",
+    description:
+      "The Prophet ﷺ used to fast on Mondays, saying: 'It is the day on which I was born and revelation was sent down to me.'",
+    hadith: "Muslim",
+    daysUntil: daysUntilWeekday(1),
+    isNext: daysUntilWeekday(1) <= 3,
+    color: Colors.purple,
+  },
+  {
+    name: "Thursday",
+    description:
+      "Deeds are presented to Allah on Thursdays and Mondays, so the Prophet ﷺ loved to be fasting when they were presented.",
+    hadith: "At-Tirmidhi",
+    daysUntil: daysUntilWeekday(4),
+    isNext: daysUntilWeekday(4) <= 3,
+    color: Colors.blue,
+  },
+  {
+    name: "Ayyam al-Bid (13th–15th)",
+    description:
+      "Fasting the white days (full moon nights) of each lunar month is highly recommended.",
+    hadith: "An-Nasa'i",
+    daysUntil: null,
+    isNext: false,
+    color: Colors.gold,
+  },
+  {
+    name: "Day of Arafah",
+    description:
+      "Fasting on the Day of Arafah expiates sins of the past year and the coming year.",
+    hadith: "Muslim",
+    daysUntil: null,
+    isNext: false,
+    color: "#D97706",
+  },
+  {
+    name: "Muharram (9th & 10th)",
+    description:
+      "Fasting on Ashura (10th Muharram) expiates sins of the past year.",
+    hadith: "Muslim",
+    daysUntil: null,
+    isNext: false,
+    color: Colors.green,
+  },
+  {
+    name: "6 Days of Shawwal",
+    description:
+      "Whoever fasts Ramadan then follows it with six days of Shawwal is as if they fasted the whole year.",
+    hadith: "Muslim",
+    daysUntil: null,
+    isNext: false,
+    color: Colors.purple,
+  },
 ];
 
-function toHijri(date: Date): { day: number; month: number; year: number } {
-  const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
-  const jdn = Math.floor((1461 * (y + 4800 + Math.floor((m - 14) / 12))) / 4)
-    + Math.floor((367 * (m - 2 - 12 * Math.floor((m - 14) / 12))) / 12)
-    - Math.floor((3 * Math.floor((y + 4900 + Math.floor((m - 14) / 12)) / 100)) / 4)
-    + d - 32075;
-  const L = jdn - 1948440 + 10632;
-  const N = Math.floor((L - 1) / 10631);
-  const L2 = L - 10631 * N + 354;
-  const J = Math.floor((10985 - L2) / 5316) * Math.floor((50 * L2) / 17719)
-    + Math.floor(L2 / 5670) * Math.floor((43 * L2) / 15238);
-  const L3 = L2 - Math.floor((30 - J) / 15) * Math.floor((17719 * J) / 50)
-    - Math.floor(J / 16) * Math.floor((15238 * J) / 43) + 29;
-  return { day: L3 - Math.floor((709 * Math.floor((24 * L3) / 709)) / 24), month: Math.floor((24 * L3) / 709), year: 30 * N + J - 30 };
-}
+const HOW_TO_FAST = [
+  {
+    title: "Make your intention (Niyyah)",
+    desc: "Before Fajr, intend in your heart that you will fast. You do not need to say it aloud.",
+    icon: "🤲",
+  },
+  {
+    title: "Suhoor (pre-dawn meal)",
+    desc: "Eat suhoor before Fajr. It is a blessed act — even a sip of water counts.",
+    icon: "🌙",
+  },
+  {
+    title: "Abstain from invalidators",
+    desc: "Avoid eating, drinking, marital relations, and deliberate vomiting during fasting hours.",
+    icon: "⛔",
+  },
+  {
+    title: "Break fast at Maghrib (Iftar)",
+    desc: "Break your fast at Maghrib with dates or water. Say: Allahumma laka sumtu wa bika amantu wa 'alayka tawakkaltu wa 'ala rizqika aftartu.",
+    icon: "🌅",
+  },
+];
 
-function getNextSunnahFastDays(now: Date, count = 5) {
-  const results: { label: string; date: Date; arabicLabel: string }[] = [];
-  const cursor = new Date(now);
-  cursor.setDate(cursor.getDate() + 1);
-  cursor.setHours(0, 0, 0, 0);
-
-  for (let safety = 0; safety < 365 && results.length < count; safety++) {
-    const h = toHijri(cursor);
-    const dow = cursor.getDay();
-    let label = "", arabicLabel = "";
-
-    if (dow === 1) { label = "Monday"; arabicLabel = "الاثنين"; }
-    else if (dow === 4) { label = "Thursday"; arabicLabel = "الخميس"; }
-    else if (h.day === 13 || h.day === 14 || h.day === 15) {
-      label = `White Day (${h.day} ${HIJRI_MONTHS[h.month - 1]})`;
-      arabicLabel = `أيام البيض — ${h.day}`;
-    } else if (h.month === 12 && h.day === 9) {
-      label = "Day of Arafah (9 Dhul Hijjah)"; arabicLabel = "يوم عرفة";
-    } else if (h.month === 1 && h.day === 10) {
-      label = "Ashura (10 Muharram)"; arabicLabel = "يوم عاشوراء";
-    }
-
-    if (label) results.push({ label, date: new Date(cursor), arabicLabel });
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return results;
-}
-
-function fmtDate(d: Date) {
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-}
-
-function daysUntil(d: Date) {
-  const diff = d.getTime() - new Date().setHours(0, 0, 0, 0);
-  const days = Math.ceil(diff / 86400000);
-  if (days === 1) return "Tomorrow";
-  return `In ${days} days`;
-}
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function FastingScreen() {
-  const { prayerTimes, hijriDate, location, loading } = usePrayerTimes();
-  const [fastingDays, setFastingDays] = useState<Record<string, boolean>>(getStoredFastingDays);
-
-  const todayKey = getTodayKey();
-  const isFastingToday = fastingDays[todayKey] === true;
-
-  const toggleFasting = () => {
-    const next = { ...fastingDays, [todayKey]: !isFastingToday };
-    saveFastingDays(next);
-    setFastingDays(next);
-    // also track total count in localStorage for profile badges
-    const total = Object.values(next).filter(Boolean).length;
-    localStorage.setItem("fasting_days_total", String(total));
-  };
-
-  const fastingCount = Object.values(fastingDays).filter(Boolean).length;
-
-  const currentMonth = hijriDate?.month?.number;
-  const isRamadan = currentMonth === 9;
-  const monthsToRamadan = currentMonth ? (currentMonth < 9 ? 9 - currentMonth : 12 - currentMonth + 9) : null;
-
-  const sunnahDays = useMemo(() => getNextSunnahFastDays(new Date(), 5), []);
+  const [fastingToday, setFastingToday] = useState(false);
+  const [fastingTomorrow, setFastingTomorrow] = useState(false);
+  const isSunnahDay = TODAY_DAY_NAME === "Monday" || TODAY_DAY_NAME === "Thursday";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#110e24" }} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
 
-        {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 }}>
-          <Text style={{ color: "#F59E0B", fontSize: 24, fontWeight: "700" }}>Fasting / Sawm</Text>
-          {hijriDate && (
-            <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>
-              🌙 {hijriDate.day} {hijriDate.month.en} {hijriDate.year} AH
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Fasting</Text>
+          <Text style={styles.sub}>Track Sunnah and voluntary fasts</Text>
+        </View>
+
+        {/* ── Today's fasting status ── */}
+        <View style={styles.section}>
+          <LinearGradient
+            colors={fastingToday ? ["#7C3AED", "#6D28D9"] : ["#1D4ED8", "#1E40AF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statusCard}
+          >
+            <View style={styles.statusLeft}>
+              <Moon size={28} color="rgba(255,255,255,0.9)" />
+              <View style={{ marginLeft: Space.md, flex: 1 }}>
+                <Text style={styles.statusTitle}>
+                  Today — {TODAY_DAY_NAME}
+                  {isSunnahDay ? " ⭐" : ""}
+                </Text>
+                <Text style={styles.statusDesc}>
+                  {fastingToday
+                    ? "You are fasting today. MashaAllah!"
+                    : isSunnahDay
+                    ? "Today is a Sunnah fast day. Will you fast?"
+                    : "Are you fasting today?"}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => setFastingToday((v) => !v)}
+              activeOpacity={0.75}
+              accessibilityLabel={fastingToday ? "Mark as not fasting" : "Mark as fasting"}
+              style={[
+                styles.fastToggleBtn,
+                fastingToday
+                  ? styles.fastToggleBtnActive
+                  : styles.fastToggleBtnInactive,
+              ]}
+            >
+              {fastingToday ? (
+                <Check size={18} color={Colors.white} />
+              ) : (
+                <Moon size={18} color="rgba(255,255,255,0.7)" />
+              )}
+              <Text style={styles.fastToggleText}>
+                {fastingToday ? "Fasting" : "Not Fasting"}
+              </Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* ── Tomorrow ── */}
+        <View style={styles.section}>
+          <View style={[styles.tomorrowCard, Shadow.sm]}>
+            <View style={styles.tomorrowLeft}>
+              <Sun size={20} color={Colors.gold} />
+              <Text style={styles.tomorrowLabel}>Tomorrow</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setFastingTomorrow((v) => !v)}
+              activeOpacity={0.75}
+              style={[
+                styles.tomorrowToggle,
+                fastingTomorrow
+                  ? { backgroundColor: Colors.green, borderColor: Colors.green }
+                  : {
+                      backgroundColor: Colors.bgMuted,
+                      borderColor: Colors.border,
+                    },
+              ]}
+            >
+              {fastingTomorrow ? (
+                <Check size={14} color={Colors.white} />
+              ) : null}
+              <Text
+                style={[
+                  styles.tomorrowToggleText,
+                  { color: fastingTomorrow ? Colors.white : Colors.textSub },
+                ]}
+              >
+                {fastingTomorrow ? "Planned" : "Plan Fast"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Sunnah fasts list ── */}
+        <View style={styles.section}>
+          <SectionHeader title="Sunnah Fasts" />
+          {SUNNAH_FASTS.map((fast, i) => (
+            <View key={i} style={[styles.fastCard, Shadow.sm]}>
+              <View
+                style={[styles.fastColorBar, { backgroundColor: fast.color }]}
+              />
+              <View style={styles.fastContent}>
+                <View style={styles.fastTop}>
+                  <Text style={styles.fastName}>{fast.name}</Text>
+                  {fast.isNext ? (
+                    <View style={styles.nextBadge}>
+                      <Star size={10} color={Colors.gold} />
+                      <Text style={styles.nextBadgeText}>Next</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.fastDesc}>{fast.description}</Text>
+                <View style={styles.fastMeta}>
+                  <View style={styles.hadithBadge}>
+                    <Text style={styles.hadithText}>{fast.hadith}</Text>
+                  </View>
+                  {fast.daysUntil !== null ? (
+                    <Text style={styles.daysText}>in {fast.daysUntil}d</Text>
+                  ) : null}
+                </View>
+              </View>
+              <ChevronRight size={16} color={Colors.textMuted} />
+            </View>
+          ))}
+        </View>
+
+        {/* ── Niyyah (intention) ── */}
+        <View style={styles.section}>
+          <View style={[styles.niyyahCard, Shadow.sm]}>
+            <View style={styles.niyyahTop}>
+              <View style={styles.niyyahIconWrap}>
+                <Info size={16} color={Colors.purple} />
+              </View>
+              <Text style={styles.niyyahTitle}>Intention (Niyyah)</Text>
+            </View>
+            <Text style={styles.niyyahArabic}>
+              نَوَيْتُ صَوْمَ غَدٍ عَنْ أَدَاءِ فَرْضِ شَهْرِ رَمَضَانَ لِلَّهِ تَعَالَى
             </Text>
-          )}
-        </View>
-
-        {/* Ramadan status */}
-        <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
-          <View style={{ backgroundColor: isRamadan ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.05)", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: isRamadan ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.08)", alignItems: "center" }}>
-            <Text style={{ fontSize: 40, marginBottom: 8 }}>{isRamadan ? "🌙✨" : "🕌"}</Text>
-            {isRamadan ? (
-              <>
-                <Text style={{ color: "#8B5CF6", fontSize: 20, fontWeight: "700" }}>Ramadan Mubarak!</Text>
-                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 4 }}>It is the blessed month of Ramadan</Text>
-              </>
-            ) : (
-              <>
-                <Text style={{ color: "#F59E0B", fontSize: 16, fontWeight: "600" }}>Next Ramadan</Text>
-                {monthsToRamadan !== null && (
-                  <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 4 }}>
-                    ~{monthsToRamadan} month{monthsToRamadan !== 1 ? "s" : ""} away
-                  </Text>
-                )}
-              </>
-            )}
+            <Text style={styles.niyyahTranslit}>
+              "Nawaitu sauma ghadin an ada-i fardi shahri Ramadana lillahi ta'ala"
+            </Text>
+            <Text style={styles.niyyahMeaning}>
+              "I intend to fast tomorrow as a fulfillment of the obligatory fast of Ramadan for the sake of Allah."
+            </Text>
           </View>
         </View>
 
-        {/* Today's fasting tracker */}
-        <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
-          <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: "600", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Today's Fast</Text>
-          <TouchableOpacity
-            onPress={toggleFasting}
-            activeOpacity={0.8}
-            style={{ backgroundColor: isFastingToday ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)", borderRadius: 16, padding: 20, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: isFastingToday ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.08)" }}>
-            <Text style={{ fontSize: 32, marginRight: 16 }}>{isFastingToday ? "✅" : "⭕"}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: isFastingToday ? "#10B981" : "rgba(255,255,255,0.8)", fontSize: 17, fontWeight: "600" }}>
-                {isFastingToday ? "Fasting Today" : "Not Fasting Today"}
-              </Text>
-              <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>Tap to toggle</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats */}
-        <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
-          <View style={{ backgroundColor: "rgba(245,158,11,0.08)", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "rgba(245,158,11,0.15)", alignItems: "center" }}>
-            <Text style={{ color: "#F59E0B", fontSize: 32, fontWeight: "700" }}>{fastingCount}</Text>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 4 }}>Days fasted (all time)</Text>
-          </View>
-        </View>
-
-        {/* Suhoor & Iftar times */}
-        {loading ? (
-          <View style={{ alignItems: "center", padding: 20 }}>
-            <ActivityIndicator color="#F59E0B" />
-          </View>
-        ) : prayerTimes ? (
-          <View style={{ marginHorizontal: 20, marginBottom: 20 }}>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: "600", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Fasting Times</Text>
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" }}>
-                <Moon size={24} color="#8B5CF6" />
-                <Text style={{ color: "#8B5CF6", fontSize: 13, fontWeight: "600", marginTop: 8 }}>Suhoor ends</Text>
-                <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginTop: 4 }}>{prayerTimes.Fajr}</Text>
+        {/* ── How to Fast ── */}
+        <View style={styles.section}>
+          <SectionHeader title="How to Fast" />
+          {HOW_TO_FAST.map((step, i) => (
+            <View key={i} style={[styles.stepCard, Shadow.sm]}>
+              <View style={styles.stepIconWrap}>
+                <Text style={styles.stepIcon}>{step.icon}</Text>
               </View>
-              <View style={{ flex: 1, backgroundColor: "rgba(245,158,11,0.08)", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: "rgba(245,158,11,0.2)" }}>
-                <Sun size={24} color="#F59E0B" />
-                <Text style={{ color: "#F59E0B", fontSize: 13, fontWeight: "600", marginTop: 8 }}>Iftar time</Text>
-                <Text style={{ color: "white", fontSize: 18, fontWeight: "700", marginTop: 4 }}>{prayerTimes.Maghrib}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.stepTitle}>{step.title}</Text>
+                <Text style={styles.stepDesc}>{step.desc}</Text>
               </View>
             </View>
-            {location && (
-              <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textAlign: "center", marginTop: 12 }}>
-                Based on your location: {location.city}
-              </Text>
-            )}
-          </View>
-        ) : null}
-
-        {/* Sunnah Fasting Days */}
-        <View style={{ marginHorizontal: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1 }}>Upcoming Sunnah Fasts</Text>
-          </View>
-          <View style={{ backgroundColor: "rgba(16,185,129,0.04)", borderRadius: 16, borderWidth: 1, borderColor: "rgba(16,185,129,0.12)", overflow: "hidden" }}>
-            {sunnahDays.map((item, i) => (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", padding: 14, borderBottomWidth: i < sunnahDays.length - 1 ? 1 : 0, borderBottomColor: "rgba(255,255,255,0.06)" }}>
-                <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(16,185,129,0.12)", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                  <Text style={{ fontSize: 18 }}>🌙</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>{item.label}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>{fmtDate(item.date)}</Text>
-                </View>
-                <View style={{ backgroundColor: "rgba(16,185,129,0.12)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                  <Text style={{ color: "#10B981", fontSize: 11, fontWeight: "700" }}>{daysUntil(item.date)}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-          <Text style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, textAlign: "center", marginTop: 10, lineHeight: 16 }}>
-            Includes Mondays, Thursdays, Ayyam al-Beed, Ashura, and Day of Arafah
-          </Text>
+          ))}
         </View>
 
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { paddingBottom: 48 },
+
+  header: {
+    paddingHorizontal: Space.xl,
+    paddingTop: Space.xl,
+    paddingBottom: Space.md,
+  },
+  title: { color: Colors.gold, fontSize: Font.xxl, fontWeight: Weight.bold },
+  sub: { color: Colors.textSub, fontSize: Font.sm, marginTop: 4 },
+
+  section: { paddingHorizontal: Space.xl, marginBottom: Space.xl },
+
+  statusCard: {
+    borderRadius: Radius.xxl,
+    padding: Space.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Space.md,
+    flexWrap: "wrap",
+  },
+  statusLeft: { flex: 1, flexDirection: "row", alignItems: "center", minWidth: 160 },
+  statusTitle: {
+    color: Colors.white,
+    fontSize: Font.md,
+    fontWeight: Weight.bold,
+  },
+  statusDesc: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: Font.sm,
+    marginTop: 3,
+    lineHeight: 18,
+  },
+  fastToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    paddingVertical: 10,
+    paddingHorizontal: Space.md,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+  },
+  fastToggleBtnActive: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.5)",
+  },
+  fastToggleBtnInactive: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  fastToggleText: {
+    color: Colors.white,
+    fontSize: Font.sm,
+    fontWeight: Weight.semibold,
+  },
+
+  tomorrowCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Space.lg,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  tomorrowLeft: { flexDirection: "row", alignItems: "center", gap: Space.sm },
+  tomorrowLabel: {
+    color: Colors.text,
+    fontSize: Font.base,
+    fontWeight: Weight.medium,
+  },
+  tomorrowToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.xs,
+    paddingVertical: 8,
+    paddingHorizontal: Space.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  tomorrowToggleText: { fontSize: Font.sm, fontWeight: Weight.semibold },
+
+  fastCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Space.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  fastColorBar: { width: 4, alignSelf: "stretch" },
+  fastContent: { flex: 1, padding: Space.md },
+  fastTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+    marginBottom: 4,
+  },
+  fastName: {
+    color: Colors.text,
+    fontSize: Font.base,
+    fontWeight: Weight.semibold,
+    flex: 1,
+  },
+  nextBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.goldMuted,
+    borderRadius: Radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: Colors.goldBorder,
+  },
+  nextBadgeText: {
+    color: Colors.gold,
+    fontSize: Font.xs,
+    fontWeight: Weight.bold,
+  },
+  fastDesc: {
+    color: Colors.textSub,
+    fontSize: Font.sm,
+    lineHeight: 19,
+    marginBottom: Space.sm,
+  },
+  fastMeta: { flexDirection: "row", alignItems: "center", gap: Space.sm },
+  hadithBadge: {
+    backgroundColor: Colors.bgMuted,
+    borderRadius: Radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  hadithText: { color: Colors.textMuted, fontSize: Font.xs },
+  daysText: { color: Colors.textMuted, fontSize: Font.xs },
+
+  niyyahCard: {
+    backgroundColor: Colors.purpleMuted,
+    borderRadius: Radius.xl,
+    padding: Space.lg,
+    borderWidth: 1,
+    borderColor: Colors.purpleBorder,
+  },
+  niyyahTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Space.sm,
+    marginBottom: Space.md,
+  },
+  niyyahIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.md,
+    backgroundColor: "rgba(124,58,237,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  niyyahTitle: {
+    color: Colors.purple,
+    fontSize: Font.base,
+    fontWeight: Weight.bold,
+  },
+  niyyahArabic: {
+    color: Colors.text,
+    fontSize: 18,
+    textAlign: "right",
+    lineHeight: 32,
+    marginBottom: Space.sm,
+    fontWeight: Weight.medium,
+  },
+  niyyahTranslit: {
+    color: Colors.textSub,
+    fontSize: Font.sm,
+    fontStyle: "italic",
+    lineHeight: 20,
+    marginBottom: Space.sm,
+  },
+  niyyahMeaning: { color: Colors.textMuted, fontSize: Font.sm, lineHeight: 20 },
+
+  stepCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Space.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Space.md,
+    marginBottom: Space.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  stepIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bgMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  stepIcon: { fontSize: 24 },
+  stepTitle: {
+    color: Colors.text,
+    fontSize: Font.base,
+    fontWeight: Weight.semibold,
+    marginBottom: 4,
+  },
+  stepDesc: { color: Colors.textSub, fontSize: Font.sm, lineHeight: 19 },
+});

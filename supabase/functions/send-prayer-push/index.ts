@@ -326,6 +326,8 @@ Deno.serve(async (req) => {
       }
       
       const currentMinutes = tzNow.getHours() * 60 + tzNow.getMinutes();
+      // Track tags already sent this run to prevent duplicate pushes within the ±2-min window
+      const sentTags = new Set<string>();
 
       for (const prayer of prayerNames) {
         const timeStr = timings[prayer]?.split(" ")[0];
@@ -334,17 +336,17 @@ Deno.serve(async (req) => {
         const prayerMinutes = h * 60 + m;
         const diff = currentMinutes - prayerMinutes;
 
-        // Pre-adhan reminder: 10 minutes before prayer (window ±1 min)
-        // At-adhan notification: at prayer time (window ±1 min)
+        // Pre-adhan reminder: 10 minutes before prayer (window ±2 min to survive a missed cron tick)
+        // At-adhan notification: at prayer time (window ±2 min)
         let notif: { title: string; body: string; tag: string; playAdhan: boolean } | null = null;
-        if (Math.abs(diff + 10) <= 1) {
+        if (Math.abs(diff + 10) <= 2) {
           notif = {
             title: `🕌 ${prayer} in ~10 minutes`,
             body: `Get ready for ${prayer} prayer. Make wudu and prepare your heart.`,
             tag: `prayer-${prayer}-pre`,
             playAdhan: false,
           };
-        } else if (Math.abs(diff) <= 1) {
+        } else if (Math.abs(diff) <= 2) {
           notif = {
             title: `🕌 ${prayer} Prayer Time`,
             body: `It is time for ${prayer} prayer. May Allah accept your salah.`,
@@ -353,7 +355,8 @@ Deno.serve(async (req) => {
           };
         }
 
-        if (notif) {
+        if (notif && !sentTags.has(notif.tag)) {
+          sentTags.add(notif.tag);
           console.log(`Sending ${notif.tag} push to ${sub.endpoint.slice(0, 40)}...`);
           const success = await sendPushNotification(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },

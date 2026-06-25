@@ -1,293 +1,524 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  ActivityIndicator,
-  Animated,
   TouchableOpacity,
-  FlatList,
-  Linking,
   Platform,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Magnetometer is native-only — loaded dynamically to avoid web crash
-let Magnetometer: any = null;
-if (Platform.OS !== "web") {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Magnetometer = require("expo-sensors").Magnetometer;
-}
+import Svg, { Circle, Line, Text as SvgText, G } from "react-native-svg";
+import { Compass, Navigation, MapPin, RotateCcw } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useSharedLocation } from "@/context/useSharedLocation";
-import useNearbyMosques, { Mosque } from "@/hooks/useNearbyMosques";
-import { MapPin, RefreshCw, Navigation, ExternalLink } from "lucide-react-native";
+import { QiblahColors, Font, Weight, Space, Radius } from "@/theme/tokens";
 
+const { width: SCREEN_W } = Dimensions.get("window");
+const COMPASS_SIZE = Math.min(SCREEN_W - 64, 300);
+const R = COMPASS_SIZE / 2;
+const CENTER = R;
+
+// Kaaba GPS coordinates
 const KAABA_LAT = 21.4225;
-const KAABA_LON = 39.8262;
+const KAABA_LNG = 39.8262;
 
-const BG = "#110e24";
-const GOLD = "#F59E0B";
-const GREEN = "#10B981";
+function toRad(deg: number) {
+  return (deg * Math.PI) / 180;
+}
 
-function getQiblahBearing(lat: number, lon: number): number {
-  const φ1 = (lat * Math.PI) / 180;
-  const φ2 = (KAABA_LAT * Math.PI) / 180;
-  const Δλ = ((KAABA_LON - lon) * Math.PI) / 180;
+function calcQiblahBearing(lat: number, lng: number): number {
+  const φ1 = toRad(lat);
+  const φ2 = toRad(KAABA_LAT);
+  const Δλ = toRad(KAABA_LNG - lng);
   const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function fmtDist(m: number) {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
-}
-
-function openInMaps(name: string, lat: number, lng: number) {
-  const url = Platform.OS === "ios"
-    ? `maps://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`
-    : `geo:${lat},${lng}?q=${encodeURIComponent(name)}`;
-  Linking.openURL(url).catch(() => {
-    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`);
-  });
-}
-
-function openGoogleMapsSearch(lat?: number, lng?: number) {
-  const url = lat && lng
-    ? `https://www.google.com/maps/search/mosque/@${lat},${lng},14z`
-    : "https://www.google.com/maps/search/mosque+near+me";
-  Linking.openURL(url);
-}
-
-// ─── Compass tab ──────────────────────────────────────────────────────────────
-function CompassTab() {
-  const { location, loading: locationLoading } = useSharedLocation();
-  const [magnetometer, setMagnetometer] = useState<{ x: number; y: number } | null>(null);
-  const [available, setAvailable] = useState(true);
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const lastAngle = useRef(0);
-
-  useEffect(() => {
-    let sub: any;
-    if (!Magnetometer) { setAvailable(false); return; }
-    Magnetometer.isAvailableAsync().then((avail: boolean) => {
-      setAvailable(avail);
-      if (!avail) return;
-      Magnetometer.setUpdateInterval(100);
-      sub = Magnetometer.addListener((data: { x: number; y: number }) => setMagnetometer(data));
-    });
-    return () => sub?.remove();
-  }, []);
-
-  const qiblahBearing = location ? getQiblahBearing(location.latitude, location.longitude) : 0;
-  // atan2(x, y) = clockwise angle from North; expo-sensors: x=East, y=North when phone is flat
-  const compassHeading = magnetometer
-    ? ((Math.atan2(magnetometer.x, magnetometer.y) * 180) / Math.PI + 360) % 360
-    : 0;
-  const arrowAngle = (qiblahBearing - compassHeading + 360) % 360;
-
-  useEffect(() => {
-    let diff = arrowAngle - lastAngle.current;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
-    const target = lastAngle.current + diff;
-    lastAngle.current = target;
-    Animated.spring(rotateAnim, { toValue: target, useNativeDriver: true, damping: 20, stiffness: 100 }).start();
-  }, [arrowAngle]);
-
-  const spin = rotateAnim.interpolate({ inputRange: [-360, 360], outputRange: ["-360deg", "360deg"] });
-  const distanceKm = location ? haversineKm(location.latitude, location.longitude, KAABA_LAT, KAABA_LON) : null;
-
-  return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", padding: 24 }}>
-      <View style={{ alignItems: "center" }}>
-        <Text style={{ color: GOLD, fontSize: 24, fontWeight: "700" }}>Qiblah Direction</Text>
-        <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 4 }}>Point your device to find Mecca</Text>
-      </View>
-
-      <View style={{ alignItems: "center", justifyContent: "center" }}>
-        {locationLoading ? (
-          <ActivityIndicator color={GOLD} size="large" />
-        ) : !available ? (
-          <View style={{ alignItems: "center", padding: 24 }}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🧭</Text>
-            <Text style={{ color: GOLD, fontSize: 16, fontWeight: "600", textAlign: "center" }}>Compass Not Available</Text>
-            <Text style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 8 }}>Your device does not have a magnetometer sensor.</Text>
-            {location && (
-              <Text style={{ color: "rgba(255,255,255,0.6)", marginTop: 16, textAlign: "center", lineHeight: 22 }}>
-                Bearing: {qiblahBearing.toFixed(1)}° from North{"\n"}Distance: {distanceKm?.toFixed(0)} km to Mecca
-              </Text>
-            )}
-          </View>
-        ) : (
-          <>
-            <View style={{ width: 260, height: 260, borderRadius: 130, borderWidth: 2, borderColor: "rgba(245,158,11,0.2)", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.03)" }}>
-              {["N", "E", "S", "W"].map((dir, i) => {
-                const angle = i * 90;
-                const rad = (angle - 90) * (Math.PI / 180);
-                const r = 100;
-                return (
-                  <Text key={dir} style={{ position: "absolute", left: 130 + r * Math.cos(rad) - 8, top: 130 + r * Math.sin(rad) - 10, color: dir === "N" ? GOLD : "rgba(255,255,255,0.3)", fontSize: 13, fontWeight: "700" }}>
-                    {dir}
-                  </Text>
-                );
-              })}
-              <Animated.View style={{ transform: [{ rotate: spin }], alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 80 }}>🕋</Text>
-                <Text style={{ color: GOLD, fontSize: 12, marginTop: -8 }}>▲</Text>
-              </Animated.View>
-            </View>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 16 }}>
-              Bearing: {qiblahBearing.toFixed(1)}°
-            </Text>
-          </>
-        )}
-      </View>
-
-      <View style={{ alignItems: "center" }}>
-        {distanceKm && (
-          <View style={{ backgroundColor: "rgba(245,158,11,0.1)", borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", borderWidth: 1, borderColor: "rgba(245,158,11,0.2)" }}>
-            <Text style={{ color: GOLD, fontSize: 20, fontWeight: "700" }}>{distanceKm.toFixed(0)} km</Text>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2 }}>Distance to Mecca</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ─── Mosques tab ──────────────────────────────────────────────────────────────
-function MosquesTab() {
-  const { location } = useSharedLocation();
-  const { mosques, loading, error, refetch } = useNearbyMosques(20000);
-
-  if (!location && loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <ActivityIndicator color={GREEN} size="large" />
-        <Text style={{ color: "rgba(255,255,255,0.5)", marginTop: 12, textAlign: "center" }}>Acquiring your location…</Text>
-      </View>
-    );
-  }
-
-  if (error && !mosques.length) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <Text style={{ fontSize: 48, marginBottom: 12 }}>🕌</Text>
-        <Text style={{ color: "#EF4444", fontSize: 15, fontWeight: "600", marginBottom: 8, textAlign: "center" }}>Could not load mosques</Text>
-        <Text style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", lineHeight: 20, marginBottom: 20 }}>{error}</Text>
-        <View style={{ gap: 10, width: "100%" }}>
-          <TouchableOpacity onPress={refetch} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 14, backgroundColor: "rgba(16,185,129,0.1)", borderWidth: 1, borderColor: "rgba(16,185,129,0.3)" }}>
-            <RefreshCw size={16} color={GREEN} />
-            <Text style={{ color: GREEN, fontSize: 14, fontWeight: "600" }}>Try Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => openGoogleMapsSearch(location?.latitude, location?.longitude)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 14, backgroundColor: "rgba(59,130,246,0.1)", borderWidth: 1, borderColor: "rgba(59,130,246,0.3)" }}>
-            <ExternalLink size={16} color="#3B82F6" />
-            <Text style={{ color: "#3B82F6", fontSize: 14, fontWeight: "600" }}>Search on Google Maps</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Header row */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
-        <View>
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: "700" }}>🕌 Mosques Near You</Text>
-          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>
-            Within 20 km{loading && location ? " · Searching…" : ` · ${mosques.length} found`}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={refetch} disabled={loading} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: "rgba(16,185,129,0.08)", borderWidth: 1, borderColor: "rgba(16,185,129,0.2)", opacity: loading ? 0.5 : 1 }}>
-          {loading ? <ActivityIndicator size={14} color={GREEN} /> : <RefreshCw size={14} color={GREEN} />}
-          <Text style={{ color: GREEN, fontSize: 12, fontWeight: "600" }}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Loading banner when refreshing an existing list */}
-      {loading && mosques.length > 0 && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: "rgba(16,185,129,0.05)", borderBottomWidth: 1, borderBottomColor: "rgba(16,185,129,0.1)" }}>
-          <ActivityIndicator size={12} color={GREEN} />
-          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>Updating results…</Text>
-        </View>
-      )}
-
-      {/* Empty state */}
-      {!loading && mosques.length === 0 && !error && (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <MapPin size={40} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: "600", marginBottom: 8 }}>No Mosques Found</Text>
-          <Text style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", lineHeight: 20, marginBottom: 20 }}>None found within 20 km. Try Google Maps for a broader search.</Text>
-          <TouchableOpacity onPress={() => openGoogleMapsSearch(location?.latitude, location?.longitude)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, backgroundColor: "rgba(59,130,246,0.1)", borderWidth: 1, borderColor: "rgba(59,130,246,0.3)" }}>
-            <ExternalLink size={16} color="#3B82F6" />
-            <Text style={{ color: "#3B82F6", fontSize: 14, fontWeight: "600" }}>Open Google Maps</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <FlatList
-        data={mosques}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }: { item: Mosque }) => (
-          <TouchableOpacity
-            onPress={() => openInMaps(item.name, item.lat, item.lng)}
-            activeOpacity={0.75}
-            style={{ flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)", marginBottom: 10 }}>
-            <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: "rgba(16,185,129,0.12)", alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-              <MapPin size={20} color={GREEN} />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "600" }} numberOfLines={1}>{item.name}</Text>
-              {item.address ? (
-                <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }} numberOfLines={1}>{item.address}</Text>
-              ) : (
-                <Text style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>Address not available</Text>
-              )}
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4 }}>
-                <Navigation size={10} color={GREEN} />
-                <Text style={{ color: GREEN, fontSize: 11, fontWeight: "700" }}>{fmtDist(item.distance)} away</Text>
-              </View>
-            </View>
-            <ExternalLink size={14} color="rgba(255,255,255,0.25)" />
-          </TouchableOpacity>
-        )}
-      />
-    </View>
-  );
-}
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-type Tab = "compass" | "mosques";
+// Compass tick marks at 8 cardinal/intercardinal positions
+const TICK_LABELS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
 export default function QiblahScreen() {
-  const [activeTab, setActiveTab] = useState<Tab>("compass");
+  const router = useRouter();
+  const { location } = useSharedLocation();
+
+  const [compassHeading, setCompassHeading] = useState<number | null>(null);
+  const [sensorAvailable, setSensorAvailable] = useState(false);
+  const [calibrating, setCalibrating] = useState(false);
+
+  const qiblahBearing = location
+    ? calcQiblahBearing(location.latitude, location.longitude)
+    : null;
+
+  // Native compass via expo-sensors Magnetometer
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    let subscription: any = null;
+
+    (async () => {
+      try {
+        const sensors = await import("expo-sensors");
+        const Magnetometer = sensors.Magnetometer;
+        const { status } = await Magnetometer.requestPermissionsAsync();
+        if (status !== "granted") return;
+
+        const available = await Magnetometer.isAvailableAsync();
+        if (!available) return;
+
+        setSensorAvailable(true);
+        Magnetometer.setUpdateInterval(100);
+        subscription = Magnetometer.addListener(
+          ({ x, y }: { x: number; y: number }) => {
+            let angle = Math.atan2(y, x) * (180 / Math.PI);
+            angle = (angle + 360) % 360;
+            setCompassHeading(angle);
+          }
+        );
+      } catch (e) {
+        // sensor not available on this device
+      }
+    })();
+
+    return () => {
+      subscription?.remove?.();
+    };
+  }, []);
+
+  // Web compass via DeviceOrientation API
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handler = (event: any) => {
+      // webkitCompassHeading is iOS Safari; alpha is Android/Chrome (reversed)
+      const heading =
+        event.webkitCompassHeading !== undefined
+          ? event.webkitCompassHeading
+          : ((360 - event.alpha) % 360);
+      setCompassHeading(heading);
+      setSensorAvailable(true);
+    };
+
+    // deviceorientationabsolute is more accurate on Android Chrome
+    window.addEventListener(
+      "deviceorientationabsolute",
+      handler as EventListener,
+      true
+    );
+    window.addEventListener(
+      "deviceorientation",
+      handler as EventListener,
+      true
+    );
+
+    // iOS 13+ requires user permission
+    if (
+      typeof (DeviceOrientationEvent as any).requestPermission === "function"
+    ) {
+      (DeviceOrientationEvent as any)
+        .requestPermission()
+        .then((state: string) => {
+          if (state !== "granted") setSensorAvailable(false);
+        })
+        .catch(() => setSensorAvailable(false));
+    }
+
+    return () => {
+      window.removeEventListener(
+        "deviceorientationabsolute",
+        handler as EventListener
+      );
+      window.removeEventListener("deviceorientation", handler as EventListener);
+    };
+  }, []);
+
+  const handleCalibrate = () => {
+    setCalibrating(true);
+    setCompassHeading(null);
+    setTimeout(() => setCalibrating(false), 2000);
+  };
+
+  // Needle rotation: qiblah bearing relative to device heading.
+  // If no sensor, show static bearing from North (still useful).
+  const needleRotation =
+    compassHeading !== null && qiblahBearing !== null
+      ? qiblahBearing - compassHeading
+      : qiblahBearing ?? 0;
+
+  const isFacingQiblah =
+    compassHeading !== null &&
+    qiblahBearing !== null &&
+    Math.abs(((qiblahBearing - compassHeading + 540) % 360) - 180) < 10;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={["top"]}>
-      {/* Tab bar */}
-      <View style={{ flexDirection: "row", marginHorizontal: 20, marginTop: 16, marginBottom: 4, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 14, padding: 4 }}>
-        {(["compass", "mosques"] as Tab[]).map(tab => (
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={styles.headerIconWrap}>
+            <Compass size={22} color={QiblahColors.gold} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Qiblah Compass</Text>
+            <Text style={styles.headerSub}>Direction to the Kaaba, Mecca</Text>
+          </View>
+        </View>
+
+        {/* ── Facing Qiblah banner ── */}
+        {isFacingQiblah ? (
+          <View style={styles.facingBanner}>
+            <Text style={styles.facingText}>🕌 You are facing the Qiblah!</Text>
+          </View>
+        ) : null}
+
+        {/* ── Compass rose ── */}
+        <View style={styles.compassWrap}>
+          <View style={styles.glowRing} />
+          <Svg
+            width={COMPASS_SIZE}
+            height={COMPASS_SIZE}
+            viewBox={`0 0 ${COMPASS_SIZE} ${COMPASS_SIZE}`}
+          >
+            {/* Outer ring */}
+            <Circle
+              cx={CENTER}
+              cy={CENTER}
+              r={R - 4}
+              fill="none"
+              stroke={QiblahColors.border}
+              strokeWidth={1.5}
+            />
+            {/* Inner fill */}
+            <Circle
+              cx={CENTER}
+              cy={CENTER}
+              r={R * 0.55}
+              fill={QiblahColors.surface}
+              stroke={QiblahColors.border}
+              strokeWidth={1}
+            />
+
+            {/* 8 tick marks + labels */}
+            {TICK_LABELS.map((label, i) => {
+              const angleDeg = i * 45;
+              const rad = toRad(angleDeg - 90);
+              const outerR = R - 6;
+              const innerR = R - 22;
+              const labelR = R - 36;
+              const isCardinal =
+                label === "N" ||
+                label === "S" ||
+                label === "E" ||
+                label === "W";
+              return (
+                <G key={label}>
+                  <Line
+                    x1={CENTER + outerR * Math.cos(rad)}
+                    y1={CENTER + outerR * Math.sin(rad)}
+                    x2={CENTER + innerR * Math.cos(rad)}
+                    y2={CENTER + innerR * Math.sin(rad)}
+                    stroke={label === "N" ? "#EF4444" : QiblahColors.textSub}
+                    strokeWidth={isCardinal ? 2 : 1}
+                  />
+                  <SvgText
+                    x={CENTER + labelR * Math.cos(rad)}
+                    y={CENTER + labelR * Math.sin(rad)}
+                    textAnchor="middle"
+                    alignmentBaseline="middle"
+                    fill={label === "N" ? "#EF4444" : QiblahColors.text}
+                    fontSize={label.length === 1 ? 13 : 10}
+                    fontWeight="600"
+                  >
+                    {label}
+                  </SvgText>
+                </G>
+              );
+            })}
+
+            {/* Qiblah needle — rotates to point toward Mecca */}
+            <G transform={`rotate(${needleRotation}, ${CENTER}, ${CENTER})`}>
+              {/* Gold tip toward Qiblah */}
+              <Line
+                x1={CENTER}
+                y1={CENTER}
+                x2={CENTER}
+                y2={CENTER - R * 0.48}
+                stroke={QiblahColors.gold}
+                strokeWidth={4}
+                strokeLinecap="round"
+              />
+              {/* Blue tail */}
+              <Line
+                x1={CENTER}
+                y1={CENTER}
+                x2={CENTER}
+                y2={CENTER + R * 0.3}
+                stroke={QiblahColors.blue}
+                strokeWidth={3}
+                strokeLinecap="round"
+              />
+              {/* Pivot */}
+              <Circle cx={CENTER} cy={CENTER} r={7} fill={QiblahColors.gold} />
+              <Circle cx={CENTER} cy={CENTER} r={3} fill={QiblahColors.bg} />
+            </G>
+
+            {/* Kaaba emoji */}
+            <SvgText
+              x={CENTER}
+              y={CENTER + R * 0.16}
+              textAnchor="middle"
+              alignmentBaseline="middle"
+              fontSize={20}
+            >
+              🕋
+            </SvgText>
+          </Svg>
+
+          {/* No sensor hint */}
+          {!sensorAvailable && !calibrating ? (
+            <View style={styles.noSensorOverlay}>
+              <Navigation size={18} color={QiblahColors.textSub} />
+              <Text style={styles.noSensorText}>
+                {Platform.OS === "web"
+                  ? "Tap to enable device orientation"
+                  : "Compass sensor unavailable"}
+              </Text>
+              {qiblahBearing !== null ? (
+                <Text style={styles.staticBearingText}>
+                  Bearing from North: {Math.round(qiblahBearing)}°
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+
+        {/* ── Info cards ── */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoLabel}>Heading</Text>
+            <Text style={styles.infoValue}>
+              {compassHeading !== null ? `${Math.round(compassHeading)}°` : "—"}
+            </Text>
+          </View>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoLabel}>Qiblah</Text>
+            <Text style={[styles.infoValue, { color: QiblahColors.gold }]}>
+              {qiblahBearing !== null ? `${Math.round(qiblahBearing)}°` : "—"}
+            </Text>
+          </View>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoLabel}>Source</Text>
+            <Text style={styles.infoValue}>
+              {location?.source ?? "—"}
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Action buttons ── */}
+        <View style={styles.actionRow}>
           <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: activeTab === tab ? GOLD : "transparent" }}>
-            <Text style={{ color: activeTab === tab ? "white" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: "700" }}>
-              {tab === "compass" ? "🧭 Compass" : "🕌 Mosques"}
+            onPress={handleCalibrate}
+            activeOpacity={0.75}
+            style={styles.calibrateBtn}
+          >
+            <RotateCcw size={16} color={QiblahColors.gold} />
+            <Text style={styles.calibrateBtnText}>
+              {calibrating ? "Calibrating…" : "Calibrate"}
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {activeTab === "compass" ? <CompassTab /> : <MosquesTab />}
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/mosques" as any)}
+            activeOpacity={0.75}
+            style={styles.mosqueBtn}
+          >
+            <MapPin size={16} color={QiblahColors.white} />
+            <Text style={styles.mosqueBtnText}>Mosque Near Me</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Desktop notice */}
+        {Platform.OS === "web" && !sensorAvailable ? (
+          <View style={styles.webTip}>
+            <Text style={styles.webTipText}>
+              On desktop browsers, compass data is unavailable. For accurate
+              real-time direction, use the mobile app.
+            </Text>
+          </View>
+        ) : null}
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: QiblahColors.bg },
+  scroll: { paddingBottom: 48 },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Space.xl,
+    paddingTop: Space.xl,
+    paddingBottom: Space.lg,
+    gap: Space.md,
+  },
+  headerIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.lg,
+    backgroundColor: QiblahColors.goldMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: QiblahColors.goldBorder,
+  },
+  headerTitle: {
+    color: QiblahColors.text,
+    fontSize: Font.xl,
+    fontWeight: Weight.bold,
+  },
+  headerSub: { color: QiblahColors.textSub, fontSize: Font.sm, marginTop: 2 },
+
+  facingBanner: {
+    marginHorizontal: Space.xl,
+    padding: Space.md,
+    borderRadius: Radius.lg,
+    backgroundColor: QiblahColors.greenMuted,
+    borderWidth: 1,
+    borderColor: QiblahColors.greenBorder,
+    alignItems: "center",
+    marginBottom: Space.md,
+  },
+  facingText: {
+    color: QiblahColors.green,
+    fontSize: Font.base,
+    fontWeight: Weight.semibold,
+  },
+
+  compassWrap: {
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: Space.xxl,
+    position: "relative",
+  },
+  glowRing: {
+    position: "absolute",
+    width: COMPASS_SIZE + 32,
+    height: COMPASS_SIZE + 32,
+    borderRadius: (COMPASS_SIZE + 32) / 2,
+    backgroundColor: "rgba(245,158,11,0.06)",
+  },
+
+  noSensorOverlay: {
+    position: "absolute",
+    bottom: 4,
+    alignItems: "center",
+    gap: 6,
+  },
+  noSensorText: {
+    color: QiblahColors.textSub,
+    fontSize: Font.sm,
+    textAlign: "center",
+  },
+  staticBearingText: {
+    color: QiblahColors.textMuted,
+    fontSize: Font.xs,
+    textAlign: "center",
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    paddingHorizontal: Space.xl,
+    gap: Space.md,
+    marginBottom: Space.xl,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: QiblahColors.surface,
+    borderRadius: Radius.lg,
+    padding: Space.md,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: QiblahColors.border,
+  },
+  infoLabel: {
+    color: QiblahColors.textSub,
+    fontSize: Font.xs,
+    fontWeight: Weight.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  infoValue: {
+    color: QiblahColors.text,
+    fontSize: Font.xl,
+    fontWeight: Weight.bold,
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    paddingHorizontal: Space.xl,
+    gap: Space.md,
+  },
+  calibrateBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Space.xs,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: QiblahColors.goldBorder,
+    backgroundColor: QiblahColors.goldMuted,
+  },
+  calibrateBtnText: {
+    color: QiblahColors.gold,
+    fontSize: Font.base,
+    fontWeight: Weight.semibold,
+  },
+  mosqueBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Space.xs,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+    backgroundColor: QiblahColors.green,
+  },
+  mosqueBtnText: {
+    color: QiblahColors.white,
+    fontSize: Font.base,
+    fontWeight: Weight.semibold,
+  },
+
+  webTip: {
+    marginHorizontal: Space.xl,
+    marginTop: Space.xl,
+    padding: Space.md,
+    borderRadius: Radius.lg,
+    backgroundColor: QiblahColors.surface,
+    borderWidth: 1,
+    borderColor: QiblahColors.border,
+  },
+  webTipText: {
+    color: QiblahColors.textSub,
+    fontSize: Font.sm,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+});

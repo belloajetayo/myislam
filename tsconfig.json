@@ -6,9 +6,9 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "lucide-react": ["./src/shims/lucide-react.ts"],
+      "sonner": ["./src/shims/sonner.ts"]
     }
   },
   "include": [
@@ -22,16 +22,6 @@
   ],
   "exclude": [
     "node_modules",
-    "supabase",
-    "src/main.tsx",
-    "src/App.tsx",
-    "src/module/**",
-    "src/components/**",
-    "src/pages/**",
-    "src/lib/**",
-    "src/hooks/useMIAChat.ts",
-    "src/hooks/usePushNotifications.ts",
-    "src/hooks/use-toast.ts",
-    "src/utils/geo.ts"
+    "supabase"
   ]
 }

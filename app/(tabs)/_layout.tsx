@@ -1,189 +1,265 @@
-import { Tabs, useRouter } from "expo-router";
-import { View, TouchableOpacity, Text } from "react-native";
-import { Home, Clock, Compass, Moon, Play, Pause, SkipForward, Volume2 } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Tabs } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { Home, Clock, BookOpen, Compass, Moon } from "lucide-react-native";
+import { Colors, Font, Weight, Space, Radius, Shadow } from "@/theme/tokens";
 import { useAudio } from "@/context/AudioContext";
+import { ProgressBar } from "@/shared";
+
+const TAB_BAR_HEIGHT = 64;
+
+const TABS = [
+  { name: "index", label: "Home", Icon: Home },
+  { name: "prayer", label: "Prayer", Icon: Clock },
+  { name: "quran", label: "Quran", Icon: BookOpen, center: true },
+  { name: "qiblah", label: "Qiblah", Icon: Compass },
+  { name: "fasting", label: "Fasting", Icon: Moon },
+] as const;
+
+// ─── Floating mini player ─────────────────────────────────────────────────────
 
 function FloatingMiniPlayer() {
-  const { currentSurah, isPlaying, currentAyahIndex, togglePlayPause, playNext, audioProgress } = useAudio();
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-
+  const { currentSurah, isPlaying, togglePlayPause, audioProgress } = useAudio();
   if (!currentSurah) return null;
 
-  const tabBarHeight = 72 + insets.bottom;
-  const currentAyah = currentSurah.ayahs?.[currentAyahIndex];
-
   return (
-    <View
-      style={{
-        position: "absolute",
-        left: 12,
-        right: 12,
-        bottom: tabBarHeight + 8,
-        zIndex: 100,
-      }}
-    >
-      {/* Progress bar behind card */}
-      <View style={{ position: "absolute", bottom: -3, left: 8, right: 8, height: 3, backgroundColor: "rgba(245,158,11,0.15)", borderRadius: 2 }}>
-        <View style={{ height: 3, backgroundColor: "#F59E0B", borderRadius: 2, width: `${audioProgress}%` }} />
+    <View style={[styles.miniPlayer, Shadow.lg]}>
+      <View style={styles.miniPlayerContent}>
+        <View style={styles.miniPlayerIcon}>
+          <BookOpen size={14} color={Colors.gold} />
+        </View>
+        <View style={{ flex: 1, marginRight: Space.sm }}>
+          <Text style={styles.miniPlayerTitle} numberOfLines={1}>
+            {currentSurah.name}
+          </Text>
+          <ProgressBar
+            value={audioProgress}
+            color={Colors.gold}
+            height={2}
+            trackColor={Colors.borderSubtle}
+            style={{ marginTop: 4 }}
+          />
+        </View>
+        <TouchableOpacity
+          onPress={togglePlayPause}
+          activeOpacity={0.75}
+          style={styles.miniPlayerBtn}
+          accessibilityLabel={isPlaying ? "Pause" : "Play"}
+        >
+          <Text style={styles.miniPlayerBtnIcon}>{isPlaying ? "⏸" : "▶"}</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        onPress={() => router.push("/(tabs)/quran")}
-        activeOpacity={0.9}
-        style={{
-          backgroundColor: "#1a1635",
-          borderRadius: 18,
-          padding: 12,
-          flexDirection: "row",
-          alignItems: "center",
-          borderWidth: 1,
-          borderColor: "rgba(245,158,11,0.2)",
-          shadowColor: "#000",
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          elevation: 10,
-        }}
-      >
-        {/* Icon */}
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
-          <Volume2 size={18} color="white" />
-        </View>
-
-        {/* Info */}
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: "#F59E0B", fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
-            {currentSurah.englishName}
-          </Text>
-          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 1 }}>
-            Ayah {currentAyah ? currentAyah.numberInSurah : currentAyahIndex + 1} of {currentSurah.ayahs?.length ?? 0}
-          </Text>
-        </View>
-
-        {/* Controls */}
-        <TouchableOpacity
-          onPress={e => { e.stopPropagation?.(); togglePlayPause(); }}
-          style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(245,158,11,0.12)", alignItems: "center", justifyContent: "center", marginRight: 8 }}
-        >
-          {isPlaying ? <Pause size={15} color="#F59E0B" fill="#F59E0B" /> : <Play size={15} color="#F59E0B" fill="#F59E0B" />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={e => { e.stopPropagation?.(); playNext(); }}
-          disabled={!currentSurah.ayahs || currentAyahIndex >= currentSurah.ayahs.length - 1}
-          style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(245,158,11,0.12)", alignItems: "center", justifyContent: "center", opacity: currentSurah.ayahs && currentAyahIndex < currentSurah.ayahs.length - 1 ? 1 : 0.4 }}
-        >
-          <SkipForward size={15} color="#F59E0B" />
-        </TouchableOpacity>
-      </TouchableOpacity>
     </View>
   );
 }
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
-  const insets = useSafeAreaInsets();
+// ─── Custom tab bar ───────────────────────────────────────────────────────────
 
-  const icons = [
-    (focused: boolean) => <Home size={20} color={focused ? "#F59E0B" : "rgba(255,255,255,0.5)"} />,
-    (focused: boolean) => <Clock size={20} color={focused ? "#F59E0B" : "rgba(255,255,255,0.5)"} />,
-    (_focused: boolean) => <Play size={22} color="white" fill="white" />,
-    (focused: boolean) => <Compass size={20} color={focused ? "#F59E0B" : "rgba(255,255,255,0.5)"} />,
-    (focused: boolean) => <Moon size={20} color={focused ? "#F59E0B" : "rgba(255,255,255,0.5)"} />,
-  ];
-  const labels = ["Home", "Prayer", "Qur'an", "Qiblah", "Sawm"];
+type TabBarProps = {
+  state: any;
+  descriptors: any;
+  navigation: any;
+};
 
+function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   return (
-    <View
-      style={{
-        backgroundColor: "#110e24",
-        flexDirection: "row",
-        height: 72 + insets.bottom,
-        paddingBottom: insets.bottom,
-        borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.08)",
-        alignItems: "center",
-      }}
-    >
-      {state.routes.map((route: any, index: number) => {
-        const isFocused = state.index === index;
-        const isCenter = index === 2;
+    <View style={styles.tabBarWrapper}>
+      <FloatingMiniPlayer />
+      <View style={[styles.tabBar, Shadow.md]}>
+        {state.routes.map((route: any, index: number) => {
+          const tabDef = TABS.find((t) => t.name === route.name);
+          if (!tabDef) return null;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+          const { Icon, label } = tabDef;
+          const center = "center" in tabDef ? tabDef.center : false;
+          const isFocused = state.index === index;
+          const { options } = descriptors[route.key];
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          if (center) {
+            return (
+              <TouchableOpacity
+                key={route.key}
+                onPress={onPress}
+                activeOpacity={0.85}
+                accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+                accessibilityRole="button"
+                style={styles.centerTabBtn}
+              >
+                <View
+                  style={[
+                    styles.centerTab,
+                    isFocused && styles.centerTabActive,
+                  ]}
+                >
+                  <Icon
+                    size={24}
+                    color={isFocused ? Colors.white : Colors.gold}
+                    strokeWidth={isFocused ? 2.5 : 2}
+                  />
+                </View>
+              </TouchableOpacity>
+            );
           }
-        };
 
-        if (isCenter) {
           return (
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              activeOpacity={0.8}
-              style={{ flex: 1, alignItems: "center", marginBottom: 8 }}
+              activeOpacity={0.75}
+              accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+              accessibilityRole="button"
+              style={styles.tabBtn}
             >
-              <View
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
-                  backgroundColor: isFocused ? "#D97706" : "#F59E0B",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#F59E0B",
-                  shadowOpacity: 0.5,
-                  shadowRadius: 12,
-                  elevation: 8,
-                  marginBottom: 2,
-                }}
+              <Icon
+                size={22}
+                color={isFocused ? Colors.gold : Colors.textMuted}
+                strokeWidth={isFocused ? 2.5 : 1.8}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  { color: isFocused ? Colors.gold : Colors.textMuted },
+                ]}
               >
-                {icons[index](isFocused)}
-              </View>
-              <Text style={{ color: isFocused ? "#F59E0B" : "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: "600" }}>
-                {labels[index]}
+                {label}
               </Text>
+              {isFocused ? <View style={styles.activeDot} /> : null}
             </TouchableOpacity>
           );
-        }
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            activeOpacity={0.7}
-            style={{ flex: 1, alignItems: "center", paddingTop: 10 }}
-          >
-            {icons[index](isFocused)}
-            <Text style={{ color: isFocused ? "#F59E0B" : "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: "600", marginTop: 4 }}>
-              {labels[index]}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+        })}
+      </View>
     </View>
   );
 }
 
-export default function TabsLayout() {
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+export default function TabLayout() {
   return (
-    <View style={{ flex: 1 }}>
-      <Tabs
-        tabBar={(props) => <CustomTabBar {...props} />}
-        screenOptions={{ headerShown: false }}
-      >
-        <Tabs.Screen name="index" options={{ title: "Home" }} />
-        <Tabs.Screen name="prayer" options={{ title: "Prayer" }} />
-        <Tabs.Screen name="quran" options={{ title: "Qur'an" }} />
-        <Tabs.Screen name="qiblah" options={{ title: "Qiblah" }} />
-        <Tabs.Screen name="fasting" options={{ title: "Sawm" }} />
-      </Tabs>
-      <FloatingMiniPlayer />
-    </View>
+    <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="prayer" options={{ title: "Prayer" }} />
+      <Tabs.Screen name="quran" options={{ title: "Quran" }} />
+      <Tabs.Screen name="qiblah" options={{ title: "Qiblah" }} />
+      <Tabs.Screen name="fasting" options={{ title: "Fasting" }} />
+    </Tabs>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  tabBarWrapper: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+
+  tabBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    height: TAB_BAR_HEIGHT + (Platform.OS === "ios" ? 20 : 0),
+    paddingBottom: Platform.OS === "ios" ? 20 : 0,
+    paddingHorizontal: Space.sm,
+  },
+
+  tabBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Space.sm,
+    position: "relative",
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: Weight.medium,
+    marginTop: 3,
+  },
+  activeDot: {
+    position: "absolute",
+    bottom: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.gold,
+  },
+
+  centerTabBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centerTab: {
+    width: 52,
+    height: 52,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.goldMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.goldBorder,
+    marginBottom: Platform.OS === "ios" ? 0 : 8,
+  },
+  centerTabActive: {
+    backgroundColor: Colors.gold,
+    borderColor: Colors.gold,
+  },
+
+  miniPlayer: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Space.lg,
+    marginBottom: Space.sm,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  miniPlayerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
+    gap: Space.sm,
+  },
+  miniPlayerIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.goldMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniPlayerTitle: {
+    color: Colors.text,
+    fontSize: Font.sm,
+    fontWeight: Weight.semibold,
+  },
+  miniPlayerBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.goldMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.goldBorder,
+  },
+  miniPlayerBtnIcon: { fontSize: 14 },
+});

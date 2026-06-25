@@ -12,6 +12,9 @@ module.exports = function (api) {
           root: ["./"],
           alias: {
             "@": "./src",
+            "lucide-react": "./src/shims/lucide-react.ts",
+            "sonner": "./src/shims/sonner.ts",
+            "react-router-dom": "./src/shims/react-router-dom.ts",
           },
         },
       ],

@@ -68,23 +68,28 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   if (!initialReady) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: "#110e24", alignItems: "center", justifyContent: "center", padding: 24 }}
+        style={{ flex: 1, backgroundColor: "#FDFBF8", alignItems: "center", justifyContent: "center", padding: 24 }}
       >
         <View
           style={{
-            backgroundColor: "rgba(255,255,255,0.05)",
+            backgroundColor: "#FFFFFF",
             borderRadius: 24,
             padding: 20,
             width: "100%",
             maxWidth: 300,
             alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 6,
+            elevation: 2,
           }}
         >
           <Text style={{ fontSize: 32, marginBottom: 12 }}>🕌</Text>
           <Text style={{ color: "#F59E0B", fontSize: 18, fontWeight: "700", marginBottom: 8 }}>
             Preparing Location
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, textAlign: "center", marginBottom: 16 }}>
+          <Text style={{ color: "#6B7280", fontSize: 12, textAlign: "center", marginBottom: 16 }}>
             Allow location access so prayer times stay accurate.
           </Text>
           <ActivityIndicator color="#F59E0B" />
