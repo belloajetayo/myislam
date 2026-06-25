@@ -120,7 +120,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
         <div className="relative">
           <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-2xl scale-110" />
           <img
-            src={logoAsset.url}
+            src={LOGO_URL}
             alt="MyIslam"
             className="relative w-28 h-28 rounded-full shadow-2xl animate-float"
           />
