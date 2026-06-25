@@ -181,7 +181,7 @@ const Index: React.FC = () => {
         />
       </div>
     </MobileLayout>
-  );
+  </>);
 };
 
 export default Index;
