@@ -7,7 +7,7 @@ import QuickShortcuts from "@/components/home/QuickShortcuts";
 import ProgressTracker from "@/components/home/ProgressTracker";
 import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
-import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked } from "lucide-react";
+import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,20 +37,23 @@ const WebViewModal: React.FC<{ url: string; onClose: () => void }> = ({ url, onC
   </div>
 );
 
-const islamicToolsSubmenu = [
-  { label: "Islamic Calendar", to: "/islamic-calendar", icon: Calendar },
-  { label: "Duas Library", to: "/duas", icon: BookMarked },
-  { label: "Zakat Calculator", to: "/zakat", icon: Hand },
-  { label: "Fasting Tracker", to: "/fasting", icon: Heart },
-  { label: "Hajj Guide", to: "/hajj", icon: MapPin },
-];
-
 const mainNavItems = [
   { label: "Home", to: "/", icon: Home },
   { label: "Prayer Times", to: "/prayer", icon: Clock },
   { label: "Qiblah", to: "/qiblah", icon: Compass },
   { label: "Quran", to: "/quran", icon: BookOpen },
   { label: "Donate", to: "/donation", icon: Heart },
+];
+
+const islamicToolsSubmenu = [
+  { label: "Islamic Calendar", to: "/islamic-calendar", icon: Calendar },
+  { label: "Duas Library", to: "/duas", icon: BookMarked },
+  { label: "Zakat Calculator", to: "/zakat", icon: Hand },
+  { label: "Fasting Tracker", to: "/fasting", icon: Heart },
+  { label: "Hajj Guide", to: "/hajj", icon: MapPin },
+  { label: "Hadith Collection", to: "/hadith", icon: ScrollText },
+  { label: "Prophet's Life", to: "/prophet", icon: Star },
+  { label: "Dua Categories", to: "/dua-categories", icon: Feather },
 ];
 
 const Index: React.FC = () => {
@@ -133,6 +136,7 @@ const Index: React.FC = () => {
                     </button>
                   ))}
 
+                  {/* Islamic Tools dropdown with submenu */}
                   <div>
                     <button
                       onClick={() => setIslamicToolsOpen(!islamicToolsOpen)}
@@ -147,7 +151,7 @@ const Index: React.FC = () => {
                     </button>
 
                     {islamicToolsOpen && (
-                      <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l-2 border-indigo-100 dark:border-indigo-800 pl-3">
+                      <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l-2 border-indigo-100 dark:border-indigo-800 pl-3 max-h-64 overflow-y-auto">
                         {islamicToolsSubmenu.map((item) => (
                           <button
                             key={item.to}
