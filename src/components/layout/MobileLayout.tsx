@@ -10,7 +10,7 @@ interface MobileLayoutProps {
 
 const MobileLayout: React.FC<MobileLayoutProps> = ({ children, showNav = true }) => {
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') !== 'false';
+    return localStorage.getItem('darkMode') === 'true';
   });
 
   useEffect(() => {
