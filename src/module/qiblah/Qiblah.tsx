@@ -16,8 +16,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredLastLocation, saveLastLocation } from "@/hooks/useExactLocation";
 import { useSharedLocation } from "@/context/useSharedLocation";
@@ -94,10 +92,7 @@ const Qiblah: React.FC = () => {
   const navigate = useNavigate();
   const { location: sharedLocation, refreshLocation } = useSharedLocation();
   const { cacheLocation } = useLocationCache();
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
   const locationFetched = useRef(false);
-  const mapInitialized = useRef(false);
   const locationCached = useRef(false);
   const mosquesLoaded = useRef(false);
   const mosquesFetchedForLocation = useRef<{ lat: number; lng: number } | null>(null);
@@ -146,14 +141,9 @@ const Qiblah: React.FC = () => {
     lat: number;
     lng: number;
   } | null>(null);
-  const mosqueMapContainer = useRef<HTMLDivElement>(null);
-  const mosqueMap = useRef<mapboxgl.Map | null>(null);
   const [loadingMosques, setLoadingMosques] = useState(false);
   const [mosqueSearchStatus, setMosqueSearchStatus] = useState<"idle" | "timeout" | "error" | "empty">("idle");
-  const [mapboxToken, setMapboxToken] = useState<string>("");
-  const [mapReady, setMapReady] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [showMosqueMap, setShowMosqueMap] = useState(false);
   const [refreshingMosqueLocation, setRefreshingMosqueLocation] = useState(false);
   const [compassSupported, setCompassSupported] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -521,123 +511,7 @@ const Qiblah: React.FC = () => {
     };
   }, [calculateQiblahDirection, cacheLocation, sharedLocation]);
 
-  // Initialize map AFTER location is available
-  useEffect(() => {
-    if (!userLocation || mapInitialized.current || isOffline) return;
-    if (!mapContainer.current) return;
 
-    mapInitialized.current = true;
-    let mapInstance: mapboxgl.Map | null = null;
-
-    const initMap = async () => {
-      let token = "";
-      try {
-        const { data, error } =
-          await supabase.functions.invoke("get-mapbox-token");
-        if (error) throw error;
-        token = data.token;
-        setMapboxToken(token);
-      } catch {
-        console.error("Failed to get Mapbox token");
-        return;
-      }
-
-      mapboxgl.accessToken = token;
-
-      mapInstance = new mapboxgl.Map({
-        container: mapContainer.current!,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
-        zoom: 2,
-        center: [KAABA_COORDS.lng, KAABA_COORDS.lat],
-        pitch: 45,
-      });
-
-      map.current = mapInstance;
-
-      new mapboxgl.Marker({ color: "#FFD700" })
-        .setLngLat([KAABA_COORDS.lng, KAABA_COORDS.lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(
-            "<strong>Al-Masjid al-Haram</strong><br/>The Holy Kaaba",
-          ),
-        )
-        .addTo(mapInstance);
-
-      new mapboxgl.Marker({ color: "#4F46E5" })
-        .setLngLat([userLocation.lng, userLocation.lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML("<strong>Your Location</strong>"),
-        )
-        .addTo(mapInstance);
-
-      mapInstance.on("load", () => {
-        setMapReady(true);
-        if (mapInstance) {
-          mapInstance.addSource("qiblah-line", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: [
-                  [userLocation.lng, userLocation.lat],
-                  [KAABA_COORDS.lng, KAABA_COORDS.lat],
-                ],
-              },
-            },
-          });
-
-          mapInstance.addLayer({
-            id: "qiblah-line-layer",
-            type: "line",
-            source: "qiblah-line",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": "#FFD700",
-              "line-width": 3,
-              "line-dasharray": [2, 2],
-            },
-          });
-
-          mapInstance.fitBounds(
-            [
-              [
-                Math.min(userLocation.lng, KAABA_COORDS.lng) - 10,
-                Math.min(userLocation.lat, KAABA_COORDS.lat) - 5,
-              ],
-              [
-                Math.max(userLocation.lng, KAABA_COORDS.lng) + 10,
-                Math.max(userLocation.lat, KAABA_COORDS.lat) + 5,
-              ],
-            ],
-            { padding: 50 },
-          );
-        }
-      });
-
-      try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${userLocation.lng},${userLocation.lat}.json?access_token=${token}`,
-        );
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          setLocationName(
-            data.features[0].place_name.split(",").slice(0, 2).join(","),
-          );
-        }
-      } catch {
-        setLocationName("Location detected");
-      }
-    };
-
-    initMap();
-
-    return () => {
-      setMapReady(false);
-      mapInstance?.remove();
-    };
-  }, [userLocation, isOffline]);
 
   // Overall cleanup for orientation listeners
   useEffect(() => {
@@ -925,40 +799,29 @@ const Qiblah: React.FC = () => {
 
       // Initialize map after a short delay to allow DOM to update
       setTimeout(() => {
-        if (!mosqueMapContainer.current || !mapboxToken || !userLocation)
           return;
 
         // Remove existing map if any
-        mosqueMap.current?.remove();
 
-        mapboxgl.accessToken = mapboxToken;
 
-        const newMap = new mapboxgl.Map({
-          container: mosqueMapContainer.current,
-          style: "mapbox://styles/mapbox/streets-v12",
-          center: [
+                    center: [
             (userLocation.lng + mosque.lng) / 2,
             (userLocation.lat + mosque.lat) / 2,
           ],
           zoom: 12,
         });
 
-        mosqueMap.current = newMap;
 
         newMap.on("load", () => {
           // Add user marker
-          new mapboxgl.Marker({ color: "#4F46E5" })
             .setLngLat([userLocation.lng, userLocation.lat])
             .setPopup(
-              new mapboxgl.Popup().setHTML("<strong>Your Location</strong>"),
             )
             .addTo(newMap);
 
           // Add mosque marker
-          new mapboxgl.Marker({ color: "#10B981" })
             .setLngLat([mosque.lng, mosque.lat])
             .setPopup(
-              new mapboxgl.Popup().setHTML(`<strong>${mosque.name}</strong>`),
             )
             .addTo(newMap);
 
@@ -994,7 +857,6 @@ const Qiblah: React.FC = () => {
           });
 
           // Fit bounds to show both points
-          const bounds = new mapboxgl.LngLatBounds()
             .extend([userLocation.lng, userLocation.lat])
             .extend([mosque.lng, mosque.lat]);
 
@@ -1002,12 +864,10 @@ const Qiblah: React.FC = () => {
         });
       }, 100);
     },
-    [mapboxToken, userLocation],
   );
 
   // Load mosques when dialog opens or when real GPS location arrives
   useEffect(() => {
-    if (!showMosqueMap || !userLocation) return;
 
     // If we have a previously-fetched location and it's within 1km of current, skip
     const prev = mosquesFetchedForLocation.current;
@@ -1028,15 +888,12 @@ const Qiblah: React.FC = () => {
     // Real GPS is available — reset guard and fetch
     mosquesLoaded.current = false;
     fetchNearbyMosques(userLocation);
-  }, [showMosqueMap, userLocation, fetchNearbyMosques, nearbyMosques.length, refreshingMosqueLocation]);
 
   return (
     <MobileLayout>
       <div className="relative min-h-[calc(100vh-80px)]">
         {/* === FALLBACK BACKGROUND: Rich Islamic geometric gradient === */}
-        {/* Always mounted so it shows immediately, hidden by Mapbox satellite once ready */}
-        {!mapReady && (
-          <div
+                  <div
             className="absolute inset-0 z-0 overflow-hidden"
             style={{
               background: isOffline
@@ -1112,13 +969,10 @@ const Qiblah: React.FC = () => {
           </div>
         )}
 
-        {/* Mapbox satellite map — loaded when online; sits on top of gradient */}
-        {!isOffline && (
-          <div ref={mapContainer} className="absolute inset-0 z-[1] transition-opacity duration-700" style={{ opacity: mapReady ? 1 : 0 }} />
+                {!isOffline && (
         )}
 
         {/* Overlay for readability */}
-        {!isOffline && mapReady ? (
           <div className="absolute inset-0 bg-black/30 z-[2] pointer-events-none" />
         ) : (
           <div className="absolute inset-0 bg-black/5 z-[2] pointer-events-none" />
@@ -1427,19 +1281,16 @@ const Qiblah: React.FC = () => {
               <button
                 onClick={toggleMosquePanel}
                 className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-all ${
-                  showMosqueMap
                     ? 'bg-gradient-to-r from-teal-600 to-emerald-700 ring-2 ring-emerald-400/40'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-600'
                 }`}
               >
                 <Building2 className="w-5 h-5" />
-                {showMosqueMap ? 'Hide Mosques' : 'Mosque Near Me'}
               </button>
             )}
           </div>
 
           {/* Mosque Inline Panel */}
-          {showMosqueMap && (
             <div
               className="w-full max-w-md mt-3 rounded-2xl overflow-hidden border border-emerald-500/30
                 bg-card/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-top-2 duration-300
