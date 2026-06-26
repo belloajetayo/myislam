@@ -118,11 +118,8 @@ const Index: React.FC = () => {
         {/* Quick Shortcuts */}
         <QuickShortcuts />
 
-        {/* Daily Reminders */}
-        <DailyReminders />
-
-        {/* AI-Generated Daily Teachings */}
-        <DailyTeachingsCarousel />
+        {/* Daily Discover — Islamic blog posts */}
+        <IslamicFeed />
 
         {/* Progress Tracker */}
         <div id="progress-tracker">
