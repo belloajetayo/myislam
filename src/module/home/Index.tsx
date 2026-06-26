@@ -5,8 +5,7 @@ import MIAAssistant from "@/components/home/MIAAssistant";
 import IslamicCalendar from "@/components/home/IslamicCalendar";
 import QuickShortcuts from "@/components/home/QuickShortcuts";
 import ProgressTracker from "@/components/home/ProgressTracker";
-import DailyReminders from "@/components/home/DailyReminders";
-import DailyTeachingsCarousel from "@/components/home/DailyTeachingsCarousel";
+import IslamicFeed from "@/components/home/IslamicFeed";
 
 import CommunityFeed from "@/components/community/CommunityFeed";
 // RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
