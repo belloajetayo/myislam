@@ -1,40 +1,15 @@
-import React, { useState, useEffect } from "react";
-import MobileLayout from "@/components/layout/MobileLayout";
-import QiblahCompass from "@/components/home/QiblahCompass";
-import MIAAssistant from "@/components/home/MIAAssistant";
-import IslamicCalendar from "@/components/home/IslamicCalendar";
-import QuickShortcuts from "@/components/home/QuickShortcuts";
-import ProgressTracker from "@/components/home/ProgressTracker";
-import IslamicFeed from "@/components/home/IslamicFeed";
-
-import CommunityFeed from "@/components/community/CommunityFeed";
-// RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
-// import { RamadanCountdown } from ...
-import { User as UserIcon, Sparkles, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { type User } from "@supabase/supabase-js";
-
-import { toast } from "sonner";
-import { useMIAChat } from "@/hooks/useMIAChat";
-import OnboardingScreen, { hasSeenOnboarding } from "@/components/onboarding/OnboardingScreen";
-
-const Index: React.FC = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
-  const {
-    messages,
-    isLoading,
-    isOpen,
-    setIsOpen,
-    sendMessage,
-    clearMessages,
-    openWithQuestion,
-  } = useMIAChat();
-
+@/components/layout/MobileLayout
+@/components/home/QiblahCompass
+@/components/home/MIAAssistant
+@/components/home/IslamicCalendar
+@/components/home/QuickShortcuts
+@/components/home/ProgressTracker
+@/components/home/IslamicFeed
+@/components/community/CommunityFeed
+react-router-dom
+@/integrations/supabase/client
+@supabase/supabase-js
+@/hooks/useMIAChat
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
