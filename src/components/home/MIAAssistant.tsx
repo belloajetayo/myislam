@@ -78,8 +78,8 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/50 bg-gradient-to-r from-primary/10 to-accent/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-border flex items-center justify-center">
+            <img src="/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png" alt="MyIslam" className="w-full h-full object-contain" />
           </div>
           <div>
             <h3 className="font-semibold text-foreground">MIA</h3>
