@@ -10,8 +10,10 @@ import DailyTeachingsCarousel from "@/components/home/DailyTeachingsCarousel";
 
 import CommunityFeed from "@/components/community/CommunityFeed";
 // RamadanCountdown temporarily hidden — will reappear ~1 month before next Ramadan
-// import RamadanCountdown from "@/components/home/RamadanCountdown";
-import { User as UserIcon, Sparkles } from "lucide-react";
+// import { RamadanCountdown } from ...
+import { User as UserIcon, Sparkles, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { type User } from "@supabase/supabase-js";
