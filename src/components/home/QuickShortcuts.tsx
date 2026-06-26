@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, Gift, User, Compass } from 'lucide-react';
+import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, User, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const primaryShortcuts = [
@@ -11,24 +11,24 @@ const primaryShortcuts = [
 ];
 
 const extraShortcuts = [
-  { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/duas' },
-  { icon: ScrollText, label: 'Hadith', color: 'from-orange-500 to-amber-600', route: '/hadith' },
-  { icon: Star, label: 'Prophet', color: 'from-yellow-500 to-orange-500', route: '/prophet' },
-  { icon: Calendar, label: 'Calendar', color: 'from-indigo-500 to-blue-600', route: '/islamic-calendar' },
+  { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/quran?tab=dua' },
+  { icon: ScrollText, label: 'Hadith', color: 'from-orange-500 to-amber-600', route: '/quran?tab=hadith' },
+  { icon: Star, label: 'Prophet', color: 'from-yellow-500 to-orange-500', route: '/quran?tab=prophets' },
+  { icon: Calendar, label: 'Calendar', color: 'from-indigo-500 to-blue-600', route: '/' },
   { icon: Compass, label: 'Qiblah', color: 'from-green-500 to-emerald-600', route: '/qiblah' },
-  { icon: Users, label: 'Community', color: 'from-pink-500 to-rose-600', route: '/community' },
+  { icon: Users, label: 'Community', color: 'from-pink-500 to-rose-600', route: '/' },
   { icon: Heart, label: 'Donate', color: 'from-red-500 to-pink-600', route: '/donation' },
   { icon: User, label: 'Profile', color: 'from-slate-500 to-gray-600', route: '/profile' },
   { icon: BookOpen, label: 'Quran', color: 'from-emerald-600 to-teal-700', route: '/quran' },
   { icon: Moon, label: 'Ramadan', color: 'from-blue-600 to-indigo-700', route: '/fasting' },
 ];
 
-const ShortcutButton: React.FC<{ 
-  icon: React.ElementType; 
-  label: string; 
-  color: string; 
-  route: string; 
-  onClick: () => void 
+const ShortcutButton: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  color: string;
+  route: string;
+  onClick: () => void
 }> = ({ icon: Icon, label, color, onClick }) => (
   <button
     onClick={onClick}
@@ -45,19 +45,6 @@ const QuickShortcuts: React.FC = () => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
-  const handleRoute = (route: string) => {
-    // Map unbuilt pages to closest existing page
-    const routeMap: Record<string, string> = {
-      '/duas': '/quran',        // Duas → Quran page for now
-      '/hadith': '/quran',      // Hadith → Quran page for now  
-      '/prophet': '/quran',     // Prophet → Quran page for now
-      '/islamic-calendar': '/', // Calendar → Home for now
-      '/community': '/',        // Community → Home for now
-      '/more': '/',             // More → Home for now
-    };
-    navigate(routeMap[route] ?? route);
-  };
-
   return (
     <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
       <div className="flex items-center justify-between mb-3">
@@ -67,13 +54,13 @@ const QuickShortcuts: React.FC = () => {
         </div>
       </div>
 
-      {/* Primary shortcuts — always visible */}
+      {/* Primary shortcuts */}
       <div className="grid grid-cols-5 gap-2.5">
         {primaryShortcuts.map((shortcut, index) => (
           <ShortcutButton
             key={index}
             {...shortcut}
-            onClick={() => handleRoute(shortcut.route)}
+            onClick={() => navigate(shortcut.route)}
           />
         ))}
       </div>
@@ -83,28 +70,21 @@ const QuickShortcuts: React.FC = () => {
         <button
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-500 text-xs font-medium hover:bg-indigo-100 transition-all active:scale-95"
-          aria-label="Show more"
         >
           <span>{expanded ? 'Less' : 'More'}</span>
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
-          />
+          <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
-      {/* Extra shortcuts — expandable */}
-      <div
-        className={`grid transition-all duration-300 ease-out mt-2 ${
-          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
-      >
+      {/* Extra shortcuts */}
+      <div className={`grid transition-all duration-300 ease-out mt-2 ${expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="grid grid-cols-5 gap-2.5 pt-1">
             {extraShortcuts.map((shortcut, index) => (
               <ShortcutButton
                 key={index}
                 {...shortcut}
-                onClick={() => handleRoute(shortcut.route)}
+                onClick={() => navigate(shortcut.route)}
               />
             ))}
           </div>
