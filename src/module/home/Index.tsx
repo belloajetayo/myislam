@@ -66,75 +66,50 @@ const Index: React.FC = () => {
       </div>
 
       <div className="relative p-4 space-y-5 pb-8">
-        {/* Header */}
-        <header className="flex items-center justify-between py-4 animate-fade-in border-b border-border/10">
-          {/* Left: Branding & Welcome */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-soft">
-              <Sparkles className="w-5 h-5 text-primary animate-pulse-soft" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gradient-gold tracking-tight leading-tight">
-                My Islam
-              </h1>
-              <p className="text-[11px] font-semibold text-muted-foreground/80">
-                Assalamu Alaikum
-              </p>
-            </div>
-          </div>
-
-          {/* Right: Action Bar */}
-          <div className="flex items-center gap-2">
-            <QiblahCompass />
-            
-            <button
-              onClick={() => {
-                const tracker = document.getElementById("progress-tracker");
-                tracker?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="relative w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-primary/30 hover:shadow-soft active:scale-95 transition-all duration-200"
-              title="Daily Progress"
-            >
-              <span className="text-lg">📊</span>
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
-            </button>
-            
-            {user ? (
+        {/* Header — minimal, menu only */}
+        <header className="flex items-center justify-between py-3 animate-fade-in">
+          <Sheet>
+            <SheetTrigger asChild>
               <button
-                onClick={() => navigate("/profile")}
-                className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
-                title="User Profile"
+                className="w-11 h-11 glass rounded-2xl flex items-center justify-center border border-border hover:border-primary/30 active:scale-95 transition-all"
+                aria-label="Open menu"
               >
-                <span className="text-xs font-bold text-primary-foreground">
-                  {(() => {
-                    const name =
-                      user.user_metadata?.full_name ||
-                      user.user_metadata?.name ||
-                      "";
-                    if (name.trim())
-                      return name
-                        .trim()
-                        .split(" ")
-                        .map((w: string) => w[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase();
-                    return (user.email?.[0] ?? "U").toUpperCase();
-                  })()}
-                </span>
+                <Menu className="w-5 h-5 text-foreground" strokeWidth={2.2} />
               </button>
-            ) : (
-              <button
-                onClick={() => navigate("/auth")}
-                className="w-11 h-11 gradient-primary rounded-2xl flex items-center justify-center shadow-soft hover:shadow-glow active:scale-95 transition-all duration-200"
-                title="Sign In"
-              >
-                <UserIcon className="w-5 h-5 text-primary-foreground" />
-
-              </button>
-            )}
-          </div>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72">
+              <div className="flex items-center gap-3 mb-6 mt-2">
+                <img src={LOGO_URL} alt="MyIslam" className="w-10 h-10 rounded-xl" />
+                <div>
+                  <p className="font-bold text-foreground">My Islam</p>
+                  <p className="text-xs text-muted-foreground">Assalamu Alaikum</p>
+                </div>
+              </div>
+              <nav className="flex flex-col gap-1">
+                {[
+                  { label: "Home", to: "/" },
+                  { label: "Prayer Times", to: "/prayer" },
+                  { label: "Qiblah", to: "/qiblah" },
+                  { label: "Quran", to: "/quran" },
+                  { label: "Fasting", to: "/fasting" },
+                  { label: "Zakat", to: "/zakat" },
+                  { label: "Hajj", to: "/hajj" },
+                  { label: "Donate", to: "/donate" },
+                  { label: user ? "Profile" : "Sign In", to: user ? "/profile" : "/auth" },
+                ].map((item) => (
+                  <button
+                    key={item.to}
+                    onClick={() => navigate(item.to)}
+                    className="text-left px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium text-foreground"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </header>
+
 
         {/* Ramadan Countdown — hidden until ~1 month before next Ramadan */}
         {/* <RamadanCountdown /> */}
