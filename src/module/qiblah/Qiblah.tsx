@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
+import PrayerClockRing from "@/components/qiblah/PrayerClockRing";
 import {
   Navigation,
   MapPin,
@@ -1215,6 +1216,11 @@ const Qiblah: React.FC = () => {
               <div className="w-10" /> {/* Spacer for alignment */}
             </div>
           </header>
+
+          {/* Prayer Clock Ring */}
+          <div className="w-full flex justify-center mb-2 animate-fade-in">
+            <PrayerClockRing locationName={locationName} />
+          </div>
 
           {/* Compass permission notice — iOS only (requires explicit user gesture) */}
           {!permissionGranted && canRequestCompassPermission && (
