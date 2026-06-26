@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw, Newspaper } from "lucide-react";
+import { RefreshCw, Newspaper } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Article {
@@ -11,10 +11,14 @@ interface Article {
   pubDate: string;
 }
 
+interface IslamicFeedProps {
+  onArticleClick?: (url: string) => void;
+}
+
 const CACHE_KEY = "myislam_articles_cache_v1";
 const CACHE_TTL = 1000 * 60 * 60 * 3; // 3 hours
 
-const IslamicFeed: React.FC = () => {
+const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,11 +57,20 @@ const IslamicFeed: React.FC = () => {
     load();
   }, []);
 
+  const handleArticleClick = (e: React.MouseEvent, url: string) => {
+    e.preventDefault();
+    if (onArticleClick) {
+      onArticleClick(url);
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Newspaper className="w-4 h-4 text-primary" />
+          <Newspaper className="w-4 h-4 text-indigo-500" />
           <h3 className="text-sm font-semibold text-foreground">
             Daily Discover
           </h3>
@@ -89,12 +102,10 @@ const IslamicFeed: React.FC = () => {
       ) : (
         <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
           {articles.map((a, i) => (
-            <a
+            <button
               key={i}
-              href={a.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-w-[240px] max-w-[240px] snap-start bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card active:scale-[0.98] transition-all flex flex-col"
+              onClick={(e) => handleArticleClick(e, a.link)}
+              className="min-w-[240px] max-w-[240px] snap-start bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card active:scale-[0.98] transition-all flex flex-col text-left"
             >
               <div className="h-32 w-full bg-muted relative overflow-hidden">
                 {a.image ? (
@@ -109,8 +120,8 @@ const IslamicFeed: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/15 to-secondary/15">
-                    <Newspaper className="w-8 h-8 text-primary/60" />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-sky-100 dark:from-indigo-900/30 dark:to-sky-900/30">
+                    <Newspaper className="w-8 h-8 text-indigo-400" />
                   </div>
                 )}
                 <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur">
@@ -121,12 +132,12 @@ const IslamicFeed: React.FC = () => {
                 <h4 className="text-[13px] font-semibold text-foreground leading-snug line-clamp-3">
                   {a.title}
                 </h4>
-                <div className="mt-auto pt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <ExternalLink className="w-3 h-3" />
-                  <span>Read article</span>
+                <div className="mt-auto pt-2 flex items-center gap-1 text-[10px] text-indigo-400">
+                  <Newspaper className="w-3 h-3" />
+                  <span>Read inside app</span>
                 </div>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       )}
