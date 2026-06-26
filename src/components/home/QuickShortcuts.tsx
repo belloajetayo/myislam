@@ -19,11 +19,17 @@ const extraShortcuts = [
   { icon: Users, label: 'Community', color: 'from-pink-500 to-rose-600', route: '/community' },
   { icon: Heart, label: 'Donate', color: 'from-red-500 to-pink-600', route: '/donation' },
   { icon: User, label: 'Profile', color: 'from-slate-500 to-gray-600', route: '/profile' },
-  { icon: Gift, label: 'More', color: 'from-violet-500 to-purple-600', route: '/more' },
+  { icon: BookOpen, label: 'Quran', color: 'from-emerald-600 to-teal-700', route: '/quran' },
   { icon: Moon, label: 'Ramadan', color: 'from-blue-600 to-indigo-700', route: '/fasting' },
 ];
 
-const ShortcutButton: React.FC<{ icon: React.ElementType; label: string; color: string; route: string; onClick: () => void }> = ({ icon: Icon, label, color, onClick }) => (
+const ShortcutButton: React.FC<{ 
+  icon: React.ElementType; 
+  label: string; 
+  color: string; 
+  route: string; 
+  onClick: () => void 
+}> = ({ icon: Icon, label, color, onClick }) => (
   <button
     onClick={onClick}
     className="flex flex-col items-center gap-2 p-3 bg-white/60 dark:bg-white/5 rounded-2xl border border-indigo-100 dark:border-indigo-800 hover:border-indigo-300 hover:shadow-md active:scale-95 transition-all duration-300 group backdrop-blur-sm"
@@ -38,6 +44,19 @@ const ShortcutButton: React.FC<{ icon: React.ElementType; label: string; color: 
 const QuickShortcuts: React.FC = () => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+
+  const handleRoute = (route: string) => {
+    // Map unbuilt pages to closest existing page
+    const routeMap: Record<string, string> = {
+      '/duas': '/quran',        // Duas → Quran page for now
+      '/hadith': '/quran',      // Hadith → Quran page for now  
+      '/prophet': '/quran',     // Prophet → Quran page for now
+      '/islamic-calendar': '/', // Calendar → Home for now
+      '/community': '/',        // Community → Home for now
+      '/more': '/',             // More → Home for now
+    };
+    navigate(routeMap[route] ?? route);
+  };
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -54,7 +73,7 @@ const QuickShortcuts: React.FC = () => {
           <ShortcutButton
             key={index}
             {...shortcut}
-            onClick={() => navigate(shortcut.route)}
+            onClick={() => handleRoute(shortcut.route)}
           />
         ))}
       </div>
@@ -85,7 +104,7 @@ const QuickShortcuts: React.FC = () => {
               <ShortcutButton
                 key={index}
                 {...shortcut}
-                onClick={() => navigate(shortcut.route)}
+                onClick={() => handleRoute(shortcut.route)}
               />
             ))}
           </div>
