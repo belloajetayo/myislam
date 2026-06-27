@@ -901,12 +901,8 @@ const Qiblah: React.FC = () => {
               />
             </svg>
           </div>
-        )}
-
-                {!isOffline && (
-        )}
-
         {/* Overlay for readability */}
+        {isOffline ? (
           <div className="absolute inset-0 bg-black/30 z-[2] pointer-events-none" />
         ) : (
           <div className="absolute inset-0 bg-black/5 z-[2] pointer-events-none" />
