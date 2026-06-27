@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Share2, Download, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useHijriDate } from "@/hooks/useHijriDate";
 
@@ -18,15 +18,15 @@ const HADITHS = [
   { text: "The strong man is not the one who overcomes others by force, but the one who controls himself while in anger.", source: "Sahih Al-Bukhari", narrator: "The Prophet ﷺ said" },
   { text: "Make things easy and do not make them difficult, cheer people up and do not drive them away.", source: "Sahih Al-Bukhari", narrator: "The Prophet ﷺ said" },
   { text: "Whoever believes in Allah and the Last Day should speak good or keep silent.", source: "Sahih Al-Bukhari & Muslim", narrator: "The Prophet ﷺ said" },
-  { text: "The best of deeds is the prayer performed on time, then kindness to parents, then jihad in the way of Allah.", source: "Sahih Al-Bukhari", narrator: "The Prophet ﷺ said" },
-  { text: "Seek knowledge from the cradle to the grave.", source: "Hadith", narrator: "The Prophet ﷺ said" },
+  { text: "The best of deeds is the prayer performed on time, then kindness to parents.", source: "Sahih Al-Bukhari", narrator: "The Prophet ﷺ said" },
   { text: "A Muslim is the one from whose tongue and hands the Muslims are safe.", source: "Sahih Al-Bukhari", narrator: "The Prophet ﷺ said" },
   { text: "The world is a prison for the believer and a paradise for the disbeliever.", source: "Sahih Muslim", narrator: "The Prophet ﷺ said" },
-  { text: "Take benefit of five before five: your youth before your old age, your health before your sickness, your wealth before your poverty, your free time before you are preoccupied, and your life before your death.", source: "Mustadrak Al-Hakim", narrator: "The Prophet ﷺ said" },
+  { text: "Smiling at your brother is an act of charity.", source: "At-Tirmidhi", narrator: "The Prophet ﷺ said" },
+  { text: "Take benefit of five before five: your youth, health, wealth, free time, and life.", source: "Mustadrak Al-Hakim", narrator: "The Prophet ﷺ said" },
 ];
 
 const DailyCards: React.FC = () => {
-  const { hijriDate } = useHijriDate();
+  const { dateInfo } = useHijriDate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const total = HADITHS.length;
 
@@ -35,8 +35,8 @@ const DailyCards: React.FC = () => {
 
   const hadith = HADITHS[currentIndex];
   const bg = BG_IMAGES[currentIndex % BG_IMAGES.length];
-  const dayNum = hijriDate?.day ?? new Date().getDate();
-  const monthName = hijriDate?.month?.en ?? "Muharram";
+  const dayNum = dateInfo?.hijri?.day ?? new Date().getDate();
+  const monthName = dateInfo?.hijri?.month?.en ?? "Muharram";
 
   const handleShare = async () => {
     try {
@@ -83,7 +83,6 @@ const DailyCards: React.FC = () => {
 
       {/* Card */}
       <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
-        {/* Background */}
         <img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/85" />
 
@@ -101,12 +100,8 @@ const DailyCards: React.FC = () => {
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <p className="text-white/70 text-[10px] italic mb-1">{hadith.narrator}:</p>
-          <p className="text-white text-[13px] leading-relaxed font-medium line-clamp-5 mb-2">
-            "{hadith.text}"
-          </p>
+          <p className="text-white text-[13px] leading-relaxed font-medium line-clamp-5 mb-2">"{hadith.text}"</p>
           <p className="text-amber-300 text-[10px] italic">[{hadith.source}]</p>
-
-          {/* Watermark */}
           <div className="flex items-center gap-1.5 mt-2">
             <img src={LOGO_URL} alt="MyIslam" className="w-4 h-4 rounded-md" />
             <span className="text-white/60 text-[9px] font-semibold tracking-wider">MyIslam App</span>
@@ -125,9 +120,7 @@ const DailyCards: React.FC = () => {
       {/* Dots */}
       <div className="flex justify-center gap-1.5 mt-3 flex-wrap">
         {Array.from({ length: total }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentIndex(i)}
+          <button key={i} onClick={() => setCurrentIndex(i)}
             className={`rounded-full transition-all ${i === currentIndex ? "w-5 h-2 bg-amber-500" : "w-2 h-2 bg-gray-300 dark:bg-gray-600"}`}
           />
         ))}
