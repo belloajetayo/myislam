@@ -397,9 +397,10 @@ His life encompassed every human role - husband, father, statesman, judge, milit
 const Quran: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as "quran" | "dua" | "hadith" | "prophets" | null;
   const [activeTab, setActiveTab] = useState<
     "quran" | "dua" | "hadith" | "prophets"
-  >("quran");
+  >(tabParam ?? "quran");
   const routeSurahNumber = Number(searchParams.get("surah"));
   const routeAyahNumber = Number(searchParams.get("ayah"));
   const [searchQuery, setSearchQuery] = useState("");
