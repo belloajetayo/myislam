@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, Newspaper } from "lucide-react";
+import { RefreshCw, Newspaper, Heart, Share2, BookmarkPlus, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
 
 interface Article {
   title: string;
@@ -16,11 +18,25 @@ interface IslamicFeedProps {
 }
 
 const CACHE_KEY = "myislam_articles_cache_v1";
-const CACHE_TTL = 1000 * 60 * 60 * 3; // 3 hours
+const CACHE_TTL = 1000 * 60 * 60 * 3;
+
+const timeAgo = (dateStr: string) => {
+  try {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const h = Math.floor(diff / 3600000);
+    if (h < 1) return "just now";
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  } catch {
+    return "";
+  }
+};
 
 const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState<Record<number, boolean>>({});
+  const [saved, setSaved] = useState<Record<number, boolean>>({});
 
   const load = async (force = false) => {
     setLoading(true);
@@ -36,16 +52,11 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
           }
         }
       }
-      const { data, error } = await supabase.functions.invoke(
-        "fetch-islamic-articles",
-      );
+      const { data, error } = await supabase.functions.invoke("fetch-islamic-articles");
       if (error) throw error;
       const list: Article[] = data?.articles ?? [];
       setArticles(list);
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({ ts: Date.now(), data: list }),
-      );
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: list }));
     } catch (e) {
       console.error("Failed to load articles", e);
     } finally {
@@ -53,94 +64,128 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const handleArticleClick = (e: React.MouseEvent, url: string) => {
-    e.preventDefault();
-    if (onArticleClick) {
-      onArticleClick(url);
-    } else {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
+  const handleShare = async (a: Article) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: a.title, url: a.link });
+      }
+    } catch { }
   };
+
+  if (loading && articles.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Newspaper className="w-4 h-4 text-indigo-500" />
+            <h3 className="text-sm font-semibold text-foreground">Daily Discover</h3>
+          </div>
+        </div>
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-2xl bg-muted animate-pulse h-80" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-      <div className="flex items-center justify-between mb-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold text-foreground">
-            Daily Discover
-          </h3>
+          <h3 className="text-sm font-semibold text-foreground">Daily Discover</h3>
         </div>
-        <button
-          onClick={() => load(true)}
-          className="text-muted-foreground hover:text-foreground p-1"
-          aria-label="Refresh"
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-          />
+        <button onClick={() => load(true)} className="text-muted-foreground hover:text-foreground p-1" aria-label="Refresh">
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      {loading && articles.length === 0 ? (
-        <div className="flex gap-3 overflow-hidden">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="min-w-[220px] h-48 rounded-2xl bg-muted animate-pulse"
-            />
-          ))}
-        </div>
-      ) : articles.length === 0 ? (
-        <div className="text-sm text-muted-foreground p-6 text-center bg-card rounded-2xl border border-border">
-          No articles available right now. Pull to refresh.
-        </div>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 snap-x snap-mandatory">
-          {articles.map((a, i) => (
+      {/* Instagram-style vertical feed */}
+      <div className="space-y-5">
+        {articles.map((a, i) => (
+          <div key={i} className="bg-white dark:bg-white/5 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 shadow-sm">
+
+            {/* Post header — like Instagram */}
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center ring-2 ring-indigo-400 ring-offset-1">
+                <img src={LOGO_URL} alt="MyIslam" className="w-6 h-6 object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-bold text-gray-900 dark:text-white">{a.source}</p>
+                <p className="text-[10px] text-gray-400">{timeAgo(a.pubDate)}</p>
+              </div>
+              <span className="text-[9px] font-semibold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">
+                Islamic
+              </span>
+            </div>
+
+            {/* Post image — full width like Instagram */}
             <button
-              key={i}
-              onClick={(e) => handleArticleClick(e, a.link)}
-              className="min-w-[240px] max-w-[240px] snap-start bg-card rounded-2xl border border-border overflow-hidden hover:shadow-card active:scale-[0.98] transition-all flex flex-col text-left"
+              onClick={() => onArticleClick?.(a.link)}
+              className="w-full block active:opacity-90 transition-opacity"
             >
-              <div className="h-32 w-full bg-muted relative overflow-hidden">
-                {a.image ? (
-                  <img
-                    src={a.image}
-                    alt={a.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display =
-                        "none";
-                    }}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-sky-100 dark:from-indigo-900/30 dark:to-sky-900/30">
-                    <Newspaper className="w-8 h-8 text-indigo-400" />
-                  </div>
-                )}
-                <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur">
-                  {a.source}
-                </span>
-              </div>
-              <div className="p-3 flex-1 flex flex-col">
-                <h4 className="text-[13px] font-semibold text-foreground leading-snug line-clamp-3">
-                  {a.title}
-                </h4>
-                <div className="mt-auto pt-2 flex items-center gap-1 text-[10px] text-indigo-400">
-                  <Newspaper className="w-3 h-3" />
-                  <span>Read inside app</span>
+              {a.image ? (
+                <img
+                  src={a.image}
+                  alt={a.title}
+                  loading="lazy"
+                  className="w-full object-cover"
+                  style={{ maxHeight: "280px", minHeight: "180px" }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <div className="w-full h-48 bg-gradient-to-br from-indigo-100 to-sky-100 dark:from-indigo-900/30 dark:to-sky-900/30 flex items-center justify-center">
+                  <Newspaper className="w-12 h-12 text-indigo-300" />
                 </div>
-              </div>
+              )}
             </button>
-          ))}
-        </div>
-      )}
+
+            {/* Action buttons — like Instagram */}
+            <div className="flex items-center gap-1 px-3 pt-2 pb-1">
+              <button
+                onClick={() => setLiked(l => ({ ...l, [i]: !l[i] }))}
+                className={`p-2 rounded-full transition-all active:scale-90 ${liked[i] ? "text-red-500" : "text-gray-500 dark:text-gray-400"}`}
+              >
+                <Heart className={`w-5 h-5 ${liked[i] ? "fill-red-500" : ""}`} />
+              </button>
+              <button
+                onClick={() => onArticleClick?.(a.link)}
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 transition-all active:scale-90"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => handleShare(a)}
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 transition-all active:scale-90"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <div className="flex-1" />
+              <button
+                onClick={() => setSaved(s => ({ ...s, [i]: !s[i] }))}
+                className={`p-2 rounded-full transition-all active:scale-90 ${saved[i] ? "text-indigo-500" : "text-gray-500 dark:text-gray-400"}`}
+              >
+                <BookmarkPlus className={`w-5 h-5 ${saved[i] ? "fill-indigo-500" : ""}`} />
+              </button>
+            </div>
+
+            {/* Caption */}
+            <div className="px-3 pb-3">
+              <p className="text-[12px] font-semibold text-gray-900 dark:text-white mb-0.5">{a.source}</p>
+              <p className="text-[12px] text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed">{a.title}</p>
+              <button
+                onClick={() => onArticleClick?.(a.link)}
+                className="text-[11px] text-indigo-400 mt-1 font-medium"
+              >
+                Read more...
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
