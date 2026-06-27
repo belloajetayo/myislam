@@ -118,65 +118,119 @@ const Index: React.FC = () => {
                 </button>
               </SheetTrigger>
 
-              <SheetContent side="left" className="w-72 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-r border-indigo-100 dark:border-indigo-900">
-                <div className="flex items-center gap-3 mb-6 mt-2">
-                  <img src={LOGO_URL} alt="MyIslam" className="w-10 h-10 rounded-xl" />
-                  <div>
-                    <p className="font-bold text-indigo-900 dark:text-white">My Islam</p>
-                    <p className="text-xs text-indigo-400">Assalamu Alaikum 🌙</p>
+              <SheetContent side="left" className="w-72 p-0 border-none overflow-hidden">
+                {/* Gradient header */}
+                <div className="relative px-5 pt-10 pb-6" style={{background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #0ea5e9 100%)"}}>
+                  {/* Decorative circles */}
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20" style={{background: "radial-gradient(circle, white, transparent)", transform: "translate(30%, -30%)"}} />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10" style={{background: "radial-gradient(circle, white, transparent)", transform: "translate(-30%, 30%)"}} />
+                  
+                  {/* Logo + name */}
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
+                      <img src={LOGO_URL} alt="MyIslam" className="w-9 h-9 rounded-xl" />
+                    </div>
+                    <div>
+                      <p className="font-black text-white text-lg tracking-tight">MyIslam</p>
+                      <p className="text-xs text-blue-100">Assalamu Alaikum 🌙</p>
+                    </div>
                   </div>
                 </div>
 
-                <nav className="flex flex-col gap-1">
-                  {mainNavItems.map((item) => (
-                    <button
-                      key={item.to}
-                      onClick={() => navigate(item.to)}
-                      className="text-left px-3 py-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-3 transition-colors"
-                    >
-                      <item.icon className="w-4 h-4 text-indigo-500" />
-                      {item.label}
-                    </button>
-                  ))}
+                {/* Nav items */}
+                <div className="px-3 py-4 bg-white dark:bg-gray-950 flex flex-col gap-1 overflow-y-auto" style={{maxHeight: "calc(100vh - 160px)"}}>
+                  {/* Main items */}
+                  {mainNavItems.map((item, idx) => {
+                    const colors = [
+                      "from-indigo-500 to-blue-500",
+                      "from-blue-500 to-cyan-500",
+                      "from-cyan-500 to-teal-500",
+                      "from-violet-500 to-indigo-500",
+                      "from-rose-500 to-pink-500",
+                    ];
+                    return (
+                      <button
+                        key={item.to}
+                        onClick={() => navigate(item.to)}
+                        className="text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
+                      >
+                        <div className={}>
+                          <item.icon className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{item.label}</span>
+                      </button>
+                    );
+                  })}
 
-                  {/* Islamic Tools dropdown with submenu */}
+                  {/* Divider */}
+                  <div className="my-2 h-px bg-gradient-to-r from-indigo-100 via-sky-100 to-transparent dark:from-indigo-900 dark:via-sky-900" />
+
+                  {/* Islamic Tools dropdown */}
                   <div>
                     <button
                       onClick={() => setIslamicToolsOpen(!islamicToolsOpen)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-3 transition-colors"
+                      className="w-full text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95"
                     >
-                      <Calendar className="w-4 h-4 text-indigo-500" />
-                      <span className="flex-1">Islamic Tools</span>
-                      {islamicToolsOpen
-                        ? <ChevronDown className="w-4 h-4 text-indigo-400" />
-                        : <ChevronRight className="w-4 h-4 text-indigo-400" />
-                      }
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm flex-shrink-0">
+                        <Calendar className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Islamic Tools</span>
+                      <div className={}>
+                        <ChevronDown className="w-3.5 h-3.5 text-indigo-500" />
+                      </div>
                     </button>
 
                     {islamicToolsOpen && (
-                      <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l-2 border-indigo-100 dark:border-indigo-800 pl-3 max-h-64 overflow-y-auto">
-                        {islamicToolsSubmenu.map((item) => (
-                          <button
-                            key={item.to}
-                            onClick={() => navigate(item.to)}
-                            className="text-left px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm text-gray-600 dark:text-gray-300 flex items-center gap-3 transition-colors"
-                          >
-                            <item.icon className="w-3.5 h-3.5 text-indigo-400" />
-                            {item.label}
-                          </button>
-                        ))}
+                      <div className="mt-1 ml-3 pl-3 border-l-2 border-gradient-to-b from-indigo-300 to-sky-300 border-indigo-200 dark:border-indigo-800 flex flex-col gap-0.5 max-h-56 overflow-y-auto">
+                        {islamicToolsSubmenu.map((item, idx) => {
+                          const subColors = [
+                            "from-teal-400 to-emerald-500",
+                            "from-sky-400 to-blue-500",
+                            "from-violet-400 to-purple-500",
+                            "from-rose-400 to-pink-500",
+                            "from-amber-400 to-yellow-500",
+                            "from-green-400 to-teal-500",
+                            "from-indigo-400 to-violet-500",
+                            "from-cyan-400 to-sky-500",
+                            "from-fuchsia-400 to-pink-500",
+                          ];
+                          return (
+                            <button
+                              key={item.to}
+                              onClick={() => navigate(item.to)}
+                              className="text-left px-2 py-2 rounded-xl flex items-center gap-2.5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
+                            >
+                              <div className={}>
+                                <item.icon className="w-3.5 h-3.5 text-white" />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{item.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
 
+                  {/* Divider */}
+                  <div className="my-2 h-px bg-gradient-to-r from-indigo-100 via-sky-100 to-transparent dark:from-indigo-900 dark:via-sky-900" />
+
+                  {/* Sign in / Profile */}
                   <button
                     onClick={() => navigate(user ? "/profile" : "/auth")}
-                    className="text-left px-3 py-2.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-3 transition-colors mt-2 border-t border-indigo-50 dark:border-indigo-900 pt-3"
+                    className="text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95"
                   >
-                    {user ? <User className="w-4 h-4 text-indigo-500" /> : <LogIn className="w-4 h-4 text-indigo-500" />}
-                    {user ? "Profile" : "Sign In"}
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                      {user ? <User className="w-4 h-4 text-white" /> : <LogIn className="w-4 h-4 text-white" />}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{user ? "Profile" : "Sign In"}</span>
                   </button>
-                </nav>
+
+                  {/* App version */}
+                  <div className="mt-4 mx-2 p-3 rounded-2xl" style={{background: "linear-gradient(135deg, #eef2ff, #e0f2fe)"}}>
+                    <p className="text-[10px] font-bold text-indigo-600 text-center">MyIslam App v1.0</p>
+                    <p className="text-[9px] text-indigo-400 text-center mt-0.5">Your complete Islamic companion 🕌</p>
+                  </div>
+                </div>
               </SheetContent>
             </Sheet>
           </header>
