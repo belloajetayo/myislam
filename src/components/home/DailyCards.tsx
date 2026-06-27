@@ -35,24 +35,18 @@ const VERSES = [
 
 type CardType = "hadith" | "verse";
 
-interface CardData {
-  type: CardType;
-  index: number;
-}
-
 const DailyCards: React.FC = () => {
   const { dateInfo } = useHijriDate();
   const [activeTab, setActiveTab] = useState<CardType>("hadith");
   const [hadithIndex, setHadithIndex] = useState(0);
   const [verseIndex, setVerseIndex] = useState(0);
+  const [downloading, setDownloading] = useState(false);
   const touchStartX = useRef<number>(0);
 
   const dayNum = dateInfo?.hijri?.day ?? new Date().getDate();
   const monthName = dateInfo?.hijri?.month?.en ?? "Muharram";
 
-  const currentData = activeTab === "hadith"
-    ? HADITHS[hadithIndex]
-    : VERSES[verseIndex];
+  const currentData = activeTab === "hadith" ? HADITHS[hadithIndex] : VERSES[verseIndex];
   const currentIndex = activeTab === "hadith" ? hadithIndex : verseIndex;
   const total = activeTab === "hadith" ? HADITHS.length : VERSES.length;
   const bg = BG_IMAGES[currentIndex % BG_IMAGES.length];
@@ -66,9 +60,7 @@ const DailyCards: React.FC = () => {
     else setVerseIndex(i => (i + 1) % VERSES.length);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
@@ -82,22 +74,149 @@ const DailyCards: React.FC = () => {
           : `${(currentData as typeof VERSES[0]).arabic}\n\n"${currentData.text}"\n\n[${currentData.source}]`;
         await navigator.share({
           title: `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day — MyIslam`,
-          text: text + "\n\nShared via MyIslam App",
-          url: "https://myislam-blj5.vercel.app",
+          text: text + "\n\nShared via MyIslam App\nmyislamapp.vercel.app",
+          url: "https://myislamapp.vercel.app",
         });
       }
     } catch { }
   };
 
-  const handleDownload = () => {
-    const text = `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day\n\n"${currentData.text}"\n\n[${currentData.source}]\n\nShared via MyIslam App`;
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `myislam-${activeTab}-${currentIndex + 1}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Generate image with canvas and download
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext("2d")!;
+
+      // Load background image
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject();
+        img.src = bg + "&crossorigin=anonymous";
+      });
+
+      // Draw background
+      ctx.drawImage(img, 0, 0, 1080, 1080);
+
+      // Dark overlay
+      ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+      ctx.fillRect(0, 0, 1080, 1080);
+
+      // Top accent line
+      const gradient = ctx.createLinearGradient(0, 0, 1080, 0);
+      gradient.addColorStop(0, "#f59e0b");
+      gradient.addColorStop(1, "#d97706");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1080, 6);
+
+      // Islamic date badge
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.roundRect(60, 60, 140, 80, 16);
+      ctx.fill();
+      ctx.fillStyle = "#1e1b4b";
+      ctx.font = "bold 36px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(String(dayNum), 130, 100);
+      ctx.fillStyle = "#d97706";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText(monthName.toUpperCase(), 130, 125);
+
+      // Title
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "bold 32px Arial";
+      ctx.textAlign = "left";
+      ctx.fillText(
+        activeTab === "hadith" ? "✨ Hadith Of The Day" : "📖 Verse Of The Day",
+        230, 100
+      );
+
+      // Narrator/Arabic
+      let yPos = 320;
+      if (activeTab === "hadith" && "narrator" in currentData) {
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.font = "italic 26px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText((currentData as typeof HADITHS[0]).narrator + ":", 540, yPos);
+        yPos += 60;
+      }
+      if (activeTab === "verse" && "arabic" in currentData) {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.font = "36px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText((currentData as typeof VERSES[0]).arabic, 540, yPos);
+        yPos += 70;
+      }
+
+      // Main text — word wrap
+      ctx.fillStyle = "white";
+      ctx.font = "bold 38px Arial";
+      ctx.textAlign = "center";
+      const words = `"${currentData.text}"`.split(" ");
+      let line = "";
+      const maxWidth = 900;
+      const lineHeight = 55;
+      for (const word of words) {
+        const testLine = line + word + " ";
+        if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+          ctx.fillText(line.trim(), 540, yPos);
+          line = word + " ";
+          yPos += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line.trim(), 540, yPos);
+      yPos += lineHeight + 20;
+
+      // Source
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "italic 26px Arial";
+      ctx.fillText(`[${currentData.source}]`, 540, yPos);
+
+      // Bottom watermark bar
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(0, 980, 1080, 100);
+
+      // Logo
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = "anonymous";
+        await new Promise<void>((res) => { logoImg.onload = () => res(); logoImg.onerror = () => res(); logoImg.src = LOGO_URL; });
+        ctx.drawImage(logoImg, 60, 995, 60, 60);
+      } catch { }
+
+      // App name watermark
+      ctx.fillStyle = "white";
+      ctx.font = "bold 28px Arial";
+      ctx.textAlign = "left";
+      ctx.fillText("MyIslam App", 135, 1033);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.font = "20px Arial";
+      ctx.fillText("myislamapp.vercel.app", 135, 1058);
+
+      // Download
+      const link = document.createElement("a");
+      link.download = `myislam-${activeTab}-${currentIndex + 1}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Download failed:", err);
+      // Fallback to text download
+      const text = `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day\n\n"${currentData.text}"\n\n[${currentData.source}]\n\nMyIslam App - myislamapp.vercel.app`;
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `myislam-${activeTab}-${currentIndex + 1}.txt`;
+      a.click();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -112,8 +231,12 @@ const DailyCards: React.FC = () => {
           <button onClick={handleShare} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 transition-colors">
             <Share2 className="w-4 h-4" />
           </button>
-          <button onClick={handleDownload} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 transition-colors">
-            <Download className="w-4 h-4" />
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 transition-colors disabled:opacity-50"
+          >
+            <Download className={`w-4 h-4 ${downloading ? "animate-bounce" : ""}`} />
           </button>
         </div>
       </div>
@@ -149,7 +272,7 @@ const DailyCards: React.FC = () => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={bg} alt="" className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/85" />
 
         {/* Islamic date badge */}
