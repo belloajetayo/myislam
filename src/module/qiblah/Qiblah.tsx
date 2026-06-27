@@ -800,6 +800,7 @@ const Qiblah: React.FC = () => {
   );
 
   // Load mosques when dialog opens or when real GPS location arrives
+  // v2
   useEffect(() => {
 
     // If we have a previously-fetched location and it's within 1km of current, skip
