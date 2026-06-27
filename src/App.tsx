@@ -17,6 +17,7 @@ import Hajj from "./pages/Hajj";
 import Donate from "./pages/Donate";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Podcasts from "./pages/Podcasts";
 import { AudioProvider } from "./context/AudioContext";
 import { LocationProvider } from "./context/LocationContext";
 
@@ -160,6 +161,7 @@ const App = () => {
                 <Route path="/fasting" element={<Fasting />} />
                 <Route path="/hajj" element={<Hajj />} />
                 <Route path="/donation" element={<Donate />} />
+                <Route path="/podcasts" element={<Podcasts />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
