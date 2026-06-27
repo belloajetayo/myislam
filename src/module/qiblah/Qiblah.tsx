@@ -1210,10 +1210,7 @@ const Qiblah: React.FC = () => {
             {!isOffline && (
               <button
                 onClick={toggleMosquePanel}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-all ${
-                    ? 'bg-gradient-to-r from-teal-600 to-emerald-700 ring-2 ring-emerald-400/40'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-600'
-                }`}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-all bg-gradient-to-r from-emerald-500 to-teal-600"
               >
                 <Building2 className="w-5 h-5" />
               </button>
