@@ -9,7 +9,7 @@ import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import PrayerTopBar from "@/components/home/PrayerTopBar";
 import DailyCards from "@/components/home/DailyCards"; // v3
-import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather } from "lucide-react";
+import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather, Headphones } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +56,7 @@ const islamicToolsSubmenu = [
   { label: "Hadith Collection", to: "/hadith", icon: ScrollText },
   { label: "Prophet's Life", to: "/prophet", icon: Star },
   { label: "Dua Categories", to: "/dua-categories", icon: Feather },
+  { label: "Podcasts", to: "/podcasts", icon: Headphones },
 ];
 
 const Index: React.FC = () => {
