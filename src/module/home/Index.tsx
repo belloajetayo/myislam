@@ -8,6 +8,7 @@ import ProgressTracker from "@/components/home/ProgressTracker";
 import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import PrayerTopBar from "@/components/home/PrayerTopBar";
+import DailyCards from "@/components/home/DailyCards";
 import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
@@ -181,6 +182,7 @@ const Index: React.FC = () => {
 
           <PrayerTopBar />
           <QuickShortcuts />
+          <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
           <div id="progress-tracker"><ProgressTracker /></div>
           <IslamicCalendar onAskMIA={handleAskMIA} />
