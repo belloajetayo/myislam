@@ -19,6 +19,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Podcasts from "./pages/Podcasts";
 import Progress from "./pages/Progress";
+import Duas from "./pages/Duas";
 import { AudioProvider } from "./context/AudioContext";
 import { LocationProvider } from "./context/LocationContext";
 
@@ -164,6 +165,7 @@ const App = () => {
                 <Route path="/donation" element={<Donate />} />
                 <Route path="/podcasts" element={<Podcasts />} />
                 <Route path="/progress" element={<Progress />} />
+                <Route path="/duas" element={<Duas />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
