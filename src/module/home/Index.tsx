@@ -59,7 +59,7 @@ const islamicToolsSubmenu = [
   { label: "Podcasts", to: "/podcasts", icon: Headphones },
 ];
 
-const Index: React.FC = () => {
+const Index: React.FC = () => { // v5
   const navigate = useNavigate();
   const [user, setUser] = useState<UserType | null>(null);
   const [islamicToolsOpen, setIslamicToolsOpen] = useState(false);
