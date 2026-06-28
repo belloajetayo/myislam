@@ -154,7 +154,7 @@ const Index: React.FC = () => {
                         onClick={() => navigate(item.to)}
                         className="text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
                       >
-                        <div className={}>
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0`}>
                           <item.icon className="w-4 h-4 text-white" />
                         </div>
                         <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{item.label}</span>
@@ -175,7 +175,7 @@ const Index: React.FC = () => {
                         <Calendar className="w-4 h-4 text-white" />
                       </div>
                       <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Islamic Tools</span>
-                      <div className={}>
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0`}>
                         <ChevronDown className="w-3.5 h-3.5 text-indigo-500" />
                       </div>
                     </button>
@@ -200,7 +200,7 @@ const Index: React.FC = () => {
                               onClick={() => navigate(item.to)}
                               className="text-left px-2 py-2 rounded-xl flex items-center gap-2.5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
                             >
-                              <div className={}>
+                              <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0`}>
                                 <item.icon className="w-3.5 h-3.5 text-white" />
                               </div>
                               <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{item.label}</span>
