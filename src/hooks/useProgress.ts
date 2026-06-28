@@ -4,6 +4,7 @@ export interface ProgressData {
   lastActiveDate: string;
   prayersCompleted: string[];
   quranPagesRead: number;
+  duasRead: number;
   streak: number;
 }
 
@@ -15,6 +16,7 @@ const defaultProgress: ProgressData = {
   lastActiveDate: getTodayString(),
   prayersCompleted: [],
   quranPagesRead: 0,
+  duasRead: 0,
   streak: 0,
 };
 
@@ -55,10 +57,11 @@ export function useProgress() {
             lastActiveDate: today,
             prayersCompleted: [], // reset daily
             quranPagesRead: 0, // reset daily
+            duasRead: 0, // reset daily
             streak: newStreak,
           };
         }
-        return parsed;
+        return { ...parsed, duasRead: parsed.duasRead ?? 0 };
       }
     } catch (e) {
       console.error("Error reading progress from localStorage", e);
@@ -92,9 +95,18 @@ export function useProgress() {
     }));
   };
 
+  const addDua = () => {
+    setProgress((prev) => ({
+      ...prev,
+      lastActiveDate: getTodayString(),
+      duasRead: (prev.duasRead ?? 0) + 1,
+    }));
+  };
+
   return {
     progress,
     togglePrayer,
     addQuranPages,
+    addDua,
   };
 }
