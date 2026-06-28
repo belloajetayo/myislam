@@ -16,6 +16,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { type User as UserType } from "@supabase/supabase-js";
 import { useMIAChat } from "@/hooks/useMIAChat";
 
+
+const NAV_COLORS = [
+  "from-indigo-500 to-blue-500",
+  "from-blue-500 to-cyan-500",
+  "from-cyan-500 to-teal-500",
+  "from-violet-500 to-indigo-500",
+  "from-rose-500 to-pink-500",
+];
+
+const SUB_COLORS = [
+  "from-teal-400 to-emerald-500",
+  "from-sky-400 to-blue-500",
+  "from-violet-400 to-purple-500",
+  "from-rose-400 to-pink-500",
+  "from-amber-400 to-yellow-500",
+  "from-green-400 to-teal-500",
+  "from-indigo-400 to-violet-500",
+  "from-cyan-400 to-sky-500",
+  "from-fuchsia-400 to-pink-500",
+];
+
 const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
 
 // WebView Modal for Daily Discover
@@ -141,20 +162,13 @@ const Index: React.FC = () => { // v5
                 <div className="px-3 py-4 bg-white dark:bg-gray-950 flex flex-col gap-1 overflow-y-auto" style={{maxHeight: "calc(100vh - 160px)"}}>
                   {/* Main items */}
                   {mainNavItems.map((item, idx) => {
-                    const colors = [
-                      "from-indigo-500 to-blue-500",
-                      "from-blue-500 to-cyan-500",
-                      "from-cyan-500 to-teal-500",
-                      "from-violet-500 to-indigo-500",
-                      "from-rose-500 to-pink-500",
-                    ];
                     return (
                       <button
                         key={item.to}
                         onClick={() => navigate(item.to)}
                         className="text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
                       >
-                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0`}>
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${NAV_COLORS[idx % NAV_COLORS.length]} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0`}>
                           <item.icon className="w-4 h-4 text-white" />
                         </div>
                         <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{item.label}</span>
@@ -183,24 +197,13 @@ const Index: React.FC = () => { // v5
                     {islamicToolsOpen && (
                       <div className="mt-1 ml-3 pl-3 border-l-2 border-gradient-to-b from-indigo-300 to-sky-300 border-indigo-200 dark:border-indigo-800 flex flex-col gap-0.5 max-h-56 overflow-y-auto">
                         {islamicToolsSubmenu.map((item, idx) => {
-                          const subColors = [
-                            "from-teal-400 to-emerald-500",
-                            "from-sky-400 to-blue-500",
-                            "from-violet-400 to-purple-500",
-                            "from-rose-400 to-pink-500",
-                            "from-amber-400 to-yellow-500",
-                            "from-green-400 to-teal-500",
-                            "from-indigo-400 to-violet-500",
-                            "from-cyan-400 to-sky-500",
-                            "from-fuchsia-400 to-pink-500",
-                          ];
                           return (
                             <button
                               key={item.to}
                               onClick={() => navigate(item.to)}
                               className="text-left px-2 py-2 rounded-xl flex items-center gap-2.5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 active:scale-95 group"
                             >
-                              <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${subColors[idx % subColors.length]} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                              <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${SUB_COLORS[idx % SUB_COLORS.length]} flex items-center justify-center shadow-sm flex-shrink-0`}>
                                 <item.icon className="w-3.5 h-3.5 text-white" />
                               </div>
                               <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{item.label}</span>
