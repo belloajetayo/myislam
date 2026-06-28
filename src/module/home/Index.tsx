@@ -237,9 +237,9 @@ const Index: React.FC = () => {
 
           <PrayerTopBar />
           <QuickShortcuts />
+          <ProgressTracker />
           <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
-          <div id="progress-tracker"><ProgressTracker /></div>
           <IslamicCalendar onAskMIA={handleAskMIA} />
           <CommunityFeed />
 
