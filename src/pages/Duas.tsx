@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, Heart, ChevronRight, Copy, Share2, X } from "lucide-react";
 import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
@@ -255,7 +255,10 @@ const DuaCard: React.FC<{
 const Duas: React.FC = () => {
   const navigate = useNavigate();
   const { addDua } = useProgress();
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    searchParams.get("category")
+  );
   const [search, setSearch] = useState("");
   const [favorites, setFavorites] = useState<DuaItem[]>(() => {
     try { return JSON.parse(localStorage.getItem("myislam_fav_duas") || "[]"); } catch { return []; }
