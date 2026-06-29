@@ -1601,64 +1601,49 @@ const Quran: React.FC = () => {
           </div>
         )}
 
-        {/* Dua Tab */}
+        {/* Dua Tab — Full grid matching /duas page */}
         {activeTab === "dua" && (
-          <>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gradient-gold">
-                  Dua Collections
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  {filteredDuas.length} categories
-                </span>
-              </div>
-              {filteredDuas.map((duaCategory, index) => (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gradient-gold">Dua and Adhkar</h3>
+              <button
+                onClick={() => navigate("/duas")}
+                className="text-xs text-primary flex items-center gap-1"
+              >
+                View all <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Category grid */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: "after-salah",  name: "After Salah",    icon: "🙏",  color: "from-emerald-500 to-teal-600" },
+                { id: "morning",      name: "Morning",        icon: "🌅",  color: "from-amber-400 to-orange-500" },
+                { id: "evening",      name: "Evening",        icon: "🌆",  color: "from-rose-500 to-pink-600" },
+                { id: "daily",        name: "Daily Duas",     icon: "📿",  color: "from-indigo-500 to-blue-600" },
+                { id: "rabbana",      name: "40 Rabbana",     icon: "📖",  color: "from-purple-500 to-violet-600" },
+                { id: "ruquiya",      name: "Ruquiya",        icon: "🔥",  color: "from-red-500 to-orange-600" },
+                { id: "sleep",        name: "Sleep & Wake",   icon: "🌙",  color: "from-blue-600 to-indigo-700" },
+                { id: "travel",       name: "Travel",         icon: "✈️",  color: "from-sky-500 to-cyan-600" },
+                { id: "forgiveness",  name: "Forgiveness",   icon: "🤲",  color: "from-teal-500 to-green-600" },
+                { id: "hajj",         name: "Hajj & Umrah",  icon: "🕋",  color: "from-slate-600 to-gray-700" },
+                { id: "quran",        name: "Quranic Duas",  icon: "🌟",  color: "from-yellow-500 to-amber-600" },
+                { id: "favorites",   name: "Favorites",      icon: "❤️",  color: "from-pink-500 to-rose-600" },
+              ].map((cat) => (
                 <button
-                  key={duaCategory.id}
-                  onClick={() => setSelectedDuaCategory(duaCategory)}
-                  className="w-full glass rounded-2xl p-4 border border-primary/10 flex items-center gap-4 hover:shadow-soft transition-all duration-300 animate-slide-up"
-                  style={{ animationDelay: `${0.2 + index * 0.05}s` }}
+                  key={cat.id}
+                  onClick={() => navigate(`/duas?category=${cat.id}`)}
+                  className="flex flex-col items-center gap-2 p-3 glass rounded-2xl border border-primary/10 hover:border-primary/30 active:scale-95 transition-all"
                 >
-                  <div className="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center shadow-soft">
-                    <Star className="w-5 h-5 text-primary-foreground" />
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center text-2xl shadow-md`}>
+                    {cat.icon}
                   </div>
-                  <div className="flex-1 text-left">
-                    <h4 className="font-semibold text-foreground">
-                      {duaCategory.category}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {duaCategory.duas.length} duas
-                    </p>
-                  </div>
-                  <p className="font-arabic text-lg text-foreground">
-                    {duaCategory.categoryArabic}
-                  </p>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <p className="text-[11px] font-bold text-foreground text-center leading-tight">{cat.name}</p>
                 </button>
               ))}
             </div>
-
-            <div
-              className="glass rounded-3xl p-5 border border-primary/10 shadow-card animate-slide-up"
-              style={{ animationDelay: "0.4s" }}
-            >
-              <h4 className="text-sm font-semibold text-foreground mb-3">
-                Dua for Guidance
-              </h4>
-              <p className="font-arabic text-xl text-foreground text-right leading-loose mb-4">
-                رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ
-                حَسَنَةً وَقِنَا عَذَابَ النَّارِ
-              </p>
-              <p className="text-sm text-muted-foreground italic">
-                "Our Lord, give us good in this world and in the Hereafter, and
-                protect us from the punishment of the Fire."
-              </p>
-              <p className="text-xs text-primary mt-2">
-                — Surah Al-Baqarah 2:201
-              </p>
-            </div>
-          </>
+          </div>
         )}
       </div>
     </MobileLayout>
