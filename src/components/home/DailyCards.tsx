@@ -43,8 +43,9 @@ const DailyCards: React.FC = () => {
   const [downloading, setDownloading] = useState(false);
   const touchStartX = useRef<number>(0);
 
-  const dayNum = dateInfo?.hijri?.day ? Number(dateInfo.hijri.day) : new Date().getDate();
-  const monthName = dateInfo?.hijri?.month?.en ?? "Muharram"; // Hijri month
+  const today = new Date();
+  const dayNum = today.getDate();
+  const monthName = today.toLocaleDateString("en", { month: "short" }); // Gregorian month
 
   const currentData = activeTab === "hadith" ? HADITHS[hadithIndex] : VERSES[verseIndex];
   const currentIndex = activeTab === "hadith" ? hadithIndex : verseIndex;
