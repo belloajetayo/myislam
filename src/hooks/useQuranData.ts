@@ -44,8 +44,9 @@ const getCachedData = <T>(key: string): T | null => {
   try {
     const cached = localStorage.getItem(CACHE_PREFIX + key);
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_EXPIRY) {
+      const { data, timestamp, permanent } = JSON.parse(cached);
+      // Surah text never expires once downloaded - true offline access
+      if (permanent || Date.now() - timestamp < CACHE_EXPIRY) {
         return data;
       }
     }
@@ -55,11 +56,12 @@ const getCachedData = <T>(key: string): T | null => {
   return null;
 };
 
-const setCachedData = <T>(key: string, data: T): void => {
+const setCachedData = <T>(key: string, data: T, permanent: boolean = false): void => {
   try {
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      permanent
     }));
   } catch (e) {
     console.error('Cache write error:', e);
@@ -211,7 +213,7 @@ export const useQuranData = () => {
           transliteration: transliterationData.code === 200 ? transliterationData.data.ayahs : []
         };
 
-        setCachedData(cacheKey, surahDetail);
+        setCachedData(cacheKey, surahDetail, true); // permanent - Quran text never changes
         return surahDetail;
       }
       return null;
@@ -255,7 +257,27 @@ export const useQuranData = () => {
     return count;
   };
 
-  return { surahs, loading, error, fetchSurahDetail, audioEditions, fetchSurahAudio, isOffline, getCachedSurahCount };
+  const downloadAllForOffline = async (
+    onProgress?: (current: number, total: number) => void
+  ): Promise<{ success: number; failed: number }> => {
+    let success = 0;
+    let failed = 0;
+    for (let i = 0; i < surahs.length; i++) {
+      const surahNum = surahs[i].number;
+      const cacheKey = `surah_${surahNum}_ar.alafasy`;
+      const cached = getCachedData<SurahDetail>(cacheKey);
+      if (!cached) {
+        const result = await fetchAndCacheSurahDetail(surahNum, 'ar.alafasy', cacheKey);
+        if (result) success++; else failed++;
+      } else {
+        success++;
+      }
+      onProgress?.(i + 1, surahs.length);
+    }
+    return { success, failed };
+  };
+
+  return { surahs, loading, error, fetchSurahDetail, audioEditions, fetchSurahAudio, isOffline, getCachedSurahCount, downloadAllForOffline };
 };
 
 // Comprehensive Duas collection
