@@ -12,6 +12,8 @@ type DuaItem = {
   translation: string;
   source: string;
   times?: number;
+  benefit?: string;
+  context?: string;
 };
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -183,6 +185,9 @@ const DuaCard: React.FC<{
   onFavorite: () => void;
   isFav: boolean;
 }> = ({ dua, index, onFavorite, isFav }) => {
+  const [count, setCount] = useState(0);
+  const target = dua.times ?? 1;
+
   const handleCopy = () => {
     navigator.clipboard?.writeText(
       `${dua.arabic}\n\n${dua.transliteration}\n\n${dua.translation}\n\n[${dua.source}]\n\nvia MyIslam App`
@@ -196,21 +201,25 @@ const DuaCard: React.FC<{
     });
   };
 
+  const incrementCount = () => {
+    setCount(c => (c + 1) % (target + 1));
+  };
+
   return (
     <div className="bg-white dark:bg-white/5 rounded-2xl border border-indigo-100 dark:border-indigo-800 overflow-hidden shadow-sm">
-      {/* Header bar */}
+      {/* Header bar — context + counter badge */}
       <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800">
         <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
           <span className="text-white text-xs font-black">{index}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 truncate">
-            {dua.transliteration.split(" ").slice(0, 5).join(" ")}...
+          <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-300 uppercase tracking-wide">
+            {target > 1 ? `${target}× — ` : "Once — "}{dua.context ?? "Recite with sincerity"}
           </p>
         </div>
-        {dua.times && (
+        {target > 1 && (
           <div className="w-8 h-8 rounded-full bg-white dark:bg-white/10 border border-indigo-200 dark:border-indigo-700 flex items-center justify-center flex-shrink-0">
-            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-300">{dua.times}×</span>
+            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-300">{target}×</span>
           </div>
         )}
       </div>
@@ -218,22 +227,53 @@ const DuaCard: React.FC<{
       {/* Body */}
       <div className="p-4">
         {/* Arabic */}
-        <p className="text-right text-xl leading-loose text-gray-900 dark:text-white mb-3" dir="rtl">
+        <p className="text-right text-2xl leading-loose text-gray-900 dark:text-white mb-4" dir="rtl">
           {dua.arabic}
         </p>
+
         {/* Transliteration */}
-        <p className="text-sm text-indigo-600 dark:text-indigo-300 italic mb-2 leading-relaxed">
-          {dua.transliteration}
-        </p>
+        <div className="mb-3">
+          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Transliteration</p>
+          <p className="text-sm text-indigo-600 dark:text-indigo-300 italic leading-relaxed">
+            {dua.transliteration}
+          </p>
+        </div>
+
         {/* Translation */}
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-          {dua.translation}
-        </p>
-        {/* Footer */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">
-            [{dua.source}]
-          </span>
+        <div className="mb-3">
+          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Translation</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            {dua.translation}
+          </p>
+        </div>
+
+        {/* Benefit — if present */}
+        {dua.benefit && (
+          <div className="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30">
+            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Benefit</p>
+            <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">{dua.benefit}</p>
+          </div>
+        )}
+
+        {/* Reference */}
+        <div className="mb-4">
+          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Reference</p>
+          <p className="text-xs text-muted-foreground">{dua.source}</p>
+        </div>
+
+        {/* Counter + actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-indigo-50 dark:border-indigo-900">
+          <button
+            onClick={incrementCount}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
+              count === target && target > 0
+                ? "bg-emerald-500 text-white"
+                : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
+            }`}
+          >
+            <span>{count === target && target > 0 ? "✓ Done" : `${count}/${target}`}</span>
+          </button>
+
           <div className="flex items-center gap-1">
             <button onClick={handleCopy} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 transition-colors">
               <Copy className="w-3.5 h-3.5" />
