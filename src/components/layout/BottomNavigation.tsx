@@ -1,13 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Clock, Compass, BookOpen, Users } from "lucide-react";
+import { Home, Clock, Compass, BookOpen, Headphones } from "lucide-react";
 
 const items = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/prayer", label: "Prayer", Icon: Clock },
   { to: "/qiblah", label: "Qiblah", Icon: Compass },
   { to: "/quran", label: "Quran", Icon: BookOpen },
-  { to: "/fasting", label: "Community", Icon: Users },
+  { to: "/podcasts", label: "Podcasts", Icon: Headphones },
 ];
 
 const BottomNavigation: React.FC = () => {
