@@ -522,6 +522,7 @@ const Qiblah: React.FC = () => {
 
   // Initialize map AFTER location is available
   useEffect(() => {
+    return; // Map disabled - using clean themed background instead
     if (!userLocation || mapInitialized.current || isOffline) return;
     if (!mapContainer.current) return;
 
