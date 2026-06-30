@@ -1034,9 +1034,8 @@ const Qiblah: React.FC = () => {
       <div className="relative min-h-[calc(100vh-80px)]">
         {/* === FALLBACK BACKGROUND: Rich Islamic geometric gradient === */}
         {/* Always mounted so it shows immediately, hidden by Mapbox satellite once ready */}
-        {!mapReady && (
-          <div
-            className="absolute inset-0 z-0 overflow-hidden"
+        <div
+            className="absolute inset-0 z-0 overflow-hidden dark:block hidden"
             style={{
               background: isOffline
                 ? 'linear-gradient(135deg, #0d2b1f 0%, #1a472a 25%, #0f3460 50%, #16213e 75%, #0d2b1f 100%)'
@@ -1109,19 +1108,20 @@ const Qiblah: React.FC = () => {
               />
             </svg>
           </div>
-        )}
 
-        {/* Mapbox satellite map — loaded when online; sits on top of gradient */}
-        {!isOffline && (
-          <div ref={mapContainer} className="absolute inset-0 z-[1] transition-opacity duration-700" style={{ opacity: mapReady ? 1 : 0 }} />
-        )}
+        {/* Light mode background — clean white/light theme */}
+        <div className="absolute inset-0 z-0 overflow-hidden block dark:hidden bg-gradient-to-br from-indigo-50 via-blue-50 to-sky-100">
+          <div
+            className="absolute rounded-full opacity-20 blur-3xl"
+            style={{ width: '320px', height: '320px', background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)', top: '-60px', left: '50%', transform: 'translateX(-50%)' }}
+          />
+          <div
+            className="absolute rounded-full opacity-15 blur-3xl"
+            style={{ width: '220px', height: '220px', background: 'radial-gradient(circle, #38bdf8 0%, transparent 70%)', bottom: '80px', right: '-40px' }}
+          />
+        </div>
 
-        {/* Overlay for readability */}
-        {!isOffline && mapReady ? (
-          <div className="absolute inset-0 bg-black/30 z-[2] pointer-events-none" />
-        ) : (
-          <div className="absolute inset-0 bg-black/5 z-[2] pointer-events-none" />
-        )}
+        {/* No map background - clean themed background only */}
 
         {/* Content */}
         <div className="relative z-20 p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
@@ -1140,7 +1140,7 @@ const Qiblah: React.FC = () => {
                 onClick={() => navigate("/")}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5 text-gray-900 dark:text-white" />
               </button>
               <div className="flex-1 text-center">
                 <div className="flex items-center justify-center gap-2">
@@ -1150,7 +1150,7 @@ const Qiblah: React.FC = () => {
                   <Dialog open={showInfo} onOpenChange={setShowInfo}>
                     <DialogTrigger asChild>
                       <button className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-                        <Info className="w-4 h-4 text-white" />
+                        <Info className="w-4 h-4 text-gray-900 dark:text-white" />
                       </button>
                     </DialogTrigger>
                     <DialogContent className="glass border-primary/20 max-w-sm mx-4">
@@ -1207,7 +1207,7 @@ const Qiblah: React.FC = () => {
                     </DialogContent>
                   </Dialog>
                 </div>
-                <div className="flex items-center justify-center gap-1 text-white/90 mt-1">
+                <div className="flex items-center justify-center gap-1 text-gray-900 dark:text-white/90 mt-1">
                   <MapPin className="w-4 h-4 text-amber-400" />
                   <span className="text-sm font-semibold">{locationName}</span>
                 </div>
@@ -1414,7 +1414,7 @@ const Qiblah: React.FC = () => {
             <button
               onClick={handleCalibrate}
               disabled={calibrating}
-              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-purple-600 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-transform disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-purple-600 rounded-2xl shadow-lg text-gray-900 dark:text-white font-medium hover:scale-105 transition-transform disabled:opacity-50"
             >
               <RotateCcw
                 className={`w-5 h-5 ${calibrating ? "animate-spin" : ""}`}
@@ -1425,7 +1425,7 @@ const Qiblah: React.FC = () => {
             {!isOffline && (
               <button
                 onClick={toggleMosquePanel}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-white font-medium hover:scale-105 transition-all ${
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-gray-900 dark:text-white font-medium hover:scale-105 transition-all ${
                   showMosqueMap
                     ? 'bg-gradient-to-r from-teal-600 to-emerald-700 ring-2 ring-emerald-400/40'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-600'
