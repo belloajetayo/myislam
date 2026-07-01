@@ -446,8 +446,22 @@ const Quran: React.FC = () => {
     audioEditions,
     isOffline,
     getCachedSurahCount,
+    downloadAllForOffline,
   } = useQuranData();
   const fetchSurahDetailRef = useRef(fetchSurahDetail);
+  const [savingOffline, setSavingOffline] = useState(false);
+  const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
+
+  const handleSaveAllOffline = async () => {
+    if (savingOffline) return;
+    setSavingOffline(true);
+    setSaveProgress({ current: 0, total: surahs.length });
+    await downloadAllForOffline((current, total) => {
+      setSaveProgress({ current, total });
+    });
+    setSavingOffline(false);
+    toast.success('Quran saved for offline reading 📖');
+  };
 
   useEffect(() => {
     fetchSurahDetailRef.current = fetchSurahDetail;
@@ -1422,6 +1436,24 @@ const Quran: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
+                <button
+                  onClick={handleSaveAllOffline}
+                  disabled={savingOffline}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 text-white text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-70"
+                >
+                  {savingOffline ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving {saveProgress.current}/{saveProgress.total}...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Save All for Offline
+                    </>
+                  )}
+                </button>
                 {filteredSurahs.map((surah, index) => (
                   <button
                     key={surah.number}
