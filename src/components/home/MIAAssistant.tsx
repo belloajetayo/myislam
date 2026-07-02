@@ -119,7 +119,7 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
               </div>
               <h4 className="font-semibold text-foreground mb-2">Assalamu Alaikum!</h4>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                I'm MIA, your Islamic knowledge assistant. Ask me questions about Qur'an, Hadith, Fiqh, and more.
+                I'm MIA, your Islamic companion. I know your streak, the next prayer, and the Hijri date — ask me what to do right now.
               </p>
             </div>
             <div className="space-y-2">
