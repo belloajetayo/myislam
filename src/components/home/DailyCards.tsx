@@ -217,132 +217,18 @@ const DailyCards: React.FC = () => {
     }
   };
 
-  // Generate image with canvas and download
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1080;
-      const ctx = canvas.getContext("2d")!;
-
-      // Load background image
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject();
-        img.src = bg + "&crossorigin=anonymous";
-      });
-
-      // Draw background
-      ctx.drawImage(img, 0, 0, 1080, 1080);
-
-      // Dark overlay
-      ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-      ctx.fillRect(0, 0, 1080, 1080);
-
-      // Top accent line
-      const gradient = ctx.createLinearGradient(0, 0, 1080, 0);
-      gradient.addColorStop(0, "#f59e0b");
-      gradient.addColorStop(1, "#d97706");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 1080, 6);
-
-      // Islamic date badge
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.roundRect(60, 60, 140, 80, 16);
-      ctx.fill();
-      ctx.fillStyle = "#1e1b4b";
-      ctx.font = "bold 36px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(String(dayNum), 130, 100);
-      ctx.fillStyle = "#d97706";
-      ctx.font = "bold 14px Arial";
-      ctx.fillText(monthName.toUpperCase(), 130, 125);
-
-      // Title
-      ctx.fillStyle = "#fbbf24";
-      ctx.font = "bold 32px Arial";
-      ctx.textAlign = "left";
-      ctx.fillText(
-        activeTab === "hadith" ? "✨ Hadith Of The Day" : "📖 Verse Of The Day",
-        230, 100
-      );
-
-      // Narrator/Arabic
-      let yPos = 320;
-      if (activeTab === "hadith" && "narrator" in currentData) {
-        ctx.fillStyle = "rgba(255,255,255,0.6)";
-        ctx.font = "italic 26px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText((currentData as typeof HADITHS[0]).narrator + ":", 540, yPos);
-        yPos += 60;
-      }
-      if (activeTab === "verse" && "arabic" in currentData) {
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
-        ctx.font = "36px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText((currentData as typeof VERSES[0]).arabic, 540, yPos);
-        yPos += 70;
-      }
-
-      // Main text — word wrap
-      ctx.fillStyle = "white";
-      ctx.font = "bold 38px Arial";
-      ctx.textAlign = "center";
-      const words = `"${currentData.text}"`.split(" ");
-      let line = "";
-      const maxWidth = 900;
-      const lineHeight = 55;
-      for (const word of words) {
-        const testLine = line + word + " ";
-        if (ctx.measureText(testLine).width > maxWidth && line !== "") {
-          ctx.fillText(line.trim(), 540, yPos);
-          line = word + " ";
-          yPos += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line.trim(), 540, yPos);
-      yPos += lineHeight + 20;
-
-      // Source
-      ctx.fillStyle = "#fbbf24";
-      ctx.font = "italic 26px Arial";
-      ctx.fillText(`[${currentData.source}]`, 540, yPos);
-
-      // Bottom watermark bar
-      ctx.fillStyle = "rgba(0,0,0,0.5)";
-      ctx.fillRect(0, 980, 1080, 100);
-
-      // Logo
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = "anonymous";
-        await new Promise<void>((res) => { logoImg.onload = () => res(); logoImg.onerror = () => res(); logoImg.src = LOGO_URL; });
-        ctx.drawImage(logoImg, 60, 995, 60, 60);
-      } catch { }
-
-      // App name watermark
-      ctx.fillStyle = "white";
-      ctx.font = "bold 28px Arial";
-      ctx.textAlign = "left";
-      ctx.fillText("MyIslam App", 135, 1033);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.font = "20px Arial";
-      ctx.fillText("myislamapp.vercel.app", 135, 1058);
-
-      // Download
-      const link = document.createElement("a");
-      link.download = `myislam-${activeTab}-${currentIndex + 1}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      const blob = await renderCanvasBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `myislam-${activeTab}-${currentIndex + 1}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download failed:", err);
-      // Fallback to text download
       const text = `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day\n\n"${currentData.text}"\n\n[${currentData.source}]\n\nMyIslam App - myislamapp.vercel.app`;
       const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
@@ -354,6 +240,7 @@ const DailyCards: React.FC = () => {
       setDownloading(false);
     }
   };
+
 
   return (
     <div className="animate-slide-up" style={{ animationDelay: "0.15s" }}>
