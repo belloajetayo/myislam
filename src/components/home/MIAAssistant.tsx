@@ -83,7 +83,7 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-foreground">MIA</h3>
-            <p className="text-xs text-muted-foreground">Islamic Knowledge Assistant</p>
+            <p className="text-xs text-muted-foreground">Your Islamic Companion</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
