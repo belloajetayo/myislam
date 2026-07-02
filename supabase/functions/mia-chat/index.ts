@@ -141,6 +141,7 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
+          ...(buildContextMessage(body.context) ? [{ role: "system", content: buildContextMessage(body.context)! }] : []),
           ...validation.sanitized!,
         ],
         stream: true,
