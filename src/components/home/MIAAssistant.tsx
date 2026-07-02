@@ -11,10 +11,10 @@ type Message = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  "How do I perform Wudu correctly?",
-  "What breaks the fast during Ramadan?",
-  "How is Zakat calculated?",
-  "What are the pillars of Islam?",
+  "What should I do right now?",
+  "How's my streak — what's my next step?",
+  "What's special about today in the Islamic calendar?",
+  "Suggest an adhkar for this time of day",
 ];
 
 interface MIAAssistantProps {
