@@ -209,7 +209,7 @@ const PrayerClockRing: React.FC<PrayerClockRingProps> = ({ locationName }) => {
             <div
               key={name}
               className={`flex flex-col items-center px-2 py-1 rounded-xl ${isNext ? "bg-white/10 ring-1" : ""}`}
-              style={{ ringColor: PRAYER_COLORS[name] }}
+              style={{ ["--tw-ring-color" as any]: PRAYER_COLORS[name] }}
             >
               <span className="text-[9px]" style={{ color: PRAYER_COLORS[name] }}>{name}</span>
               <span className="text-[10px] font-bold text-white">{time}</span>
