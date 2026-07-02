@@ -251,8 +251,8 @@ const DailyCards: React.FC = () => {
           <h3 className="text-sm font-semibold text-foreground">Daily Inspiration</h3>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={handleShare} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 transition-colors">
-            <Share2 className="w-4 h-4" />
+          <button onClick={handleShare} disabled={sharing} className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-500 transition-colors disabled:opacity-50">
+            <Share2 className={`w-4 h-4 ${sharing ? "animate-pulse" : ""}`} />
           </button>
           <button
             onClick={handleDownload}
