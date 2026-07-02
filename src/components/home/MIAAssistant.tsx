@@ -11,10 +11,10 @@ type Message = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  "How do I perform Wudu correctly?",
-  "What breaks the fast during Ramadan?",
-  "How is Zakat calculated?",
-  "What are the pillars of Islam?",
+  "What should I do right now?",
+  "How's my streak — what's my next step?",
+  "What's special about today in the Islamic calendar?",
+  "Suggest an adhkar for this time of day",
 ];
 
 interface MIAAssistantProps {
@@ -83,7 +83,7 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-foreground">MIA</h3>
-            <p className="text-xs text-muted-foreground">Islamic Knowledge Assistant</p>
+            <p className="text-xs text-muted-foreground">Your Islamic Companion</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
               </div>
               <h4 className="font-semibold text-foreground mb-2">Assalamu Alaikum!</h4>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                I'm MIA, your Islamic knowledge assistant. Ask me questions about Qur'an, Hadith, Fiqh, and more.
+                I'm MIA, your Islamic companion. I know your streak, the next prayer, and the Hijri date — ask me what to do right now.
               </p>
             </div>
             <div className="space-y-2">
