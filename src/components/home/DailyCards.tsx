@@ -35,15 +35,22 @@ const VERSES = [
 
 type CardType = "hadith" | "verse";
 
+const dayOfYear = (d: Date) => {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d.getTime() - start.getTime()) / 86400000);
+};
+
 const DailyCards: React.FC = () => {
   const { dateInfo } = useHijriDate();
+  const today = new Date();
+  const doy = dayOfYear(today);
   const [activeTab, setActiveTab] = useState<CardType>("hadith");
-  const [hadithIndex, setHadithIndex] = useState(0);
-  const [verseIndex, setVerseIndex] = useState(0);
+  const [hadithIndex, setHadithIndex] = useState(doy % HADITHS.length);
+  const [verseIndex, setVerseIndex] = useState(doy % VERSES.length);
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const touchStartX = useRef<number>(0);
 
-  const today = new Date();
   const dayNum = today.getDate();
   const monthName = today.toLocaleDateString("en", { month: "short" }); // Gregorian month
 
@@ -67,19 +74,147 @@ const DailyCards: React.FC = () => {
     if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
   };
 
-  const handleShare = async () => {
+  // Render the current card to a canvas and return a PNG Blob
+  const renderCanvasBlob = async (): Promise<Blob> => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext("2d")!;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = bg + "&crossorigin=anonymous";
+    });
+    ctx.drawImage(img, 0, 0, 1080, 1080);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 0);
+    gradient.addColorStop(0, "#f59e0b");
+    gradient.addColorStop(1, "#d97706");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1080, 6);
+
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.roundRect(60, 60, 140, 80, 16);
+    ctx.fill();
+    ctx.fillStyle = "#1e1b4b";
+    ctx.font = "bold 36px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(String(dayNum), 130, 100);
+    ctx.fillStyle = "#d97706";
+    ctx.font = "bold 14px Arial";
+    ctx.fillText(monthName.toUpperCase(), 130, 125);
+
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 32px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(
+      activeTab === "hadith" ? "✨ Hadith Of The Day" : "📖 Verse Of The Day",
+      230, 100
+    );
+
+    let yPos = 320;
+    if (activeTab === "hadith" && "narrator" in currentData) {
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.font = "italic 26px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText((currentData as typeof HADITHS[0]).narrator + ":", 540, yPos);
+      yPos += 60;
+    }
+    if (activeTab === "verse" && "arabic" in currentData) {
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "36px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText((currentData as typeof VERSES[0]).arabic, 540, yPos);
+      yPos += 70;
+    }
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 38px Arial";
+    ctx.textAlign = "center";
+    const words = `"${currentData.text}"`.split(" ");
+    let line = "";
+    const maxWidth = 900;
+    const lineHeight = 55;
+    for (const word of words) {
+      const testLine = line + word + " ";
+      if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+        ctx.fillText(line.trim(), 540, yPos);
+        line = word + " ";
+        yPos += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line.trim(), 540, yPos);
+    yPos += lineHeight + 20;
+
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "italic 26px Arial";
+    ctx.fillText(`[${currentData.source}]`, 540, yPos);
+
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 980, 1080, 100);
+
     try {
-      if (navigator.share) {
-        const text = activeTab === "hadith"
-          ? `${(currentData as typeof HADITHS[0]).narrator}:\n\n"${currentData.text}"\n\n[${currentData.source}]`
-          : `${(currentData as typeof VERSES[0]).arabic}\n\n"${currentData.text}"\n\n[${currentData.source}]`;
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      await new Promise<void>((res) => { logoImg.onload = () => res(); logoImg.onerror = () => res(); logoImg.src = LOGO_URL; });
+      ctx.drawImage(logoImg, 60, 995, 60, 60);
+    } catch { }
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("MyIslam App", 135, 1033);
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "20px Arial";
+    ctx.fillText("myislamapp.vercel.app", 135, 1058);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error("blob failed")), "image/png");
+    });
+  };
+
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const blob = await renderCanvasBlob();
+      const file = new File([blob], `myislam-${activeTab}-${currentIndex + 1}.png`, { type: "image/png" });
+      const shareText = activeTab === "hadith"
+        ? `${(currentData as typeof HADITHS[0]).narrator}:\n\n"${currentData.text}"\n\n[${currentData.source}]\n\nShared via MyIslam App\nmyislamapp.vercel.app`
+        : `${(currentData as typeof VERSES[0]).arabic}\n\n"${currentData.text}"\n\n[${currentData.source}]\n\nShared via MyIslam App\nmyislamapp.vercel.app`;
+
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
         await navigator.share({
           title: `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day — MyIslam`,
-          text: text + "\n\nShared via MyIslam App\nmyislamapp.vercel.app",
+          text: shareText,
+          files: [file],
+        });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: `${activeTab === "hadith" ? "Hadith" : "Verse"} of the Day — MyIslam`,
+          text: shareText,
           url: "https://myislamapp.vercel.app",
         });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        a.click();
+        URL.revokeObjectURL(url);
       }
-    } catch { }
+    } catch (err) {
+      console.error("Share failed:", err);
+    } finally {
+      setSharing(false);
+    }
   };
 
   // Generate image with canvas and download
