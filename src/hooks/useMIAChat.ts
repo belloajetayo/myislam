@@ -77,34 +77,6 @@ export const useMIAChat = () => {
       });
     };
 
-    // Build companion context from cached app state
-    const buildContext = () => {
-      const ctx: Record<string, unknown> = {
-        nowISO: new Date().toISOString(),
-        localTime: new Date().toLocaleString(),
-        weekday: new Date().toLocaleDateString("en", { weekday: "long" }),
-      };
-      try {
-        const progRaw = localStorage.getItem("mia_user_progress");
-        if (progRaw) {
-          const p = JSON.parse(progRaw);
-          ctx.streakDays = p.streak ?? 0;
-          ctx.prayersCompletedToday = p.prayersCompleted ?? [];
-          ctx.quranPagesToday = p.quranPagesRead ?? 0;
-          ctx.duasToday = p.duasRead ?? 0;
-        }
-      } catch { /* ignore */ }
-      try {
-        const ptRaw = localStorage.getItem("prayer_times_cache_v1");
-        if (ptRaw) {
-          const pt = JSON.parse(ptRaw);
-          ctx.prayerTimes = pt.prayerTimes;
-          ctx.hijriDate = pt.hijriDate;
-          ctx.location = pt.location ? { city: pt.location.city, country: pt.location.country } : null;
-        }
-      } catch { /* ignore */ }
-      return ctx;
-    };
 
     // Build companion context from cached app state
     const buildContext = () => {
