@@ -62,6 +62,14 @@ const QUICK_ACTIONS: QuickAction[] = [
     match: /\b(qibla|qiblah|kaaba|ka'?bah|direction|compass)\b/i,
     gradient: 'from-amber-500 to-orange-500',
   },
+  {
+    key: 'fasting',
+    label: 'Fasting',
+    icon: Utensils,
+    route: '/fasting',
+    match: /\b(fast(ing)?|sawm|suhoor|iftar|ramadan|white days|ayy?am al-b[iī]d)\b/i,
+    gradient: 'from-sky-500 to-cyan-500',
+  },
 ];
 
 interface MIAAssistantProps {
