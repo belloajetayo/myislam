@@ -218,6 +218,15 @@ export const useMIAChat = () => {
     }, 100);
   }, [sendMessage]);
 
+  // Locally inject an assistant message (used for proactive nudges — no API call).
+  const injectAssistantMessage = useCallback((content: string) => {
+    setMessages(prev => {
+      if (prev[prev.length - 1]?.content === content) return prev;
+      return [...prev, { role: 'assistant', content }];
+    });
+    persistMessage({ role: 'assistant', content });
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -226,6 +235,7 @@ export const useMIAChat = () => {
     sendMessage,
     clearMessages,
     openWithQuestion,
+    injectAssistantMessage,
     historyLoaded,
   };
 };
