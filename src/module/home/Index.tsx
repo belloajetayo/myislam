@@ -95,7 +95,21 @@ const Index: React.FC = () => { // v5
     sendMessage,
     clearMessages,
     openWithQuestion,
+    injectAssistantMessage,
   } = useMIAChat();
+
+  const { pending, message: proactive, markSeen } = useMIAProactive();
+
+  // When the assistant opens with a pending proactive message, seed it as
+  // the first assistant reply (no API call) so the user sees MIA's nudge
+  // immediately — then mark it seen so the dot clears.
+  useEffect(() => {
+    if (isOpen && proactive) {
+      injectAssistantMessage(`**${proactive.title}**\n\n${proactive.body}`);
+      markSeen(proactive.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, proactive?.id]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
