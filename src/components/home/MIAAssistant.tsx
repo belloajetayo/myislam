@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight } from 'lucide-react';
+import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
+import { getUserName, setUserName } from '@/lib/miaProactive';
 
 type Message = {
   role: 'user' | 'assistant';
