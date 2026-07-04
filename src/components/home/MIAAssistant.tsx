@@ -94,9 +94,24 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   onClearMessages,
 }) => {
   const [input, setInput] = React.useState('');
+  const [nameDraft, setNameDraft] = React.useState('');
+  const [needsName, setNeedsName] = React.useState<boolean>(() => !getUserName());
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isOpen) setNeedsName(!getUserName());
+  }, [isOpen]);
+
+  const submitName = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = nameDraft.trim();
+    if (!v) return;
+    setUserName(v);
+    setNeedsName(false);
+    setNameDraft('');
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
