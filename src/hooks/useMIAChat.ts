@@ -106,18 +106,47 @@ export const useMIAChat = () => {
       return ctx;
     };
 
+    // Build companion context from cached app state
+    const buildContext = () => {
+      const ctx: Record<string, unknown> = {
+        nowISO: new Date().toISOString(),
+        localTime: new Date().toLocaleString(),
+        weekday: new Date().toLocaleDateString("en", { weekday: "long" }),
+        userName: getUserName() ?? null,
+      };
+      try {
+        const progRaw = localStorage.getItem("mia_user_progress");
+        if (progRaw) {
+          const p = JSON.parse(progRaw);
+          ctx.streakDays = p.streak ?? 0;
+          ctx.prayersCompletedToday = p.prayersCompleted ?? [];
+          ctx.quranPagesToday = p.quranPagesRead ?? 0;
+          ctx.duasToday = p.duasRead ?? 0;
+        }
+      } catch { /* ignore */ }
+      try {
+        const ptRaw = localStorage.getItem("prayer_times_cache_v1");
+        if (ptRaw) {
+          const pt = JSON.parse(ptRaw);
+          ctx.prayerTimes = pt.prayerTimes;
+          ctx.hijriDate = pt.hijriDate;
+          ctx.location = pt.location ? { city: pt.location.city, country: pt.location.country } : null;
+        }
+      } catch { /* ignore */ }
+      return ctx;
+    };
+
     try {
+      // Auth is OPTIONAL — MIA works signed out; we only persist when signed in.
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('Please sign in to use MIA Assistant');
-      }
+      const authToken = session?.access_token ?? SUPABASE_ANON;
 
       const response = await fetch(MIA_CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          ...(SUPABASE_ANON ? { apikey: SUPABASE_ANON } : {}),
         },
         body: JSON.stringify({ messages: [...messages, userMessage], context: buildContext() }),
       });
