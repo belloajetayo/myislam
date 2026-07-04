@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserName } from '@/lib/miaProactive';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -8,6 +9,7 @@ type Message = {
 };
 
 const MIA_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mia-chat`;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
 export const useMIAChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
