@@ -265,9 +265,15 @@ const Index: React.FC = () => { // v5
             <button
               onClick={() => setIsOpen(true)}
               className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-lg shadow-indigo-300/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
-              aria-label="Open MIA Assistant"
+              aria-label={pending ? `MIA has a new message${proactive ? `: ${proactive.title}` : ''}` : 'Open MIA Assistant'}
             >
               <Sparkles className="w-6 h-6" />
+              {pending && (
+                <>
+                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 ring-2 ring-white shadow-md" />
+                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 animate-ping opacity-70" />
+                </>
+              )}
             </button>
           )}
 
