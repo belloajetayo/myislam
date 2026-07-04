@@ -207,6 +207,26 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
           </div>
         </div>
 
+        {/* First-time name prompt (works without login) */}
+        {needsName && (
+          <div className="relative mx-5 mb-3 rounded-3xl bg-white/10 p-4 text-white ring-1 ring-white/15 backdrop-blur">
+            <p className="text-sm font-semibold">What should I call you?</p>
+            <p className="mt-0.5 text-xs text-white/70">So I can greet you personally, insha'Allah.</p>
+            <form onSubmit={submitName} className="mt-3 flex gap-2">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Your name"
+                maxLength={40}
+                className="h-10 rounded-xl border-0 bg-white/95 text-sm text-[#3d1a78] placeholder:text-[#7c5fbf] focus-visible:ring-2 focus-visible:ring-white"
+              />
+              <Button type="submit" size="sm" className="h-10 rounded-xl bg-white text-[#3d1a78] hover:bg-white/90">
+                Save
+              </Button>
+            </form>
+          </div>
+        )}
+
         {/* Messages */}
         <ScrollArea className="relative flex-1 px-5" ref={scrollRef}>
           {messages.length === 0 ? (
