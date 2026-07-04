@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { type User as UserType } from "@supabase/supabase-js";
 import { useMIAChat } from "@/hooks/useMIAChat";
+import { useMIAProactive } from "@/hooks/useMIAProactive";
 
 
 const NAV_COLORS = [
