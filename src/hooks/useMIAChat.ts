@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserName } from '@/lib/miaProactive';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -8,6 +9,7 @@ type Message = {
 };
 
 const MIA_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mia-chat`;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
 export const useMIAChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,12 +77,14 @@ export const useMIAChat = () => {
       });
     };
 
+
     // Build companion context from cached app state
     const buildContext = () => {
       const ctx: Record<string, unknown> = {
         nowISO: new Date().toISOString(),
         localTime: new Date().toLocaleString(),
         weekday: new Date().toLocaleDateString("en", { weekday: "long" }),
+        userName: getUserName() ?? null,
       };
       try {
         const progRaw = localStorage.getItem("mia_user_progress");
@@ -105,17 +109,16 @@ export const useMIAChat = () => {
     };
 
     try {
+      // Auth is OPTIONAL — MIA works signed out; we only persist when signed in.
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('Please sign in to use MIA Assistant');
-      }
+      const authToken = session?.access_token ?? SUPABASE_ANON;
 
       const response = await fetch(MIA_CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          ...(SUPABASE_ANON ? { apikey: SUPABASE_ANON } : {}),
         },
         body: JSON.stringify({ messages: [...messages, userMessage], context: buildContext() }),
       });
@@ -215,6 +218,15 @@ export const useMIAChat = () => {
     }, 100);
   }, [sendMessage]);
 
+  // Locally inject an assistant message (used for proactive nudges — no API call).
+  const injectAssistantMessage = useCallback((content: string) => {
+    setMessages(prev => {
+      if (prev[prev.length - 1]?.content === content) return prev;
+      return [...prev, { role: 'assistant', content }];
+    });
+    persistMessage({ role: 'assistant', content });
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -223,6 +235,7 @@ export const useMIAChat = () => {
     sendMessage,
     clearMessages,
     openWithQuestion,
+    injectAssistantMessage,
     historyLoaded,
   };
 };

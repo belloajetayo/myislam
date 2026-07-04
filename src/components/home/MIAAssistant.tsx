@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight } from 'lucide-react';
+import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
+import { getUserName, setUserName } from '@/lib/miaProactive';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -60,6 +62,14 @@ const QUICK_ACTIONS: QuickAction[] = [
     match: /\b(qibla|qiblah|kaaba|ka'?bah|direction|compass)\b/i,
     gradient: 'from-amber-500 to-orange-500',
   },
+  {
+    key: 'fasting',
+    label: 'Fasting',
+    icon: Utensils,
+    route: '/fasting',
+    match: /\b(fast(ing)?|sawm|suhoor|iftar|ramadan|white days|ayy?am al-b[iī]d)\b/i,
+    gradient: 'from-sky-500 to-cyan-500',
+  },
 ];
 
 interface MIAAssistantProps {
@@ -84,9 +94,24 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   onClearMessages,
 }) => {
   const [input, setInput] = React.useState('');
+  const [nameDraft, setNameDraft] = React.useState('');
+  const [needsName, setNeedsName] = React.useState<boolean>(() => !getUserName());
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isOpen) setNeedsName(!getUserName());
+  }, [isOpen]);
+
+  const submitName = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = nameDraft.trim();
+    if (!v) return;
+    setUserName(v);
+    setNeedsName(false);
+    setNameDraft('');
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -181,6 +206,26 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
             })}
           </div>
         </div>
+
+        {/* First-time name prompt (works without login) */}
+        {needsName && (
+          <div className="relative mx-5 mb-3 rounded-3xl bg-white/10 p-4 text-white ring-1 ring-white/15 backdrop-blur">
+            <p className="text-sm font-semibold">What should I call you?</p>
+            <p className="mt-0.5 text-xs text-white/70">So I can greet you personally, insha'Allah.</p>
+            <form onSubmit={submitName} className="mt-3 flex gap-2">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Your name"
+                maxLength={40}
+                className="h-10 rounded-xl border-0 bg-white/95 text-sm text-[#3d1a78] placeholder:text-[#7c5fbf] focus-visible:ring-2 focus-visible:ring-white"
+              />
+              <Button type="submit" size="sm" className="h-10 rounded-xl bg-white text-[#3d1a78] hover:bg-white/90">
+                Save
+              </Button>
+            </form>
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="relative flex-1 px-5" ref={scrollRef}>
