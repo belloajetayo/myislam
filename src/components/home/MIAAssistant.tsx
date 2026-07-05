@@ -79,6 +79,9 @@ interface MIAAssistantProps {
   onClose: () => void;
   onSendMessage: (message: string) => void;
   onClearMessages: () => void;
+  pendingPrayerCheck?: { name: string } | null;
+  onPrayerAnswer?: (answer: 'yes' | 'no') => void;
+  onStartConsultation?: () => void;
 }
 
 const detectActions = (text: string): QuickAction[] => {
