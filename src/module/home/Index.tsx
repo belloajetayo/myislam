@@ -16,6 +16,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { type User as UserType } from "@supabase/supabase-js";
 import { useMIAChat } from "@/hooks/useMIAChat";
 import { useMIAProactive } from "@/hooks/useMIAProactive";
+import {
+  getCurrentPrayerCheck,
+  markPrayerAnswered,
+  postSalahDuas,
+  gentleGoPrayNudge,
+  consultationOpener,
+  getUserName,
+  capitalizePrayer,
+} from "@/lib/miaProactive";
 
 
 const NAV_COLORS = [
@@ -100,6 +109,39 @@ const Index: React.FC = () => { // v5
 
   const { pending, message: proactive, markSeen } = useMIAProactive();
 
+  const [prayerCheck, setPrayerCheck] = useState<{ name: string } | null>(null);
+
+  // On mount: check if there's a current prayer we haven't asked about today.
+  // If so, auto-open MIA and show the "have you prayed X?" card.
+  useEffect(() => {
+    const check = getCurrentPrayerCheck();
+    if (check) {
+      setPrayerCheck(check);
+      setIsOpen(true);
+      const name = getUserName();
+      const greeting = name ? `${name}, ` : '';
+      injectAssistantMessage(
+        `Assalamu alaikum ${greeting}👋\n\nThe time for **${capitalizePrayer(check.name)}** has entered. Have you prayed yet?`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePrayerAnswer = (answer: 'yes' | 'no') => {
+    if (!prayerCheck) return;
+    markPrayerAnswered(prayerCheck.name, answer);
+    if (answer === 'yes') {
+      injectAssistantMessage(postSalahDuas(prayerCheck.name));
+    } else {
+      injectAssistantMessage(gentleGoPrayNudge(prayerCheck.name, getUserName()));
+    }
+    setPrayerCheck(null);
+  };
+
+  const handleStartConsultation = () => {
+    injectAssistantMessage(consultationOpener(getUserName()));
+  };
+
   // When the assistant opens with a pending proactive message, seed it as
   // the first assistant reply (no API call) so the user sees MIA's nudge
   // immediately — then mark it seen so the dot clears.
@@ -110,6 +152,7 @@ const Index: React.FC = () => { // v5
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, proactive?.id]);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -284,7 +327,11 @@ const Index: React.FC = () => { // v5
             onClose={() => setIsOpen(false)}
             onSendMessage={sendMessage}
             onClearMessages={clearMessages}
+            pendingPrayerCheck={prayerCheck}
+            onPrayerAnswer={handlePrayerAnswer}
+            onStartConsultation={handleStartConsultation}
           />
+
         </div>
       </MobileLayout>
     </>

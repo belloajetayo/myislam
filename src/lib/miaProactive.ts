@@ -263,3 +263,80 @@ export function setUserName(name: string): void {
     /* quota */
   }
 }
+
+// ── "Have you prayed?" check (per prayer, per day) ───────────────────────────
+
+const PRAYER_ANSWERED_KEY = "mia_prayer_answered_v1";
+type AnsweredMap = Record<string, "yes" | "no">;
+
+function readAnswered(): AnsweredMap {
+  try {
+    const raw = localStorage.getItem(PRAYER_ANSWERED_KEY);
+    const map = raw ? (JSON.parse(raw) as AnsweredMap) : {};
+    const today = todayKey();
+    const filtered: AnsweredMap = {};
+    for (const k of Object.keys(map)) if (k.startsWith(today)) filtered[k] = map[k];
+    return filtered;
+  } catch {
+    return {};
+  }
+}
+
+export function isPrayerAnswered(prayer: string): boolean {
+  return !!readAnswered()[`${todayKey()}-${prayer}`];
+}
+
+export function markPrayerAnswered(prayer: string, answer: "yes" | "no"): void {
+  try {
+    const map = readAnswered();
+    map[`${todayKey()}-${prayer}`] = answer;
+    localStorage.setItem(PRAYER_ANSWERED_KEY, JSON.stringify(map));
+  } catch {
+    /* quota */
+  }
+}
+
+/**
+ * Returns the current prayer if its time entered within the last 90 min
+ * and the user hasn't been asked about it today. Drives the auto "have
+ * you prayed X?" check that fires when the app opens.
+ */
+export function getCurrentPrayerCheck(): { name: PrayerName } | null {
+  const cache = readPrayerCache();
+  const times = cache?.prayerTimes;
+  if (!times) return null;
+  const now = nowMinutes();
+
+  let currentPrayer: PrayerName | null = null;
+  let currentAt = -Infinity;
+  for (const name of PRAYER_ORDER) {
+    const t = parseHHMM(times[name]);
+    if (t == null) continue;
+    if (t <= now && t > currentAt) {
+      currentAt = t;
+      currentPrayer = name;
+    }
+  }
+  if (!currentPrayer) return null;
+  if (now - currentAt > 90) return null;
+  if (isPrayerAnswered(currentPrayer)) return null;
+  return { name: currentPrayer };
+}
+
+export function capitalizePrayer(s: string): string {
+  return capitalize(s);
+}
+
+export function postSalahDuas(prayer: string): string {
+  return `MashaAllah 🌿 — may Allah accept your **${capitalize(prayer)}**.\n\nBefore you leave your spot, keep these on your tongue:\n\n- **Astaghfirullah** ×3\n- **Allahumma antas-salām wa minkas-salām, tabārakta yā dhal-jalāli wal-ikrām**\n- **SubhanAllah** ×33, **Alhamdulillah** ×33, **Allahu Akbar** ×34\n- **Ayat al-Kursi** — protects you until the next prayer.\n- **Surat al-Ikhlas, al-Falaq, an-Nās** — once after Dhuhr/Asr, three times after Fajr & Maghrib.\n\nThen make a short personal du'a — Allah is closest to you in this moment. 💜`;
+}
+
+export function gentleGoPrayNudge(prayer: string, userName?: string | null): string {
+  const who = userName ? `${userName}, ` : "";
+  return `No worries ${who}— the time for **${capitalize(prayer)}** is still open. Make wudu, face the Qiblah, and give Allah just a few minutes. I'll be here when you're back. 💜\n\n> "Indeed, prayer prohibits immorality and wrongdoing." — Qur'an 29:45`;
+}
+
+export function consultationOpener(userName?: string | null): string {
+  const who = userName ? `${userName}` : "friend";
+  return `I'm here for you, **${who}** 💜\n\nThis is a safe space — nothing you say leaves this chat. Take your breath and tell me what's weighing on your heart. It can be anxiety, loneliness, family, work, guilt, faith struggles… anything.\n\nI'll listen first, then share what Islam teaches about it and practical steps you can take today.\n\n> "Verily, in the remembrance of Allah do hearts find rest." — Qur'an 13:28\n\nWhenever you're ready — go ahead.`;
+}
