@@ -107,6 +107,58 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   const navigate = useNavigate();
   const userName = getUserName();
 
+  // Consultation flow state
+  const [consultStep, setConsultStep] = React.useState<0 | 1 | 2 | 3>(0);
+  const [consultWhat, setConsultWhat] = React.useState('');
+  const [consultFeelings, setConsultFeelings] = React.useState<string[]>([]);
+  const [consultExtra, setConsultExtra] = React.useState('');
+
+  const FEELINGS = ['Anxious', 'Sad', 'Angry', 'Lonely', 'Guilty', 'Overwhelmed', 'Lost', 'Hopeless', 'Confused', 'Grieving'];
+
+  const resetConsult = () => {
+    setConsultStep(0);
+    setConsultWhat('');
+    setConsultFeelings([]);
+    setConsultExtra('');
+  };
+
+  const toggleFeeling = (f: string) => {
+    setConsultFeelings((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+  };
+
+  const beginConsultation = () => {
+    setConsultStep(1);
+    onStartConsultation?.();
+  };
+
+  const submitConsultation = () => {
+    const feelingsStr = consultFeelings.length ? consultFeelings.join(', ') : 'not specified';
+    const extra = consultExtra.trim() ? `\nAdditional context: ${consultExtra.trim()}` : '';
+    const prompt =
+`[CONSULTATION MODE — please respond in this exact structure, warm and non-judgmental, under ~200 words total]
+
+What happened: ${consultWhat.trim()}
+How I feel: ${feelingsStr}${extra}
+
+Respond in this format using Markdown headings:
+
+### 💜 I hear you
+2–3 empathetic sentences reflecting what I shared. Do not minimise.
+
+### 📖 Islamic Perspective
+Brief guidance from Qur'an or authentic Sunnah with one short reference (e.g. Qur'an 2:286, or Bukhari).
+
+### 🤲 A Dua for You
+One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
+
+### ✅ 3 Steps You Can Take Today
+- Small, doable action 1
+- Small, doable action 2
+- Small, doable action 3`;
+    onSendMessage(prompt);
+    resetConsult();
+  };
+
   useEffect(() => {
     if (isOpen) setNeedsName(!getUserName());
   }, [isOpen]);
@@ -211,18 +263,144 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
                 </button>
               );
             })}
-            {onStartConsultation && (
-              <button
-                onClick={onStartConsultation}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/20 ring-1 ring-white/20 transition active:scale-95"
-                title="Talk to MIA about what's bothering you"
-              >
-                <HeartHandshake className="h-3.5 w-3.5" />
-                Heart-to-Heart
-              </button>
-            )}
+            <button
+              onClick={beginConsultation}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/20 ring-1 ring-white/20 transition active:scale-95"
+              title="Talk to MIA about what's bothering you"
+            >
+              <HeartHandshake className="h-3.5 w-3.5" />
+              Heart-to-Heart
+            </button>
           </div>
         </div>
+
+        {/* Consultation flow card */}
+        {consultStep > 0 && (
+          <div className="relative mx-5 mb-3 rounded-3xl bg-white/12 p-4 text-white ring-1 ring-white/15 backdrop-blur">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HeartHandshake className="h-4 w-4 text-fuchsia-200" />
+                <p className="text-sm font-semibold">Heart-to-Heart · Step {consultStep} of 3</p>
+              </div>
+              <button
+                onClick={resetConsult}
+                className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/70 hover:bg-white/20"
+                aria-label="Cancel consultation"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-4 flex gap-1">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className={`h-1 flex-1 rounded-full ${n <= consultStep ? 'bg-fuchsia-300' : 'bg-white/20'}`} />
+              ))}
+            </div>
+
+            {consultStep === 1 && (
+              <>
+                <p className="text-sm font-semibold">What happened?</p>
+                <p className="mt-0.5 text-xs text-white/70">Describe the situation in your own words. Nothing leaves this chat.</p>
+                <Textarea
+                  value={consultWhat}
+                  onChange={(e) => setConsultWhat(e.target.value)}
+                  placeholder="Tell me what's going on…"
+                  rows={4}
+                  className="mt-3 min-h-[96px] resize-none rounded-2xl border-0 bg-white/95 text-sm text-[#3d1a78] placeholder:text-[#7c5fbf] focus-visible:ring-2 focus-visible:ring-white"
+                />
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    onClick={() => setConsultStep(2)}
+                    disabled={consultWhat.trim().length < 3}
+                    className="rounded-xl bg-white text-[#3d1a78] hover:bg-white/90 disabled:opacity-40"
+                  >
+                    Next <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {consultStep === 2 && (
+              <>
+                <p className="text-sm font-semibold">How are you feeling?</p>
+                <p className="mt-0.5 text-xs text-white/70">Tap all that apply.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {FEELINGS.map((f) => {
+                    const active = consultFeelings.includes(f);
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => toggleFeeling(f)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition active:scale-95 ${
+                          active
+                            ? 'bg-white text-[#3d1a78] ring-white'
+                            : 'bg-white/10 text-white ring-white/20 hover:bg-white/20'
+                        }`}
+                      >
+                        {active && <Check className="mr-1 inline h-3 w-3" />}
+                        {f}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Textarea
+                  value={consultExtra}
+                  onChange={(e) => setConsultExtra(e.target.value)}
+                  placeholder="Anything else you'd like to add? (optional)"
+                  rows={2}
+                  className="mt-3 min-h-[64px] resize-none rounded-2xl border-0 bg-white/95 text-sm text-[#3d1a78] placeholder:text-[#7c5fbf] focus-visible:ring-2 focus-visible:ring-white"
+                />
+                <div className="mt-3 flex justify-between">
+                  <Button
+                    onClick={() => setConsultStep(1)}
+                    variant="ghost"
+                    className="rounded-xl text-white hover:bg-white/10"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setConsultStep(3)}
+                    disabled={consultFeelings.length === 0 && !consultExtra.trim()}
+                    className="rounded-xl bg-white text-[#3d1a78] hover:bg-white/90 disabled:opacity-40"
+                  >
+                    Next <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {consultStep === 3 && (
+              <>
+                <p className="text-sm font-semibold">Ready for Islamic guidance</p>
+                <p className="mt-0.5 text-xs text-white/70">MIA will reply with empathy, a Qur'an/Sunnah perspective, a short dua, and 3 practical steps.</p>
+                <div className="mt-3 space-y-2 rounded-2xl bg-white/10 p-3 text-xs text-white/85 ring-1 ring-white/10">
+                  <p><span className="font-semibold text-white">Situation:</span> {consultWhat.slice(0, 140)}{consultWhat.length > 140 ? '…' : ''}</p>
+                  {consultFeelings.length > 0 && (
+                    <p><span className="font-semibold text-white">Feelings:</span> {consultFeelings.join(', ')}</p>
+                  )}
+                </div>
+                <div className="mt-3 flex justify-between">
+                  <Button
+                    onClick={() => setConsultStep(2)}
+                    variant="ghost"
+                    className="rounded-xl text-white hover:bg-white/10"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={submitConsultation}
+                    disabled={isLoading}
+                    className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white shadow-md hover:opacity-95 disabled:opacity-40"
+                  >
+                    Get guidance <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
 
         {/* Prayer check-in card */}
         {pendingPrayerCheck && onPrayerAnswer && (
