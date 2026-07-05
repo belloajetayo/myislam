@@ -107,6 +107,58 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   const navigate = useNavigate();
   const userName = getUserName();
 
+  // Consultation flow state
+  const [consultStep, setConsultStep] = React.useState<0 | 1 | 2 | 3>(0);
+  const [consultWhat, setConsultWhat] = React.useState('');
+  const [consultFeelings, setConsultFeelings] = React.useState<string[]>([]);
+  const [consultExtra, setConsultExtra] = React.useState('');
+
+  const FEELINGS = ['Anxious', 'Sad', 'Angry', 'Lonely', 'Guilty', 'Overwhelmed', 'Lost', 'Hopeless', 'Confused', 'Grieving'];
+
+  const resetConsult = () => {
+    setConsultStep(0);
+    setConsultWhat('');
+    setConsultFeelings([]);
+    setConsultExtra('');
+  };
+
+  const toggleFeeling = (f: string) => {
+    setConsultFeelings((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+  };
+
+  const beginConsultation = () => {
+    setConsultStep(1);
+    onStartConsultation?.();
+  };
+
+  const submitConsultation = () => {
+    const feelingsStr = consultFeelings.length ? consultFeelings.join(', ') : 'not specified';
+    const extra = consultExtra.trim() ? `\nAdditional context: ${consultExtra.trim()}` : '';
+    const prompt =
+`[CONSULTATION MODE — please respond in this exact structure, warm and non-judgmental, under ~200 words total]
+
+What happened: ${consultWhat.trim()}
+How I feel: ${feelingsStr}${extra}
+
+Respond in this format using Markdown headings:
+
+### 💜 I hear you
+2–3 empathetic sentences reflecting what I shared. Do not minimise.
+
+### 📖 Islamic Perspective
+Brief guidance from Qur'an or authentic Sunnah with one short reference (e.g. Qur'an 2:286, or Bukhari).
+
+### 🤲 A Dua for You
+One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
+
+### ✅ 3 Steps You Can Take Today
+- Small, doable action 1
+- Small, doable action 2
+- Small, doable action 3`;
+    onSendMessage(prompt);
+    resetConsult();
+  };
+
   useEffect(() => {
     if (isOpen) setNeedsName(!getUserName());
   }, [isOpen]);
