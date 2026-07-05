@@ -327,7 +327,11 @@ const Index: React.FC = () => { // v5
             onClose={() => setIsOpen(false)}
             onSendMessage={sendMessage}
             onClearMessages={clearMessages}
+            pendingPrayerCheck={prayerCheck}
+            onPrayerAnswer={handlePrayerAnswer}
+            onStartConsultation={handleStartConsultation}
           />
+
         </div>
       </MobileLayout>
     </>
