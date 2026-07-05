@@ -16,6 +16,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { type User as UserType } from "@supabase/supabase-js";
 import { useMIAChat } from "@/hooks/useMIAChat";
 import { useMIAProactive } from "@/hooks/useMIAProactive";
+import {
+  getCurrentPrayerCheck,
+  markPrayerAnswered,
+  postSalahDuas,
+  gentleGoPrayNudge,
+  consultationOpener,
+  getUserName,
+  capitalizePrayer,
+} from "@/lib/miaProactive";
 
 
 const NAV_COLORS = [
