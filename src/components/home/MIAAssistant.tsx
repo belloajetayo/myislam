@@ -95,6 +95,9 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   onClose,
   onSendMessage,
   onClearMessages,
+  pendingPrayerCheck,
+  onPrayerAnswer,
+  onStartConsultation,
 }) => {
   const [input, setInput] = React.useState('');
   const [nameDraft, setNameDraft] = React.useState('');
@@ -102,6 +105,7 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
+  const userName = getUserName();
 
   useEffect(() => {
     if (isOpen) setNeedsName(!getUserName());
