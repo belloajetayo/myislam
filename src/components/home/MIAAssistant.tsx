@@ -211,8 +211,43 @@ const MIAAssistant: React.FC<MIAAssistantProps> = ({
                 </button>
               );
             })}
+            {onStartConsultation && (
+              <button
+                onClick={onStartConsultation}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg shadow-black/20 ring-1 ring-white/20 transition active:scale-95"
+                title="Talk to MIA about what's bothering you"
+              >
+                <HeartHandshake className="h-3.5 w-3.5" />
+                Heart-to-Heart
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Prayer check-in card */}
+        {pendingPrayerCheck && onPrayerAnswer && (
+          <div className="relative mx-5 mb-3 rounded-3xl bg-white/12 p-4 text-white ring-1 ring-white/15 backdrop-blur">
+            <p className="text-sm font-semibold">
+              {userName ? `${userName}, ` : ''}have you prayed <span className="text-amber-200">{capitalizePrayer(pendingPrayerCheck.name)}</span>?
+            </p>
+            <p className="mt-0.5 text-xs text-white/70">Tap one so I can guide your next step.</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => onPrayerAnswer('yes')}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md ring-1 ring-white/20 transition active:scale-95"
+              >
+                <Check className="h-4 w-4" /> Yes, alhamdulillah
+              </button>
+              <button
+                onClick={() => onPrayerAnswer('no')}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 transition hover:bg-white/20 active:scale-95"
+              >
+                Not yet
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* First-time name prompt (works without login) */}
         {needsName && (
