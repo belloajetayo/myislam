@@ -301,7 +301,6 @@ const Index: React.FC = () => { // v5
           <PrayerTopBar />
           <QuickShortcuts />
           <ProgressTracker />
-          <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
           <IslamicCalendar onAskMIA={handleAskMIA} />
           <CommunityFeed />
