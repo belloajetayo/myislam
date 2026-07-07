@@ -235,6 +235,7 @@ export const useMIAChat = () => {
       if (prev[prev.length - 1]?.content === content) return prev;
       return [...prev, { role: 'assistant', content }];
     });
+    if (!isOpenRef.current) setUnreadCount(c => c + 1);
     persistMessage({ role: 'assistant', content });
   }, []);
 
