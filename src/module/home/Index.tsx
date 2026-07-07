@@ -8,7 +8,7 @@ import ProgressTracker from "@/components/home/ProgressTracker";
 import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import PrayerTopBar from "@/components/home/PrayerTopBar";
-import DailyCards from "@/components/home/DailyCards"; // v3
+
 import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather, Headphones } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
@@ -105,9 +105,11 @@ const Index: React.FC = () => { // v5
     clearMessages,
     openWithQuestion,
     injectAssistantMessage,
+    unreadCount,
   } = useMIAChat();
 
   const { pending, message: proactive, markSeen } = useMIAProactive();
+  const totalUnread = unreadCount + (pending ? 1 : 0);
 
   const [prayerCheck, setPrayerCheck] = useState<{ name: string } | null>(null);
 
@@ -299,7 +301,6 @@ const Index: React.FC = () => { // v5
           <PrayerTopBar />
           <QuickShortcuts />
           <ProgressTracker />
-          <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
           <IslamicCalendar onAskMIA={handleAskMIA} />
           <CommunityFeed />
@@ -308,13 +309,15 @@ const Index: React.FC = () => { // v5
             <button
               onClick={() => setIsOpen(true)}
               className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-lg shadow-indigo-300/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
-              aria-label={pending ? `MIA has a new message${proactive ? `: ${proactive.title}` : ''}` : 'Open MIA Assistant'}
+              aria-label={totalUnread > 0 ? `MIA has ${totalUnread} new message${totalUnread > 1 ? 's' : ''}` : 'Open MIA Assistant'}
             >
               <Sparkles className="w-6 h-6" />
-              {pending && (
+              {totalUnread > 0 && (
                 <>
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 ring-2 ring-white shadow-md" />
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 animate-ping opacity-70" />
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 ring-2 ring-white shadow-md flex items-center justify-center text-[11px] font-bold text-white">
+                    {totalUnread > 9 ? '9+' : totalUnread}
+                  </span>
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-rose-500 animate-ping opacity-60" />
                 </>
               )}
             </button>
