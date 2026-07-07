@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserName } from '@/lib/miaProactive';
@@ -14,9 +14,20 @@ const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | 
 export const useMIAChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpenRaw] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const isOpenRef = useRef(false);
   const { toast } = useToast();
+
+  const setIsOpen = useCallback((v: boolean | ((p: boolean) => boolean)) => {
+    setIsOpenRaw(prev => {
+      const next = typeof v === 'function' ? v(prev) : v;
+      isOpenRef.current = next;
+      if (next) setUnreadCount(0);
+      return next;
+    });
+  }, []);
 
   // Load previous chat history on mount
   useEffect(() => {
