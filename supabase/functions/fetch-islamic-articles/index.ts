@@ -203,22 +203,32 @@ serve(async (req) => {
   }
 
   try {
+    let exclude: string[] = [];
+    let limit = 6;
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        if (Array.isArray(body?.exclude)) exclude = body.exclude.filter((x: unknown): x is string => typeof x === "string");
+        if (typeof body?.limit === "number") limit = Math.max(1, Math.min(10, body.limit));
+      } catch { /* ignore */ }
+    }
+
     const now = new Date();
     const event = detectUpcomingEvent(now);
     const eventContext = event
       ? `${event.name} — ${event.description}${event.inDays === 0 ? " (today)" : event.inDays === 1 ? " (tomorrow)" : " (in 2 days)"}`
       : null;
 
-    const links = await listIslamQAAnswerLinks();
+    const links = (await listIslamQAAnswerLinks()).filter((l) => !exclude.includes(l));
     if (links.length === 0) {
-      return new Response(JSON.stringify({ articles: [], event: eventContext }), {
+      return new Response(JSON.stringify({ articles: [], event: eventContext, hasMore: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // If an event is upcoming, first fetch to find matches by title
+    // If an event is upcoming AND this is the first page, prioritise matches
     let selected: string[] = [];
-    if (event) {
+    if (event && exclude.length === 0) {
       const settled = await Promise.allSettled(
         links.slice(0, 15).map(async (u) => {
           const h = await fetchText(u, 6000);
@@ -232,24 +242,25 @@ serve(async (req) => {
       selected = settled
         .map((r) => (r.status === "fulfilled" ? r.value : null))
         .filter((u): u is string => !!u)
-        .slice(0, 6);
+        .slice(0, limit);
     }
 
-    // Fill with randomised remaining if nothing matched or no event
-    if (selected.length < 6) {
+    if (selected.length < limit) {
       const remaining = links.filter((l) => !selected.includes(l)).sort(() => Math.random() - 0.5);
-      selected = [...selected, ...remaining].slice(0, 6);
+      selected = [...selected, ...remaining].slice(0, limit);
     }
 
     const fetched = await Promise.allSettled(
-      selected.map((u) => fetchIslamQAArticle(u, eventContext)),
+      selected.map((u) => fetchIslamQAArticle(u, exclude.length === 0 ? eventContext : null)),
     );
     const articles: Article[] = fetched
       .map((r) => (r.status === "fulfilled" ? r.value : null))
       .filter((a): a is Article => !!a);
 
+    const hasMore = links.length > selected.length;
+
     return new Response(
-      JSON.stringify({ articles, event: eventContext, eventName: event?.name ?? null }),
+      JSON.stringify({ articles, event: eventContext, eventName: event?.name ?? null, hasMore }),
       { headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "public, max-age=1800" } },
     );
   } catch (err) {
