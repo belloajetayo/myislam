@@ -248,6 +248,7 @@ export const useMIAChat = () => {
     clearMessages,
     openWithQuestion,
     injectAssistantMessage,
+    unreadCount,
     historyLoaded,
   };
 };
