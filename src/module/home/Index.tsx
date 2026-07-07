@@ -105,9 +105,11 @@ const Index: React.FC = () => { // v5
     clearMessages,
     openWithQuestion,
     injectAssistantMessage,
+    unreadCount,
   } = useMIAChat();
 
   const { pending, message: proactive, markSeen } = useMIAProactive();
+  const totalUnread = unreadCount + (pending ? 1 : 0);
 
   const [prayerCheck, setPrayerCheck] = useState<{ name: string } | null>(null);
 
