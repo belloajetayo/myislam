@@ -88,15 +88,25 @@ const HADITHS_TTS = [
 
 const Podcasts: React.FC = () => {
   const navigate = useNavigate();
+  const { location } = useSharedLocation();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [activeTab, setActiveTab] = useState<"radio" | "lectures" | "reminders">("radio");
+  const [activeTab, setActiveTab] = useState<"radio" | "youtube" | "lectures" | "reminders">("radio");
   const [playing, setPlaying] = useState(false);
-  const [currentStation, setCurrentStation] = useState<typeof RADIO_STATIONS[0] | null>(null);
+  const [currentStation, setCurrentStation] = useState<Station | null>(null);
   const [currentLecture, setCurrentLecture] = useState<typeof LECTURES[0] | null>(null);
   const [muted, setMuted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [currentHadith, setCurrentHadith] = useState(0);
+  const [ytFilter, setYtFilter] = useState<"All" | "Quran" | "Nasheed" | "Lecture">("All");
+  const [activeVideo, setActiveVideo] = useState<YoutubeItem | null>(null);
+
+  // Location-based station list — global + user's country if we have one
+  const RADIO_STATIONS = useMemo<Station[]>(() => {
+    const country = location?.country;
+    const local = country && REGIONAL_STATIONS[country] ? REGIONAL_STATIONS[country] : [];
+    return [...local, ...GLOBAL_STATIONS];
+  }, [location?.country]);
 
   // Cleanup audio on unmount
   useEffect(() => {
