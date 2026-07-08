@@ -161,14 +161,26 @@ const CommunityFeed: React.FC = () => {
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedContent, setExpandedContent] = useState<Record<string, boolean>>({});
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setVisibleCount(prev => prev + 5);
-      setLoadingMore(false);
-    }, 800);
-  };
+  // Infinite scroll: lazy-load more posts when sentinel enters view
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    if (visibleCount >= posts.length) return;
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && !loadingMore) {
+        setLoadingMore(true);
+        window.setTimeout(() => {
+          setVisibleCount((prev) => prev + 3);
+          setLoadingMore(false);
+        }, 500);
+      }
+    }, { rootMargin: '400px 0px' });
+    io.observe(node);
+    return () => io.disconnect();
+  }, [visibleCount, posts.length, loadingMore]);
 
   const handleExpandComments = (postId: string) => {
     if (expandedPost === postId) {
