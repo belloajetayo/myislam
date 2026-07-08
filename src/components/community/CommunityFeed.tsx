@@ -385,23 +385,16 @@ const CommunityFeed: React.FC = () => {
         })
       )}
 
-      {/* Load More Button */}
+      {/* Infinite scroll sentinel + shimmer */}
       {posts.length > visibleCount && (
-        <Button
-          variant="outline"
-          onClick={handleLoadMore}
-          disabled={loadingMore}
-          className="w-full gap-2 border-border hover:bg-muted"
-        >
-          {loadingMore ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            <>Load More ({posts.length - visibleCount} remaining)</>
-          )}
-        </Button>
+        <div ref={sentinelRef} className="py-6 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <p className="text-[11px] text-muted-foreground">Loading more wisdom…</p>
+        </div>
       )}
     </div>
   );
