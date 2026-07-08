@@ -161,14 +161,26 @@ const CommunityFeed: React.FC = () => {
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedContent, setExpandedContent] = useState<Record<string, boolean>>({});
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const handleLoadMore = () => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setVisibleCount(prev => prev + 5);
-      setLoadingMore(false);
-    }, 800);
-  };
+  // Infinite scroll: lazy-load more posts when sentinel enters view
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    if (visibleCount >= posts.length) return;
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && !loadingMore) {
+        setLoadingMore(true);
+        window.setTimeout(() => {
+          setVisibleCount((prev) => prev + 3);
+          setLoadingMore(false);
+        }, 500);
+      }
+    }, { rootMargin: '400px 0px' });
+    io.observe(node);
+    return () => io.disconnect();
+  }, [visibleCount, posts.length, loadingMore]);
 
   const handleExpandComments = (postId: string) => {
     if (expandedPost === postId) {
@@ -281,11 +293,11 @@ const CommunityFeed: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-slide-up">
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <BookOpen className="w-5 h-5 text-islamic-gold" />
-        <h2 className="text-lg font-semibold text-foreground">Daily Wisdom</h2>
+      <div className="flex items-center gap-2 mb-1">
+        <BookOpen className="w-4 h-4 text-islamic-gold" />
+        <h2 className="text-sm font-semibold text-foreground">Daily Wisdom</h2>
       </div>
 
       {/* Posts */}
@@ -295,101 +307,140 @@ const CommunityFeed: React.FC = () => {
           <p>No posts yet. Tap "Refresh" to add wisdom!</p>
         </div>
       ) : (
-        posts.slice(0, visibleCount).map((post) => {
-          const typeConfig = POST_TYPE_CONFIG[post.post_type] || POST_TYPE_CONFIG.teaching;
-          const postComments = comments[post.id] || [];
-          
-          return (
-            <div 
-              key={post.id} 
-              className={`bg-gradient-to-b ${typeConfig.gradient} rounded-2xl border ${typeConfig.border} overflow-hidden shadow-card`}
-            >
-              {/* Post Header - Like Hadith of the Day style */}
-              <div className="p-4 pb-0">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-islamic-gold to-amber-600 flex items-center justify-center shadow-lg">
-                    <span className="text-xl">{typeConfig.icon}</span>
+        <div className="space-y-5">
+          {posts.slice(0, visibleCount).map((post) => {
+            const typeConfig = POST_TYPE_CONFIG[post.post_type] || POST_TYPE_CONFIG.teaching;
+            const postComments = comments[post.id] || [];
+            const isLiked = likedPostIds.has(post.id);
+            const isCommentsOpen = expandedPost === post.id;
+
+            return (
+              <div
+                key={post.id}
+                className="bg-white dark:bg-white/5 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 shadow-sm animate-fade-in"
+              >
+                {/* Post header — avatar / label / time */}
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-islamic-gold to-amber-600 flex items-center justify-center ring-2 ring-amber-300 ring-offset-1 text-sm">
+                    {typeConfig.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground">{typeConfig.label}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold text-gray-900 dark:text-white truncate">MyIslam · {typeConfig.label}</p>
+                    <p className="text-[10px] text-gray-400">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</p>
                   </div>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-islamic-gold/10 border border-islamic-gold/20">
-                    <span className="text-[10px] font-medium text-islamic-gold">MyIslam</span>
+                  <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+                    Wisdom
+                  </span>
+                </div>
+
+                {/* Hero — gradient banner styled like Discover image */}
+                <div className={`w-full bg-gradient-to-br ${typeConfig.gradient} border-y ${typeConfig.border} px-5 py-8 flex items-center justify-center`}>
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">{typeConfig.icon}</div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/70">{typeConfig.label}</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Post Content - Styled quote */}
-              <div className="px-4 pb-4">
-                <div className="bg-background/40 rounded-xl p-4 border border-border/50">
-                  <p className={`text-foreground leading-relaxed italic text-sm ${
-                    !expandedContent[post.id] ? 'line-clamp-6' : ''
+                {/* Actions bar (Instagram-style) */}
+                <div className="flex items-center gap-1 px-3 pt-2 pb-1">
+                  <button
+                    onClick={() => handleLike(post)}
+                    aria-pressed={isLiked}
+                    className={`p-2 rounded-full transition-all active:scale-90 ${isLiked ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}
+                  >
+                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500' : ''}`} />
+                  </button>
+                  <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 -ml-1">{post.likes_count}</span>
+                  <button
+                    onClick={() => handleExpandComments(post.id)}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 transition-all active:scale-90 relative ml-2"
+                  >
+                    <Send className="w-5 h-5" />
+                    {postComments.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold text-white bg-amber-500 rounded-full w-4 h-4 flex items-center justify-center">
+                        {postComments.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleShare(post)}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 transition-all active:scale-90"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Caption */}
+                <div className="px-3 pb-3">
+                  <p className="text-[12px] font-semibold text-gray-900 dark:text-white mb-0.5">MyIslam</p>
+                  <p className={`text-[12px] text-gray-800 dark:text-gray-200 leading-relaxed font-medium italic ${
+                    !expandedContent[post.id] ? 'line-clamp-4' : ''
                   }`}>
                     "{post.content}"
                   </p>
-                  {post.content.length > 300 && (
+                  {post.content.length > 220 && (
                     <button
                       onClick={() => setExpandedContent(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                      className="text-xs font-semibold text-islamic-gold mt-2 hover:underline"
+                      className="text-[11px] text-islamic-gold font-semibold mt-1"
                     >
                       {expandedContent[post.id] ? 'See less' : 'See more'}
                     </button>
                   )}
-                  <p className="text-xs text-muted-foreground mt-3 font-medium">
-                    — {post.source}
-                  </p>
+                  <p className="text-[10.5px] text-muted-foreground mt-2">— {post.source}</p>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="px-4 py-3 border-t border-border/30 flex items-center gap-4 bg-background/20">
-                <button
-                  onClick={() => handleLike(post)}
-                  aria-pressed={likedPostIds.has(post.id)}
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    likedPostIds.has(post.id)
-                      ? 'text-red-500'
-                      : 'text-muted-foreground hover:text-red-400'
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${likedPostIds.has(post.id) ? 'fill-current' : ''}`} />
-                  <span className="text-sm">{post.likes_count}</span>
-                </button>
-                <button
-                  onClick={() => handleShare(post)}
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-blue-400 transition-colors ml-auto"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="text-sm">Share</span>
-                </button>
+                {/* Comments */}
+                {isCommentsOpen && (
+                  <div className="border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/[0.03] px-3 py-3 space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      Comments · {postComments.length}
+                    </p>
+                    {postComments.map((c) => (
+                      <div key={c.id} className="flex gap-2">
+                        <Avatar className="w-7 h-7">
+                          <AvatarFallback className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                            {c.author_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 bg-white dark:bg-white/5 rounded-2xl px-3 py-2 border border-gray-100 dark:border-white/10">
+                          <p className="text-[10.5px] font-semibold text-gray-900 dark:text-white">{c.author_name}</p>
+                          <p className="text-[11.5px] text-gray-700 dark:text-gray-300 leading-relaxed mt-0.5">{c.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        value={newComment[post.id] || ''}
+                        onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        placeholder="Add a comment…"
+                        className="h-9 text-xs rounded-full bg-white dark:bg-white/5"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitComment(post.id); }}
+                      />
+                      <button
+                        onClick={() => handleSubmitComment(post.id)}
+                        className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center active:scale-95"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
 
-      {/* Load More Button */}
+      {/* Infinite scroll sentinel + shimmer */}
       {posts.length > visibleCount && (
-        <Button
-          variant="outline"
-          onClick={handleLoadMore}
-          disabled={loadingMore}
-          className="w-full gap-2 border-border hover:bg-muted"
-        >
-          {loadingMore ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            <>Load More ({posts.length - visibleCount} remaining)</>
-          )}
-        </Button>
+        <div ref={sentinelRef} className="py-6 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 rounded-full bg-islamic-gold animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <p className="text-[11px] text-muted-foreground">Loading more wisdom…</p>
+        </div>
       )}
     </div>
   );

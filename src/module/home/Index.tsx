@@ -304,21 +304,26 @@ const Index: React.FC = () => { // v5
           <IslamicCalendar onAskMIA={handleAskMIA} />
           <CommunityFeed />
 
-          {!isOpen && (
-            <button
-              onClick={() => setIsOpen(true)}
-              className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-lg shadow-indigo-300/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
-              aria-label={pending ? `MIA has a new message${proactive ? `: ${proactive.title}` : ''}` : 'Open MIA Assistant'}
-            >
-              <Sparkles className="w-6 h-6" />
-              {pending && (
-                <>
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 ring-2 ring-white shadow-md" />
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-rose-500 animate-ping opacity-70" />
-                </>
-              )}
-            </button>
-          )}
+          {!isOpen && (() => {
+            const pendingCount = (pending ? 1 : 0) + (prayerCheck ? 1 : 0);
+            return (
+              <button
+                onClick={() => setIsOpen(true)}
+                className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-lg shadow-indigo-300/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
+                aria-label={pendingCount > 0 ? `MIA has ${pendingCount} new message${pendingCount > 1 ? 's' : ''}` : 'Open MIA Assistant'}
+              >
+                <Sparkles className="w-6 h-6" />
+                {pendingCount > 0 && (
+                  <>
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 ring-2 ring-white shadow-md flex items-center justify-center text-[11px] font-bold text-white z-10">
+                      {pendingCount}
+                    </span>
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-rose-500 animate-ping opacity-60" />
+                  </>
+                )}
+              </button>
+            );
+          })()}
 
           <MIAAssistant
             messages={messages}

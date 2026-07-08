@@ -1,16 +1,72 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Headphones, Play, Pause, Radio, Volume2, VolumeX, Mic, ChevronRight, Loader } from "lucide-react";
+import { ArrowLeft, Headphones, Play, Pause, Radio, Volume2, VolumeX, Mic, ChevronRight, Loader, Youtube, MapPin } from "lucide-react";
+import { useSharedLocation } from "@/context/useSharedLocation";
 
-// Islamic Radio Streams
-const RADIO_STATIONS = [
+type Station = { name: string; description: string; url: string; color: string; flag: string; country?: string };
+
+// Global Islamic Radio Streams
+const GLOBAL_STATIONS: Station[] = [
   { name: "Quran Radio", description: "24/7 Holy Quran recitation", url: "https://stream.radiojar.com/quran-hafs-sulami", color: "from-emerald-500 to-teal-600", flag: "🕌" },
   { name: "Makkah Live", description: "Live from Masjid Al-Haram", url: "https://Qurango.net/radio/tarateel", color: "from-amber-500 to-orange-600", flag: "🕋" },
   { name: "Islamic Reminders", description: "Lectures and reminders", url: "https://stream.zeno.fm/0r0xa792kwzuv", color: "from-indigo-500 to-blue-600", flag: "📖" },
   { name: "Madinah Radio", description: "Live from Masjid An-Nabawi", url: "https://stream.radiojar.com/madinah", color: "from-rose-500 to-pink-600", flag: "🌙" },
   { name: "Quran Kareem", description: "Beautiful Quran recitation", url: "https://n0d.radiojar.com/csp2r04750quv?rj-ttl=5&rj-tok=AAABkVZH_xMADHIBXXxmh9g5VA", color: "from-purple-500 to-violet-600", flag: "✨" },
 ];
+
+// Region-specific stations — enabled by user's country
+const REGIONAL_STATIONS: Record<string, Station[]> = {
+  "Saudi Arabia": [
+    { name: "Idha'at al-Quran (KSA)", description: "Saudi Quran radio", url: "https://svr7.radiotime.com/mp3/s1088067.mp3", color: "from-green-600 to-emerald-700", flag: "🇸🇦", country: "Saudi Arabia" },
+    { name: "Nida al-Islam", description: "Islamic lectures — Riyadh", url: "https://stream.radiojar.com/nida-alislam", color: "from-teal-500 to-green-600", flag: "🇸🇦", country: "Saudi Arabia" },
+  ],
+  "Egypt": [
+    { name: "Idha'at al-Quran (Egypt)", description: "Egypt's national Quran radio", url: "https://n0a.radiojar.com/8s5u5tpdtwzuv", color: "from-yellow-500 to-amber-600", flag: "🇪🇬", country: "Egypt" },
+  ],
+  "United Arab Emirates": [
+    { name: "Quran Kareem Dubai", description: "Dubai Holy Quran radio", url: "https://uk2.streamingpulse.com/ssl/dqr", color: "from-red-500 to-rose-600", flag: "🇦🇪", country: "United Arab Emirates" },
+  ],
+  "Turkey": [
+    { name: "Diyanet Radyosu", description: "Turkey Islamic radio", url: "https://radyo.dogannet.tv/diyanet", color: "from-red-600 to-red-800", flag: "🇹🇷", country: "Turkey" },
+  ],
+  "Indonesia": [
+    { name: "Rodja FM", description: "Indonesian Sunni radio", url: "https://radio.rodja.id:8443/rodjafm", color: "from-red-500 to-white", flag: "🇮🇩", country: "Indonesia" },
+    { name: "MQFM Bandung", description: "Manajemen Qolbu radio", url: "https://streaming.mqfm.co.id/mqfm", color: "from-emerald-500 to-green-600", flag: "🇮🇩", country: "Indonesia" },
+  ],
+  "Malaysia": [
+    { name: "IKIMfm", description: "Malaysia Islamic knowledge", url: "https://ikimfmlh.rastream.com/ikimfm", color: "from-blue-500 to-indigo-600", flag: "🇲🇾", country: "Malaysia" },
+  ],
+  "Pakistan": [
+    { name: "Radio Pakistan Quran", description: "Pakistan Quran channel", url: "https://live.radio.pk/stream/quran", color: "from-green-600 to-emerald-700", flag: "🇵🇰", country: "Pakistan" },
+  ],
+  "Nigeria": [
+    { name: "Deenee Radio", description: "Nigerian Islamic radio", url: "https://s2.radio.co/s2b2b68a1e/listen", color: "from-green-500 to-emerald-600", flag: "🇳🇬", country: "Nigeria" },
+  ],
+  "United Kingdom": [
+    { name: "Islam Channel Radio", description: "UK Islamic radio", url: "https://icradio.streamguys1.com/live-mp3", color: "from-blue-600 to-indigo-700", flag: "🇬🇧", country: "United Kingdom" },
+  ],
+  "United States": [
+    { name: "Muslim Community Radio", description: "US Islamic community", url: "https://s2.radio.co/s5f7d97b3d/listen", color: "from-blue-500 to-red-500", flag: "🇺🇸", country: "United States" },
+  ],
+};
+
+// YouTube Islamic content — nasheeds, Quran, lectures
+type YoutubeItem = { title: string; author: string; videoId: string; category: string };
+const YOUTUBE_CONTENT: YoutubeItem[] = [
+  { title: "Beautiful Quran Recitation — Sheikh Abdur-Rahman As-Sudais", author: "Haramain", videoId: "s_kfoLKGRE0", category: "Quran" },
+  { title: "Maher Al Muaiqly — Full Quran", author: "Maher Al Muaiqly", videoId: "0DGpk3sq2ug", category: "Quran" },
+  { title: "Mishary Rashid Alafasy — Surah Ar-Rahman", author: "Mishary Alafasy", videoId: "BbG9GgHwEnA", category: "Quran" },
+  { title: "Sami Yusuf — Hasbi Rabbi", author: "Sami Yusuf", videoId: "0aoZmVzLbaU", category: "Nasheed" },
+  { title: "Maher Zain — Insha Allah", author: "Maher Zain", videoId: "n5X2VOZZeQE", category: "Nasheed" },
+  { title: "Harris J — Salam Alaikum", author: "Harris J", videoId: "Hzwzp3xLh5w", category: "Nasheed" },
+  { title: "Mustafa Ceceli — Bismillah", author: "Mustafa Ceceli", videoId: "GhCTPmxRHhw", category: "Nasheed" },
+  { title: "Omar Suleiman — Purifying the Heart", author: "Yaqeen Institute", videoId: "hSbFZJTVzZM", category: "Lecture" },
+  { title: "Mufti Menk — Motivational Reminder", author: "Mufti Menk", videoId: "GX4ULOWtcnU", category: "Lecture" },
+  { title: "Nouman Ali Khan — Understanding the Quran", author: "Bayyinah", videoId: "OZzKVsi-vqM", category: "Lecture" },
+];
+
+
 
 // Islamic Lectures from free API
 const LECTURES = [
@@ -32,15 +88,25 @@ const HADITHS_TTS = [
 
 const Podcasts: React.FC = () => {
   const navigate = useNavigate();
+  const { location } = useSharedLocation();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [activeTab, setActiveTab] = useState<"radio" | "lectures" | "reminders">("radio");
+  const [activeTab, setActiveTab] = useState<"radio" | "youtube" | "lectures" | "reminders">("radio");
   const [playing, setPlaying] = useState(false);
-  const [currentStation, setCurrentStation] = useState<typeof RADIO_STATIONS[0] | null>(null);
+  const [currentStation, setCurrentStation] = useState<Station | null>(null);
   const [currentLecture, setCurrentLecture] = useState<typeof LECTURES[0] | null>(null);
   const [muted, setMuted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [currentHadith, setCurrentHadith] = useState(0);
+  const [ytFilter, setYtFilter] = useState<"All" | "Quran" | "Nasheed" | "Lecture">("All");
+  const [activeVideo, setActiveVideo] = useState<YoutubeItem | null>(null);
+
+  // Location-based station list — global + user's country if we have one
+  const RADIO_STATIONS = useMemo<Station[]>(() => {
+    const country = location?.country;
+    const local = country && REGIONAL_STATIONS[country] ? REGIONAL_STATIONS[country] : [];
+    return [...local, ...GLOBAL_STATIONS];
+  }, [location?.country]);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -87,7 +153,7 @@ const Podcasts: React.FC = () => {
     setCurrentLecture(null);
   };
 
-  const handleStation = async (station: typeof RADIO_STATIONS[0]) => {
+  const handleStation = async (station: Station) => {
     if (currentStation?.name === station.name && playing) {
       stopAudio();
       return;
@@ -178,16 +244,17 @@ const Podcasts: React.FC = () => {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {[
-            { id: "radio", label: "📻 Radio", icon: Radio },
-            { id: "lectures", label: "🎙️ Lectures", icon: Mic },
-            { id: "reminders", label: "🤲 Reminders", icon: Headphones },
+            { id: "radio", label: "📻 Radio" },
+            { id: "youtube", label: "▶️ YouTube" },
+            { id: "lectures", label: "🎙️ Lectures" },
+            { id: "reminders", label: "🤲 Reminders" },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === tab.id
                   ? "bg-indigo-500 text-white shadow-sm"
                   : "bg-white/60 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-indigo-100 dark:border-indigo-800"
@@ -201,7 +268,14 @@ const Podcasts: React.FC = () => {
         {/* Radio Tab */}
         {activeTab === "radio" && (
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Tap to tune in live 📡</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Tap to tune in live 📡</p>
+              {location?.country && (
+                <span className="text-[10px] text-indigo-500 font-semibold flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> {location.country}
+                </span>
+              )}
+            </div>
             {RADIO_STATIONS.map((station, i) => {
               const isActive = currentStation?.name === station.name;
               return (
@@ -218,7 +292,12 @@ const Podcasts: React.FC = () => {
                     {station.flag}
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-bold text-foreground">{station.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-foreground">{station.name}</p>
+                      {station.country && (
+                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">Local</span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-muted-foreground">{station.description}</p>
                     {isActive && (
                       <div className="flex items-center gap-1 mt-1">
@@ -241,6 +320,81 @@ const Podcasts: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* YouTube Tab */}
+        {activeTab === "youtube" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Youtube className="w-3.5 h-3.5 text-red-500" /> Nasheeds, Quran & lectures from YouTube
+            </p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {(["All", "Quran", "Nasheed", "Lecture"] as const).map(c => (
+                <button
+                  key={c}
+                  onClick={() => setYtFilter(c)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                    ytFilter === c
+                      ? "bg-red-500 text-white"
+                      : "bg-white/60 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-red-100 dark:border-red-900/40"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {activeVideo && (
+              <div className="rounded-2xl overflow-hidden border border-red-200 dark:border-red-900/40 bg-black">
+                <div className="relative pb-[56.25%]">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1&rel=0`}
+                    className="absolute inset-0 w-full h-full"
+                    title={activeVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="p-3 bg-white/60 dark:bg-white/5">
+                  <p className="text-sm font-bold text-foreground line-clamp-2">{activeVideo.title}</p>
+                  <p className="text-[11px] text-red-500 font-semibold mt-0.5">{activeVideo.author}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              {YOUTUBE_CONTENT.filter(v => ytFilter === "All" || v.category === ytFilter).map((v, i) => (
+                <button
+                  key={i}
+                  onClick={() => { stopAudio(); setActiveVideo(v); }}
+                  className={`text-left rounded-2xl overflow-hidden border transition-all active:scale-95 ${
+                    activeVideo?.videoId === v.videoId
+                      ? "border-red-400 bg-red-50 dark:bg-red-900/20"
+                      : "border-indigo-100 dark:border-indigo-800 bg-white/60 dark:bg-white/5"
+                  }`}
+                >
+                  <div className="relative">
+                    <img
+                      src={`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`}
+                      alt={v.title}
+                      loading="lazy"
+                      className="w-full h-24 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
+                        <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                      </div>
+                    </div>
+                    <span className="absolute top-1 right-1 text-[8px] font-bold bg-black/70 text-white px-1.5 py-0.5 rounded-full">{v.category}</span>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] font-bold text-foreground line-clamp-2 leading-snug">{v.title}</p>
+                    <p className="text-[10px] text-red-500 mt-0.5">{v.author}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
