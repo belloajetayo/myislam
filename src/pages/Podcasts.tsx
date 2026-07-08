@@ -153,7 +153,7 @@ const Podcasts: React.FC = () => {
     setCurrentLecture(null);
   };
 
-  const handleStation = async (station: typeof RADIO_STATIONS[0]) => {
+  const handleStation = async (station: Station) => {
     if (currentStation?.name === station.name && playing) {
       stopAudio();
       return;
