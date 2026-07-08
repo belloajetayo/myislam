@@ -1,16 +1,72 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Headphones, Play, Pause, Radio, Volume2, VolumeX, Mic, ChevronRight, Loader } from "lucide-react";
+import { ArrowLeft, Headphones, Play, Pause, Radio, Volume2, VolumeX, Mic, ChevronRight, Loader, Youtube, MapPin } from "lucide-react";
+import { useSharedLocation } from "@/context/useSharedLocation";
 
-// Islamic Radio Streams
-const RADIO_STATIONS = [
+type Station = { name: string; description: string; url: string; color: string; flag: string; country?: string };
+
+// Global Islamic Radio Streams
+const GLOBAL_STATIONS: Station[] = [
   { name: "Quran Radio", description: "24/7 Holy Quran recitation", url: "https://stream.radiojar.com/quran-hafs-sulami", color: "from-emerald-500 to-teal-600", flag: "🕌" },
   { name: "Makkah Live", description: "Live from Masjid Al-Haram", url: "https://Qurango.net/radio/tarateel", color: "from-amber-500 to-orange-600", flag: "🕋" },
   { name: "Islamic Reminders", description: "Lectures and reminders", url: "https://stream.zeno.fm/0r0xa792kwzuv", color: "from-indigo-500 to-blue-600", flag: "📖" },
   { name: "Madinah Radio", description: "Live from Masjid An-Nabawi", url: "https://stream.radiojar.com/madinah", color: "from-rose-500 to-pink-600", flag: "🌙" },
   { name: "Quran Kareem", description: "Beautiful Quran recitation", url: "https://n0d.radiojar.com/csp2r04750quv?rj-ttl=5&rj-tok=AAABkVZH_xMADHIBXXxmh9g5VA", color: "from-purple-500 to-violet-600", flag: "✨" },
 ];
+
+// Region-specific stations — enabled by user's country
+const REGIONAL_STATIONS: Record<string, Station[]> = {
+  "Saudi Arabia": [
+    { name: "Idha'at al-Quran (KSA)", description: "Saudi Quran radio", url: "https://svr7.radiotime.com/mp3/s1088067.mp3", color: "from-green-600 to-emerald-700", flag: "🇸🇦", country: "Saudi Arabia" },
+    { name: "Nida al-Islam", description: "Islamic lectures — Riyadh", url: "https://stream.radiojar.com/nida-alislam", color: "from-teal-500 to-green-600", flag: "🇸🇦", country: "Saudi Arabia" },
+  ],
+  "Egypt": [
+    { name: "Idha'at al-Quran (Egypt)", description: "Egypt's national Quran radio", url: "https://n0a.radiojar.com/8s5u5tpdtwzuv", color: "from-yellow-500 to-amber-600", flag: "🇪🇬", country: "Egypt" },
+  ],
+  "United Arab Emirates": [
+    { name: "Quran Kareem Dubai", description: "Dubai Holy Quran radio", url: "https://uk2.streamingpulse.com/ssl/dqr", color: "from-red-500 to-rose-600", flag: "🇦🇪", country: "United Arab Emirates" },
+  ],
+  "Turkey": [
+    { name: "Diyanet Radyosu", description: "Turkey Islamic radio", url: "https://radyo.dogannet.tv/diyanet", color: "from-red-600 to-red-800", flag: "🇹🇷", country: "Turkey" },
+  ],
+  "Indonesia": [
+    { name: "Rodja FM", description: "Indonesian Sunni radio", url: "https://radio.rodja.id:8443/rodjafm", color: "from-red-500 to-white", flag: "🇮🇩", country: "Indonesia" },
+    { name: "MQFM Bandung", description: "Manajemen Qolbu radio", url: "https://streaming.mqfm.co.id/mqfm", color: "from-emerald-500 to-green-600", flag: "🇮🇩", country: "Indonesia" },
+  ],
+  "Malaysia": [
+    { name: "IKIMfm", description: "Malaysia Islamic knowledge", url: "https://ikimfmlh.rastream.com/ikimfm", color: "from-blue-500 to-indigo-600", flag: "🇲🇾", country: "Malaysia" },
+  ],
+  "Pakistan": [
+    { name: "Radio Pakistan Quran", description: "Pakistan Quran channel", url: "https://live.radio.pk/stream/quran", color: "from-green-600 to-emerald-700", flag: "🇵🇰", country: "Pakistan" },
+  ],
+  "Nigeria": [
+    { name: "Deenee Radio", description: "Nigerian Islamic radio", url: "https://s2.radio.co/s2b2b68a1e/listen", color: "from-green-500 to-emerald-600", flag: "🇳🇬", country: "Nigeria" },
+  ],
+  "United Kingdom": [
+    { name: "Islam Channel Radio", description: "UK Islamic radio", url: "https://icradio.streamguys1.com/live-mp3", color: "from-blue-600 to-indigo-700", flag: "🇬🇧", country: "United Kingdom" },
+  ],
+  "United States": [
+    { name: "Muslim Community Radio", description: "US Islamic community", url: "https://s2.radio.co/s5f7d97b3d/listen", color: "from-blue-500 to-red-500", flag: "🇺🇸", country: "United States" },
+  ],
+};
+
+// YouTube Islamic content — nasheeds, Quran, lectures
+type YoutubeItem = { title: string; author: string; videoId: string; category: string };
+const YOUTUBE_CONTENT: YoutubeItem[] = [
+  { title: "Beautiful Quran Recitation — Sheikh Abdur-Rahman As-Sudais", author: "Haramain", videoId: "s_kfoLKGRE0", category: "Quran" },
+  { title: "Maher Al Muaiqly — Full Quran", author: "Maher Al Muaiqly", videoId: "0DGpk3sq2ug", category: "Quran" },
+  { title: "Mishary Rashid Alafasy — Surah Ar-Rahman", author: "Mishary Alafasy", videoId: "BbG9GgHwEnA", category: "Quran" },
+  { title: "Sami Yusuf — Hasbi Rabbi", author: "Sami Yusuf", videoId: "0aoZmVzLbaU", category: "Nasheed" },
+  { title: "Maher Zain — Insha Allah", author: "Maher Zain", videoId: "n5X2VOZZeQE", category: "Nasheed" },
+  { title: "Harris J — Salam Alaikum", author: "Harris J", videoId: "Hzwzp3xLh5w", category: "Nasheed" },
+  { title: "Mustafa Ceceli — Bismillah", author: "Mustafa Ceceli", videoId: "GhCTPmxRHhw", category: "Nasheed" },
+  { title: "Omar Suleiman — Purifying the Heart", author: "Yaqeen Institute", videoId: "hSbFZJTVzZM", category: "Lecture" },
+  { title: "Mufti Menk — Motivational Reminder", author: "Mufti Menk", videoId: "GX4ULOWtcnU", category: "Lecture" },
+  { title: "Nouman Ali Khan — Understanding the Quran", author: "Bayyinah", videoId: "OZzKVsi-vqM", category: "Lecture" },
+];
+
+
 
 // Islamic Lectures from free API
 const LECTURES = [
