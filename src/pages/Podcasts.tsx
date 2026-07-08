@@ -244,16 +244,17 @@ const Podcasts: React.FC = () => {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {[
-            { id: "radio", label: "📻 Radio", icon: Radio },
-            { id: "lectures", label: "🎙️ Lectures", icon: Mic },
-            { id: "reminders", label: "🤲 Reminders", icon: Headphones },
+            { id: "radio", label: "📻 Radio" },
+            { id: "youtube", label: "▶️ YouTube" },
+            { id: "lectures", label: "🎙️ Lectures" },
+            { id: "reminders", label: "🤲 Reminders" },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === tab.id
                   ? "bg-indigo-500 text-white shadow-sm"
                   : "bg-white/60 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-indigo-100 dark:border-indigo-800"
@@ -267,7 +268,14 @@ const Podcasts: React.FC = () => {
         {/* Radio Tab */}
         {activeTab === "radio" && (
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Tap to tune in live 📡</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Tap to tune in live 📡</p>
+              {location?.country && (
+                <span className="text-[10px] text-indigo-500 font-semibold flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> {location.country}
+                </span>
+              )}
+            </div>
             {RADIO_STATIONS.map((station, i) => {
               const isActive = currentStation?.name === station.name;
               return (
@@ -284,7 +292,12 @@ const Podcasts: React.FC = () => {
                     {station.flag}
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-bold text-foreground">{station.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-foreground">{station.name}</p>
+                      {station.country && (
+                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">Local</span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-muted-foreground">{station.description}</p>
                     {isActive && (
                       <div className="flex items-center gap-1 mt-1">
@@ -307,6 +320,81 @@ const Podcasts: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* YouTube Tab */}
+        {activeTab === "youtube" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Youtube className="w-3.5 h-3.5 text-red-500" /> Nasheeds, Quran & lectures from YouTube
+            </p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {(["All", "Quran", "Nasheed", "Lecture"] as const).map(c => (
+                <button
+                  key={c}
+                  onClick={() => setYtFilter(c)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                    ytFilter === c
+                      ? "bg-red-500 text-white"
+                      : "bg-white/60 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-red-100 dark:border-red-900/40"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {activeVideo && (
+              <div className="rounded-2xl overflow-hidden border border-red-200 dark:border-red-900/40 bg-black">
+                <div className="relative pb-[56.25%]">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1&rel=0`}
+                    className="absolute inset-0 w-full h-full"
+                    title={activeVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="p-3 bg-white/60 dark:bg-white/5">
+                  <p className="text-sm font-bold text-foreground line-clamp-2">{activeVideo.title}</p>
+                  <p className="text-[11px] text-red-500 font-semibold mt-0.5">{activeVideo.author}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              {YOUTUBE_CONTENT.filter(v => ytFilter === "All" || v.category === ytFilter).map((v, i) => (
+                <button
+                  key={i}
+                  onClick={() => { stopAudio(); setActiveVideo(v); }}
+                  className={`text-left rounded-2xl overflow-hidden border transition-all active:scale-95 ${
+                    activeVideo?.videoId === v.videoId
+                      ? "border-red-400 bg-red-50 dark:bg-red-900/20"
+                      : "border-indigo-100 dark:border-indigo-800 bg-white/60 dark:bg-white/5"
+                  }`}
+                >
+                  <div className="relative">
+                    <img
+                      src={`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`}
+                      alt={v.title}
+                      loading="lazy"
+                      className="w-full h-24 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
+                        <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                      </div>
+                    </div>
+                    <span className="absolute top-1 right-1 text-[8px] font-bold bg-black/70 text-white px-1.5 py-0.5 rounded-full">{v.category}</span>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] font-bold text-foreground line-clamp-2 leading-snug">{v.title}</p>
+                    <p className="text-[10px] text-red-500 mt-0.5">{v.author}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
