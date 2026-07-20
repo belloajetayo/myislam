@@ -405,6 +405,8 @@ const Quran: React.FC = () => {
   const routeAyahNumber = Number(searchParams.get("ayah"));
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurah, setSelectedSurah] = useState<SurahDetail | null>(null);
+  const [verseMode, setVerseMode] = useState(false);
+  const [currentVerseIndex, setCurrentVerseIndex] = useState(0);
   const [selectedDuaCategory, setSelectedDuaCategory] = useState<
     (typeof duasCollection)[0] | null
   >(null);
@@ -645,6 +647,21 @@ const Quran: React.FC = () => {
     minSwipeDistance: 80,
   });
 
+  // Swipe navigation for verse-by-verse mode
+  const { swipeHandlers: verseSwipeHandlers } = useSwipeNavigation({
+    onSwipeLeft: () => {
+      if (selectedSurah && currentVerseIndex < selectedSurah.ayahs.length - 1) {
+        setCurrentVerseIndex(i => i + 1);
+      }
+    },
+    onSwipeRight: () => {
+      if (currentVerseIndex > 0) {
+        setCurrentVerseIndex(i => i - 1);
+      }
+    },
+    minSwipeDistance: 50,
+  });
+
   // Swipe navigation for Dua
   const goToNextDua = useCallback(() => {
     if (selectedDuaCategory) {
@@ -762,6 +779,77 @@ const Quran: React.FC = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="flex flex-col h-full" {...surahSwipeHandlers}>
+        {/* Verse-by-verse mode */}
+        {verseMode && selectedSurah && (
+          <div
+            className="flex flex-col h-full"
+            {...verseSwipeHandlers}
+          >
+            {/* Verse counter */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-indigo-100 dark:border-indigo-900">
+              <button
+                onClick={() => setCurrentVerseIndex(i => Math.max(0, i - 1))}
+                disabled={currentVerseIndex === 0}
+                className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 disabled:opacity-30"
+              >
+                ‹
+              </button>
+              <span className="text-xs text-muted-foreground font-medium">
+                Verse {currentVerseIndex + 1} of {selectedSurah.ayahs.length}
+              </span>
+              <button
+                onClick={() => setCurrentVerseIndex(i => Math.min(selectedSurah.ayahs.length - 1, i + 1))}
+                disabled={currentVerseIndex === selectedSurah.ayahs.length - 1}
+                className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 disabled:opacity-30"
+              >
+                ›
+              </button>
+            </div>
+
+            {/* Single verse display */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6 text-center">
+              {/* Verse number badge */}
+              <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                <span className="text-white text-xs font-black">{selectedSurah.ayahs[currentVerseIndex]?.numberInSurah}</span>
+              </div>
+
+              {/* Arabic */}
+              <p className="font-arabic text-4xl leading-loose text-foreground text-right w-full" dir="rtl">
+                {selectedSurah.ayahs[currentVerseIndex]?.text}
+              </p>
+
+              {/* Transliteration if available */}
+              {selectedSurah.ayahs[currentVerseIndex]?.transliteration && (
+                <p className="text-sm text-indigo-500 italic leading-relaxed">
+                  {selectedSurah.ayahs[currentVerseIndex].transliteration}
+                </p>
+              )}
+
+              {/* Translation */}
+              {selectedSurah.ayahs[currentVerseIndex]?.translation && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  "{selectedSurah.ayahs[currentVerseIndex].translation}"
+                </p>
+              )}
+
+              {/* Swipe hint */}
+              <p className="text-[10px] text-muted-foreground">
+                ← swipe to navigate →
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1 bg-gray-100 dark:bg-gray-800 mx-4 mb-4 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full transition-all duration-300"
+                style={{ width: `${((currentVerseIndex + 1) / selectedSurah.ayahs.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Normal scroll mode */}
+        {!verseMode && (
           <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button
               onClick={() => setSelectedSurah(null)}
@@ -785,6 +873,12 @@ const Quran: React.FC = () => {
               <span className="text-xs text-muted-foreground">
                 ({selectedSurah.number}/114)
               </span>
+              <button
+                onClick={() => { setVerseMode(v => !v); setCurrentVerseIndex(0); }}
+                className={verseMode ? "ml-1 w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center text-xs font-black" : "ml-1 w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center text-xs font-black"}
+              >
+                {verseMode ? "≡" : "1"}
+              </button>
             </div>
           </header>
 
