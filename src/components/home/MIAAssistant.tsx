@@ -1,12 +1,39 @@
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check } from 'lucide-react';
+import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check, Mic, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import { getUserName, setUserName, capitalizePrayer } from '@/lib/miaProactive';
+import {
+  buildGreeting, createRecognizer, isVoiceEnabled, parseCommand, setVoiceEnabled,
+  shouldGreet, speak, stopSpeaking,
+} from '@/lib/miaJarvis';
+
+type OrbState = 'idle' | 'listening' | 'speaking' | 'thinking';
+
+const JarvisOrb: React.FC<{ size: 'sm' | 'lg'; state: OrbState; onClick?: () => void }> = ({ size, state, onClick }) => {
+  const dim = size === 'lg' ? 'h-36 w-36' : 'h-11 w-11';
+  const active = state !== 'idle';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      aria-label="MIA"
+      className={`relative ${dim} shrink-0 rounded-full disabled:cursor-default`}
+    >
+      <span className={`absolute inset-0 rounded-full bg-cyan-300/30 blur-xl ${active ? 'animate-pulse' : ''}`} />
+      <span className={`absolute inset-0 rounded-full border-2 border-dashed border-cyan-200/60 ${state === 'thinking' ? 'animate-spin' : 'animate-[spin_12s_linear_infinite]'}`} />
+      <span className="absolute inset-[12%] rounded-full border border-fuchsia-200/50 animate-[spin_8s_linear_infinite_reverse]" />
+      {state === 'listening' && <span className="absolute inset-0 rounded-full border-2 border-rose-300 animate-ping" />}
+      <span className={`absolute inset-[24%] rounded-full bg-gradient-to-br from-cyan-300 via-violet-400 to-fuchsia-500 shadow-[0_0_30px_rgba(103,232,249,0.7)] ${state === 'speaking' ? 'animate-pulse' : ''}`} />
+      <span className="absolute inset-[34%] rounded-full bg-white/70 blur-[2px]" />
+    </button>
+  );
+};
 
 type Message = {
   role: 'user' | 'assistant';
@@ -184,10 +211,97 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
     }
   }, [isOpen]);
 
+  const goTo = (route: string) => {
+    stopRecognition();
+    onClose();
+    navigate(route);
+  };
+
+  // ----- Jarvis: voice, greeting, instant commands -----
+  const [voiceOn, setVoiceOn] = React.useState(isVoiceEnabled);
+  const [listening, setListening] = React.useState(false);
+  const [speaking, setSpeaking] = React.useState(false);
+  const recRef = useRef<ReturnType<typeof createRecognizer>>(null);
+  const hasMic = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  const greeting = React.useMemo(() => buildGreeting(userName), [isOpen, userName]);
+  const lastSpokenRef = useRef<number>(-1);
+
+  const say = React.useCallback((text: string, after?: () => void) => {
+    if (!voiceOn) return after?.();
+    setSpeaking(true);
+    speak(text, () => { setSpeaking(false); after?.(); });
+  }, [voiceOn]);
+
+  function stopRecognition() {
+    try { recRef.current?.stop(); } catch { /* ignore */ }
+    setListening(false);
+  }
+
+  const send = (text: string) => {
+    const t = text.trim();
+    if (!t || isLoading) return;
+    const cmd = parseCommand(t);
+    if (cmd) {
+      if (voiceOn) speak(`Opening ${cmd.label}.`);
+      goTo(cmd.route);
+      return;
+    }
+    onSendMessage(t);
+  };
+
+  const toggleListen = () => {
+    if (listening) return stopRecognition();
+    stopSpeaking();
+    const r = createRecognizer();
+    if (!r) return;
+    recRef.current = r;
+    let finalText = '';
+    r.onresult = (e) => {
+      let txt = '';
+      for (let i = 0; i < e.results.length; i++) {
+        txt += e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText = txt;
+      }
+      setInput(txt);
+    };
+    r.onend = () => {
+      setListening(false);
+      if (finalText.trim()) { send(finalText); setInput(''); }
+    };
+    r.onerror = () => setListening(false);
+    setListening(true);
+    r.start();
+  };
+
+  const toggleVoice = () => {
+    const next = !voiceOn;
+    setVoiceOn(next);
+    setVoiceEnabled(next);
+    if (!next) { stopSpeaking(); setSpeaking(false); }
+  };
+
+  // Greet on open
+  useEffect(() => {
+    if (isOpen && messages.length === 0 && shouldGreet()) say(greeting);
+    if (!isOpen) { stopSpeaking(); setSpeaking(false); stopRecognition(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Read out each finished assistant reply
+  useEffect(() => {
+    if (!isOpen || isLoading) return;
+    const idx = messages.length - 1;
+    const last = messages[idx];
+    if (last?.role === 'assistant' && idx !== lastSpokenRef.current) {
+      if (lastSpokenRef.current !== -1 || messages.length > 1) say(last.content);
+      lastSpokenRef.current = idx;
+    }
+  }, [messages, isLoading, isOpen, say]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
-      onSendMessage(input);
+      send(input);
       setInput('');
     }
   };
@@ -199,16 +313,11 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
     }
   };
 
-  const goTo = (route: string) => {
-    onClose();
-    navigate(route);
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="relative flex w-full max-w-md flex-col overflow-hidden bg-gradient-to-b from-[#3d1a78] via-[#5b2ca8] to-[#7c3aed] shadow-2xl sm:h-[85vh] sm:max-h-[720px] sm:rounded-[32px]">
+      <div className="relative flex w-full max-w-md flex-col overflow-hidden bg-gradient-to-b from-[#0b0726] via-[#2a1466] to-[#5b2ca8] shadow-2xl sm:h-[85vh] sm:max-h-[720px] sm:rounded-[32px]">
         {/* Ambient glow */}
         <div className="pointer-events-none absolute -top-24 -left-16 h-64 w-64 rounded-full bg-fuchsia-400/30 blur-3xl" />
         <div className="pointer-events-none absolute -top-10 right-0 h-48 w-48 rounded-full bg-violet-300/20 blur-3xl" />
@@ -216,19 +325,22 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
         {/* Header */}
         <div className="relative flex items-center justify-between px-5 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur">
-              <img
-                src="/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png"
-                alt="MIA"
-                className="h-8 w-8 object-contain"
-              />
-            </div>
+            <JarvisOrb size="sm" state={listening ? 'listening' : speaking ? 'speaking' : isLoading ? 'thinking' : 'idle'} />
             <div className="text-white">
-              <h3 className="text-base font-semibold leading-tight">MIA</h3>
-              <p className="text-[11px] font-medium text-white/70">Your Islamic Companion</p>
+              <h3 className="text-base font-semibold leading-tight tracking-[0.2em]">M.I.A</h3>
+              <p className="text-[11px] font-medium text-cyan-200/80">
+                {listening ? 'Listening…' : speaking ? 'Speaking…' : isLoading ? 'Thinking…' : 'Online · Your Islamic Companion'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={toggleVoice}
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20"
+              title={voiceOn ? 'Mute MIA' : 'Let MIA speak'}
+            >
+              {voiceOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
             {messages.length > 0 && (
               <button
                 onClick={onClearMessages}
@@ -451,10 +563,11 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
         <ScrollArea className="relative flex-1 px-5" ref={scrollRef}>
           {messages.length === 0 ? (
             <div className="space-y-5 py-4">
-              <div className="rounded-3xl bg-white/10 p-5 text-white ring-1 ring-white/15 backdrop-blur">
-                <p className="text-lg font-semibold">Assalamu Alaikum 👋</p>
-                <p className="mt-1 text-sm text-white/80">
-                  I know your streak, next prayer, and the Hijri date. Ask me what to do right now — or tap a shortcut above.
+              <div className="flex flex-col items-center gap-4 py-2 text-center text-white">
+                <JarvisOrb size="lg" state={listening ? 'listening' : speaking ? 'speaking' : 'idle'} onClick={hasMic ? toggleListen : undefined} />
+                <p className="text-sm leading-relaxed text-white/90">{greeting}</p>
+                <p className="text-[11px] text-white/60">
+                  {hasMic ? 'Tap the orb and say “Open Qiblah”, “Show my streak”, or ask anything.' : 'Type “Open Qiblah”, “Show duas”, or ask anything.'}
                 </p>
               </div>
               <div className="space-y-2">
@@ -462,7 +575,7 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
                 {SUGGESTED_QUESTIONS.map((q, i) => (
                   <button
                     key={i}
-                    onClick={() => onSendMessage(q)}
+                    onClick={() => send(q)}
                     className="flex w-full items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-left text-sm text-white ring-1 ring-white/10 transition hover:bg-white/15"
                   >
                     <span>{q}</span>
@@ -544,6 +657,17 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
               rows={1}
               disabled={isLoading}
             />
+            {hasMic && (
+              <Button
+                type="button"
+                size="icon"
+                onClick={toggleListen}
+                aria-label={listening ? 'Stop listening' : 'Talk to MIA'}
+                className={`h-11 w-11 shrink-0 rounded-2xl text-white shadow-lg ${listening ? 'animate-pulse bg-gradient-to-br from-rose-500 to-fuchsia-600' : 'bg-gradient-to-br from-cyan-500 to-violet-600'}`}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               type="submit"
               size="icon"

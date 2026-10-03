@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Newspaper, Heart, Share2, BookmarkPlus, MessageCircle, Sparkles, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { DISCOVER_QA, DISCOVER_VIDEOS, type DiscoverQA, type DiscoverVideo } from "@/data/discoverContent";
+import { QACard, VideoCard } from "./DiscoverExtras";
+
+const PAGE = 5;
 
 const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
 
@@ -78,6 +82,36 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
 
   useEffect(() => { load(); }, []);
 
+  // Build a mixed feed: article, Q&A, video, repeating; order shuffled per day/refresh.
+  const [seed, setSeed] = useState(() => Math.floor(Date.now() / 86400000));
+  const feed = useMemo<FeedItem[]>(() => {
+    const rot = <T,>(arr: T[], n: number) => arr.map((_, k) => arr[(k + n) % arr.length]);
+    const qas = rot(DISCOVER_QA, seed % DISCOVER_QA.length);
+    const vids = rot(DISCOVER_VIDEOS, (seed * 7) % DISCOVER_VIDEOS.length);
+    const out: FeedItem[] = [];
+    const max = Math.max(articles.length, qas.length, vids.length);
+    for (let k = 0; k < max; k++) {
+      if (articles[k]) out.push({ kind: "article", a: articles[k], i: k });
+      if (qas[k]) out.push({ kind: "qa", q: qas[k] });
+      if (vids[k]) out.push({ kind: "video", v: vids[k] });
+    }
+    return out;
+  }, [articles, seed]);
+
+  const [visible, setVisible] = useState(PAGE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        window.setTimeout(() => setVisible((v) => Math.min(v + PAGE, feed.length)), 450);
+      }
+    }, { rootMargin: "300px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [feed.length, loading]);
+
   const handleShare = async (a: Article) => {
     try {
       if (navigator.share) {
@@ -126,9 +160,13 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
         </div>
       )}
 
-      {/* Vertical feed */}
+      {/* Mixed feed: articles, quick Q&As and short videos, lazily revealed */}
       <div className="space-y-5">
-        {articles.map((a, i) => {
+        {feed.slice(0, visible).map((item, fi) => {
+          if (item.kind === "video") return <VideoCard key={`v${fi}`} v={item.v} />;
+          if (item.kind === "qa") return <QACard key={`q${fi}`} q={item.q} />;
+          const a = item.a;
+          const i = item.i;
           const commentCount = a.comments?.length ?? 0;
           const isOpen = !!openComments[i];
           return (
@@ -245,6 +283,17 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
             </div>
           );
         })}
+      </div>
+      <div ref={sentinelRef} className="py-6 flex justify-center">
+        {visible < feed.length ? (
+          <div className="flex gap-1.5" aria-label="Loading more">
+            <span className="h-2 w-2 rounded-full bg-primary animate-bounce" />
+            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:120ms]" />
+            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:240ms]" />
+          </div>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">You're all caught up · pull refresh for more</p>
+        )}
       </div>
     </div>
   );
