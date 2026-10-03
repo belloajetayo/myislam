@@ -178,19 +178,31 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
     }
   }, [initialPage]);
 
+  // Track last reported surah number to completely prevent re-render loops
+  const lastSurahNumRef = useRef<number>(-1);
+  const onSurahChangeRef = useRef(onSurahChange);
+  useEffect(() => {
+    onSurahChangeRef.current = onSurahChange;
+  }, [onSurahChange]);
+
   // Save last read page in localStorage
   useEffect(() => {
-    localStorage.setItem("mushaf_last_read_page", String(currentPage));
+    try {
+      localStorage.setItem("mushaf_last_read_page", String(currentPage));
+    } catch {}
     const surahNum = getPrimarySurahNumberForPage(currentPage);
-    onSurahChange?.(surahNum);
-  }, [currentPage, onSurahChange]);
+    if (surahNum !== lastSurahNumRef.current) {
+      lastSurahNumRef.current = surahNum;
+      onSurahChangeRef.current?.(surahNum);
+    }
+  }, [currentPage]);
 
   // Save theme preference
   useEffect(() => {
     localStorage.setItem("mushaf_theme", theme);
   }, [theme]);
 
-  // Preload adjacent pages for instant navigation
+  // Preload and cache adjacent pages for instant navigation
   useEffect(() => {
     const pagesToPreload = [
       currentPage + 1,
@@ -199,9 +211,20 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
       currentPage - 2,
     ].filter((p) => p >= 1 && p <= TOTAL_MUSHAF_PAGES);
 
-    pagesToPreload.forEach((p) => {
+    pagesToPreload.forEach(async (p) => {
+      const url = getMushafPageImageUrl(p, quality);
       const img = new Image();
-      img.src = getMushafPageImageUrl(p, quality);
+      img.src = url;
+      if ("caches" in window) {
+        try {
+          const cache = await caches.open("mushaf-pages-cache");
+          const has = await cache.match(url);
+          if (!has) {
+            const res = await fetch(url, { mode: "cors" });
+            if (res.ok) await cache.put(url, res);
+          }
+        } catch {}
+      }
     });
   }, [currentPage, quality]);
 
@@ -603,6 +626,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                     alt={`Madani Mushaf Page ${leftPage}`}
                     className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
+                    decoding="async"
                   />
                   {/* Subtle inner curvature shadow into spine */}
                   <div
@@ -645,6 +669,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                     alt={`Madani Mushaf Page ${rightPage}`}
                     className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
+                    decoding="async"
                   />
                 </div>
 
@@ -685,6 +710,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                   alt={`Madani Mushaf Page ${currentPage}`}
                   className={`max-h-[80vh] sm:max-h-[83vh] w-auto object-contain pointer-events-none select-none transition-all duration-200 ${activeTheme.filterClass}`}
                   loading="eager"
+                  decoding="async"
                   onLoad={() => setIsLoadingPage(false)}
                   onLoadStart={() => setIsLoadingPage(true)}
                 />

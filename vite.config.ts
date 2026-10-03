@@ -26,6 +26,20 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/api/, /^\/~oauth/, /^\/push-sw\.js/],
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/files\.quran\.app\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mushaf-pages-cache',
+              expiration: {
+                maxEntries: 650,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/api\.alquran\.cloud\/.*/i,
             handler: 'CacheFirst',
             options: {

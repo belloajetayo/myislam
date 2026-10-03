@@ -9,7 +9,6 @@ import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import PrayerTopBar from "@/components/home/PrayerTopBar";
 import DailyCards from "@/components/home/DailyCards"; // v3
-import { QuranHomeCard } from "@/components/home/QuranHomeCard";
 import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather, Headphones } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
@@ -299,7 +298,6 @@ const Index: React.FC = () => { // v5
 
           <PrayerTopBar />
           <QuickShortcuts />
-          <QuranHomeCard />
           <ProgressTracker />
           <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
