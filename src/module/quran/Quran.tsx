@@ -45,7 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { MushafPageView } from "@/components/quran/MushafPageView";
 import { MushafTranslationPeek } from "@/components/quran/MushafTranslationPeek";
-import { SURAH_START_PAGES } from "@/data/mushafPageData";
+import { SURAH_START_PAGES, toArabicDigits } from "@/data/mushafPageData";
 
 // Hadith Collection
 const hadithCollection = [
