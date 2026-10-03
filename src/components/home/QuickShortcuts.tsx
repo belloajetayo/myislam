@@ -20,7 +20,7 @@ const extraShortcuts = [
   { icon: Heart, label: 'Donate', color: 'from-red-500 to-pink-600', route: '/donation' },
   { icon: User, label: 'Profile', color: 'from-slate-500 to-gray-600', route: '/profile' },
   { icon: Sparkles, label: 'Tasbih', color: 'from-emerald-600 to-teal-700', route: '/tasbih' },
-  { icon: BookOpen, label: 'Mushaf', color: 'from-amber-600 to-orange-600', route: '/quran' },
+  { icon: BookOpen, label: 'Mushaf', color: 'from-amber-600 to-orange-600', route: '/quran?view=mushaf' },
   { icon: Moon, label: 'Ramadan', color: 'from-blue-600 to-indigo-700', route: '/fasting' },
 ];
 

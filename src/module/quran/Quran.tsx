@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import ClassicMushafView from "@/components/quran/ClassicMushafView";
 
 // Hadith Collection
 const hadithCollection = [
@@ -435,7 +436,10 @@ const Quran: React.FC = () => {
 
   const [showTransliteration, setShowTransliteration] = useState(true);
   const activeAyahRef = useRef<HTMLElement | null>(null);
-  const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
+  const viewParam = searchParams.get("view");
+  const [arabicOnlyMode, setArabicOnlyMode] = useState<boolean>(() => {
+    return viewParam === "mushaf" || true;
+  });
 
 
   const {
@@ -942,54 +946,18 @@ const Quran: React.FC = () => {
             </div>
           </div>
 
-          {/* Arabic-Only Mushaf Mode */}
+          {/* Authentic Mushaf Page View (Matching Screenshot) */}
           {arabicOnlyMode ? (
-            <>
-              {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
-                <div className="p-6 text-center border-b border-primary/10 bg-gradient-to-b from-amber-50/50 to-transparent dark:from-amber-900/10">
-                  <p className="font-arabic text-3xl text-foreground leading-relaxed">
-                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-                  </p>
-                </div>
-              )}
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6 pb-12 bg-gradient-to-b from-amber-50/30 to-transparent dark:from-amber-900/5">
-                  {/* Surah Name Header */}
-                  <div className="text-center mb-8">
-                    <p className="font-arabic text-4xl text-foreground mb-2">
-                      {selectedSurah.name}
-                    </p>
-                    <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent mx-auto" />
-                  </div>
-
-                  {/* Continuous Arabic Text - Like a real Mushaf */}
-                  <div className="font-arabic text-2xl md:text-3xl text-foreground text-right leading-[2.5] tracking-wide">
-                    {selectedSurah.ayahs.map((ayah, index) => (
-                      <span
-                        key={ayah.number}
-                        id={`ayah-${selectedSurah.number}-${ayah.numberInSurah}`}
-                        ref={
-                          isViewingCurrentSurah && currentAyahIndex === index
-                            ? (activeAyahRef as React.RefObject<HTMLSpanElement>)
-                            : null
-                        }
-                        className={`cursor-pointer hover:text-primary transition-colors ${
-                          isViewingCurrentSurah && currentAyahIndex === index && isPlaying
-                            ? "text-primary bg-primary/10 rounded px-1"
-                            : ""
-                        }`}
-                        onClick={() => playAyah(index)}
-                      >
-                        {ayah.text}
-                        <span className="inline-flex items-center justify-center w-8 h-8 mx-1 text-sm bg-primary/10 rounded-full text-primary font-sans">
-                          {ayah.numberInSurah}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
+            <ClassicMushafView
+              surah={selectedSurah}
+              isPlaying={isPlaying}
+              currentAyahIndex={currentAyahIndex}
+              onPlayAyah={(idx) => playAyah(idx)}
+              onTogglePlayPause={handleTogglePlayPause}
+              onNextSurah={goToNextSurah}
+              onPrevSurah={goToPreviousSurah}
+              activeAyahRef={activeAyahRef}
+            />
           ) : (
             <>
               {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
