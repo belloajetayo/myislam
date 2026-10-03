@@ -317,7 +317,7 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="relative flex w-full max-w-md flex-col overflow-hidden bg-gradient-to-b from-[#3d1a78] via-[#5b2ca8] to-[#7c3aed] shadow-2xl sm:h-[85vh] sm:max-h-[720px] sm:rounded-[32px]">
+      <div className="relative flex w-full max-w-md flex-col overflow-hidden bg-gradient-to-b from-[#0b0726] via-[#2a1466] to-[#5b2ca8] shadow-2xl sm:h-[85vh] sm:max-h-[720px] sm:rounded-[32px]">
         {/* Ambient glow */}
         <div className="pointer-events-none absolute -top-24 -left-16 h-64 w-64 rounded-full bg-fuchsia-400/30 blur-3xl" />
         <div className="pointer-events-none absolute -top-10 right-0 h-48 w-48 rounded-full bg-violet-300/20 blur-3xl" />
