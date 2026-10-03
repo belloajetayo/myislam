@@ -81,7 +81,7 @@ const mainNavItems = [
 const islamicToolsSubmenu = [
   { label: "Digital Tasbih", to: "/tasbih", icon: Sparkles },
   { label: "Islamic Calendar", to: "/calendar", icon: Calendar },
-  { label: "Duas Library", to: "/quran?tab=dua", icon: BookMarked },
+  { label: "Duas Library", to: "/duas", icon: BookMarked },
   { label: "Hadith Collection", to: "/quran?tab=hadith", icon: ScrollText },
   { label: "Prophet's Life", to: "/quran?tab=prophets", icon: Star },
   { label: "Zakat Calculator", to: "/zakat", icon: Hand },

@@ -175,7 +175,7 @@ const App = () => {
                 <Route path="/hadith" element={<Navigate to="/quran?tab=hadith" replace />} />
                 <Route path="/prophet" element={<Navigate to="/quran?tab=prophets" replace />} />
                 <Route path="/prophets" element={<Navigate to="/quran?tab=prophets" replace />} />
-                <Route path="/dua-categories" element={<Navigate to="/quran?tab=dua" replace />} />
+                <Route path="/dua-categories" element={<Navigate to="/duas" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

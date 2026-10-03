@@ -1138,7 +1138,7 @@ const Qiblah: React.FC = () => {
           <header className="w-full mb-4 animate-fade-in">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-900 dark:text-white" />

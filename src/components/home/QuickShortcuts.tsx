@@ -11,7 +11,7 @@ const primaryShortcuts = [
 ];
 
 const extraShortcuts = [
-  { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/quran?tab=dua' },
+  { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/duas' },
   { icon: ScrollText, label: 'Hadith', color: 'from-orange-500 to-amber-600', route: '/quran?tab=hadith' },
   { icon: Star, label: 'Prophet', color: 'from-yellow-500 to-orange-500', route: '/quran?tab=prophets' },
   { icon: Calendar, label: 'Calendar', color: 'from-indigo-500 to-blue-600', route: '/calendar' },

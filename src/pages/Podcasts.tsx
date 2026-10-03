@@ -210,7 +210,7 @@ const Podcasts: React.FC = () => {
       <div className="p-4 space-y-5 pb-8">
         {/* Header */}
         <header className="flex items-center gap-3 py-3">
-          <button onClick={() => navigate("/")} className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/60 dark:bg-white/5 border border-indigo-100 dark:border-indigo-800">
+          <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))} className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/60 dark:bg-white/5 border border-indigo-100 dark:border-indigo-800">
             <ArrowLeft className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
           </button>
           <div className="flex-1">

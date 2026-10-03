@@ -77,36 +77,74 @@ export function useProgress() {
   const togglePrayer = (prayerName: string) => {
     setProgress((prev) => {
       const isCompleted = prev.prayersCompleted.includes(prayerName);
+      const newPrayers = isCompleted
+        ? prev.prayersCompleted.filter((p) => p !== prayerName)
+        : [...prev.prayersCompleted, prayerName];
+      const hasActivity = newPrayers.length > 0 || prev.quranPagesRead > 0 || (prev.duasRead ?? 0) > 0;
       return {
         ...prev,
-        lastActiveDate: getTodayString(), // ensure today is marked
-        prayersCompleted: isCompleted
-          ? prev.prayersCompleted.filter((p) => p !== prayerName)
-          : [...prev.prayersCompleted, prayerName],
+        lastActiveDate: getTodayString(),
+        prayersCompleted: newPrayers,
+        streak: prev.streak === 0 && hasActivity ? 1 : prev.streak,
+      };
+    });
+  };
+
+  const toggleAllPrayers = () => {
+    setProgress((prev) => {
+      const allPrayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+      const allDone = allPrayers.every((p) => prev.prayersCompleted.includes(p));
+      const newPrayers = allDone ? [] : allPrayers;
+      const hasActivity = newPrayers.length > 0 || prev.quranPagesRead > 0 || (prev.duasRead ?? 0) > 0;
+      return {
+        ...prev,
+        lastActiveDate: getTodayString(),
+        prayersCompleted: newPrayers,
+        streak: prev.streak === 0 && hasActivity ? 1 : prev.streak,
       };
     });
   };
 
   const addQuranPages = (pages: number) => {
-    setProgress((prev) => ({
-      ...prev,
-      lastActiveDate: getTodayString(),
-      quranPagesRead: prev.quranPagesRead + pages,
-    }));
+    setProgress((prev) => {
+      const newPages = prev.quranPagesRead + pages;
+      return {
+        ...prev,
+        lastActiveDate: getTodayString(),
+        quranPagesRead: newPages,
+        streak: prev.streak === 0 && newPages > 0 ? 1 : prev.streak,
+      };
+    });
   };
 
-  const addDua = () => {
+  const addDua = (count = 1) => {
+    setProgress((prev) => {
+      const newDuas = (prev.duasRead ?? 0) + count;
+      return {
+        ...prev,
+        lastActiveDate: getTodayString(),
+        duasRead: newDuas,
+        streak: prev.streak === 0 && newDuas > 0 ? 1 : prev.streak,
+      };
+    });
+  };
+
+  const resetDailyProgress = () => {
     setProgress((prev) => ({
       ...prev,
       lastActiveDate: getTodayString(),
-      duasRead: (prev.duasRead ?? 0) + 1,
+      prayersCompleted: [],
+      quranPagesRead: 0,
+      duasRead: 0,
     }));
   };
 
   return {
     progress,
     togglePrayer,
+    toggleAllPrayers,
     addQuranPages,
     addDua,
+    resetDailyProgress,
   };
 }

@@ -328,7 +328,7 @@ const Profile: React.FC = () => {
         {/* ── Header ── */}
         <header className="sticky top-0 z-10 px-4 pt-4 pb-3 flex items-center gap-3 bg-background/80 backdrop-blur-md border-b border-border/40">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
             className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-primary/20"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />

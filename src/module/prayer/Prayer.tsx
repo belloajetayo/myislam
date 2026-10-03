@@ -190,8 +190,8 @@ const Prayer: React.FC = () => {
         {/* Header */}
         <header className="flex items-center gap-4 py-2 animate-fade-in">
           <button
-            onClick={() => navigate("/")}
-            aria-label="Back to home"
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+            aria-label="Back"
             className="w-10 h-10 glass rounded-2xl flex items-center justify-center border border-islamic-gold/40 bg-background/40 shrink-0"
           >
             <ArrowLeft className="w-5 h-5 text-islamic-gold" />

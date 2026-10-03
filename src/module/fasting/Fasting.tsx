@@ -328,7 +328,7 @@ const Fasting: React.FC = () => {
         {/* Header */}
         <header className="sticky top-0 z-10 flex items-center gap-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 px-4 -mt-4 mb-2">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
             className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
           >
             <ArrowLeft className="w-5 h-5 text-primary-foreground" />
