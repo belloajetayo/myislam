@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import QiblahCompass from "@/components/home/QiblahCompass";
 import MIAAssistant from "@/components/home/MIAAssistant";
-import IslamicCalendar from "@/components/home/IslamicCalendar";
+import PrayerTimeCard from "@/components/home/PrayerTimeCard";
 import QuickShortcuts from "@/components/home/QuickShortcuts";
 import ProgressTracker from "@/components/home/ProgressTracker";
 import IslamicFeed from "@/components/home/IslamicFeed";
@@ -301,7 +301,7 @@ const Index: React.FC = () => { // v5
           <ProgressTracker />
           <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />
-          <IslamicCalendar onAskMIA={handleAskMIA} />
+          <PrayerTimeCard onAskMIA={handleAskMIA} />
           <CommunityFeed />
 
           {!isOpen && (() => {
