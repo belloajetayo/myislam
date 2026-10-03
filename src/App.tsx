@@ -20,8 +20,11 @@ import NotFound from "./pages/NotFound";
 import Podcasts from "./pages/Podcasts";
 import Progress from "./pages/Progress";
 import Duas from "./pages/Duas";
+import Tasbih from "./pages/Tasbih";
+import Calendar from "./pages/Calendar";
 import { AudioProvider } from "./context/AudioContext";
 import { LocationProvider } from "./context/LocationContext";
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -166,6 +169,13 @@ const App = () => {
                 <Route path="/podcasts" element={<Podcasts />} />
                 <Route path="/progress" element={<Progress />} />
                 <Route path="/duas" element={<Duas />} />
+                <Route path="/tasbih" element={<Tasbih />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/islamic-calendar" element={<Calendar />} />
+                <Route path="/hadith" element={<Navigate to="/quran?tab=hadith" replace />} />
+                <Route path="/prophet" element={<Navigate to="/quran?tab=prophets" replace />} />
+                <Route path="/prophets" element={<Navigate to="/quran?tab=prophets" replace />} />
+                <Route path="/dua-categories" element={<Navigate to="/quran?tab=dua" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -68,9 +68,11 @@ const setCachedData = <T>(key: string, data: T, permanent: boolean = false): voi
   }
 };
 
+import { STATIC_SURAHS } from "@/data/quranStaticData";
+
 export const useQuranData = () => {
-  const [surahs, setSurahs] = useState<Surah[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [surahs, setSurahs] = useState<Surah[]>(STATIC_SURAHS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioEditions, setAudioEditions] = useState<AudioEdition[]>([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);

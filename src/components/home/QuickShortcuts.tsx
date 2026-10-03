@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, User, Compass } from 'lucide-react';
+import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, User, Compass, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const primaryShortcuts = [
-  { icon: BookOpen, label: 'Quran', color: 'from-emerald-500 to-teal-600', route: '/quran' },
+  { icon: BookOpen, label: 'Iman', color: 'from-emerald-500 to-teal-600', route: '/quran' },
   { icon: HandHeart, label: 'Salat', color: 'from-blue-500 to-indigo-600', route: '/prayer' },
   { icon: Droplets, label: 'Zakat', color: 'from-amber-500 to-orange-600', route: '/zakat' },
   { icon: Moon, label: 'Sawm', color: 'from-purple-500 to-violet-600', route: '/fasting' },
@@ -14,12 +14,13 @@ const extraShortcuts = [
   { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/quran?tab=dua' },
   { icon: ScrollText, label: 'Hadith', color: 'from-orange-500 to-amber-600', route: '/quran?tab=hadith' },
   { icon: Star, label: 'Prophet', color: 'from-yellow-500 to-orange-500', route: '/quran?tab=prophets' },
-  { icon: Calendar, label: 'Calendar', color: 'from-indigo-500 to-blue-600', route: '/' },
+  { icon: Calendar, label: 'Calendar', color: 'from-indigo-500 to-blue-600', route: '/calendar' },
   { icon: Compass, label: 'Qiblah', color: 'from-green-500 to-emerald-600', route: '/qiblah' },
   { icon: Users, label: 'Community', color: 'from-pink-500 to-rose-600', route: '/' },
   { icon: Heart, label: 'Donate', color: 'from-red-500 to-pink-600', route: '/donation' },
   { icon: User, label: 'Profile', color: 'from-slate-500 to-gray-600', route: '/profile' },
-  { icon: BookOpen, label: 'Quran', color: 'from-emerald-600 to-teal-700', route: '/quran' },
+  { icon: Sparkles, label: 'Tasbih', color: 'from-emerald-600 to-teal-700', route: '/tasbih' },
+  { icon: BookOpen, label: 'Mushaf', color: 'from-amber-600 to-orange-600', route: '/quran' },
   { icon: Moon, label: 'Ramadan', color: 'from-blue-600 to-indigo-700', route: '/fasting' },
 ];
 

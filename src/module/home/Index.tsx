@@ -9,6 +9,7 @@ import IslamicFeed from "@/components/home/IslamicFeed";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import PrayerTopBar from "@/components/home/PrayerTopBar";
 import DailyCards from "@/components/home/DailyCards"; // v3
+import { QuranHomeCard } from "@/components/home/QuranHomeCard";
 import { Sparkles, Menu, ChevronDown, ChevronRight, Home, Clock, Compass, BookOpen, Calendar, Hand, Heart, MapPin, LogIn, User, BookMarked, Star, ScrollText, Feather, Headphones } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
@@ -79,14 +80,14 @@ const mainNavItems = [
 ];
 
 const islamicToolsSubmenu = [
-  { label: "Islamic Calendar", to: "/islamic-calendar", icon: Calendar },
-  { label: "Duas Library", to: "/duas", icon: BookMarked },
+  { label: "Digital Tasbih", to: "/tasbih", icon: Sparkles },
+  { label: "Islamic Calendar", to: "/calendar", icon: Calendar },
+  { label: "Duas Library", to: "/quran?tab=dua", icon: BookMarked },
+  { label: "Hadith Collection", to: "/quran?tab=hadith", icon: ScrollText },
+  { label: "Prophet's Life", to: "/quran?tab=prophets", icon: Star },
   { label: "Zakat Calculator", to: "/zakat", icon: Hand },
   { label: "Fasting Tracker", to: "/fasting", icon: Heart },
   { label: "Hajj Guide", to: "/hajj", icon: MapPin },
-  { label: "Hadith Collection", to: "/hadith", icon: ScrollText },
-  { label: "Prophet's Life", to: "/prophet", icon: Star },
-  { label: "Dua Categories", to: "/dua-categories", icon: Feather },
   { label: "Podcasts", to: "/podcasts", icon: Headphones },
 ];
 
@@ -298,6 +299,7 @@ const Index: React.FC = () => { // v5
 
           <PrayerTopBar />
           <QuickShortcuts />
+          <QuranHomeCard />
           <ProgressTracker />
           <DailyCards />
           <IslamicFeed onArticleClick={handleDiscoverClick} />

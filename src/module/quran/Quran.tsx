@@ -20,7 +20,6 @@ import {
   SkipBack,
   WifiOff,
   BookText,
-  Download,
   Check,
   ArrowUpToLine,
 } from "lucide-react";
@@ -44,6 +43,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { MushafPageView } from "@/components/quran/MushafPageView";
+import { MushafTranslationPeek } from "@/components/quran/MushafTranslationPeek";
+import { SURAH_START_PAGES } from "@/data/mushafPageData";
 
 // Hadith Collection
 const hadithCollection = [
@@ -433,12 +435,31 @@ const Quran: React.FC = () => {
   const [bookmarkedSurahs, setBookmarkedSurahs] = useState<number[]>([
     36, 67, 112,
   ]);
-  const [downloadingSurah, setDownloadingSurah] = useState<number | null>(null);
-  const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>([]);
 
   const [showTransliteration, setShowTransliteration] = useState(true);
   const activeAyahRef = useRef<HTMLElement | null>(null);
   const [arabicOnlyMode, setArabicOnlyMode] = useState(false);
+  const [mushafStandaloneOpen, setMushafStandaloneOpen] = useState(false);
+  const [mushafPage, setMushafPage] = useState<number>(() => {
+    const saved = localStorage.getItem("mushaf_last_read_page");
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [translationPeekOpen, setTranslationPeekOpen] = useState(false);
+  const [peekSurahDetail, setPeekSurahDetail] = useState<SurahDetail | null>(null);
+  const [peekPage, setPeekPage] = useState(1);
+
+  const handleOpenTranslationPeek = async (surahNumber: number, page: number) => {
+    setPeekPage(page);
+    try {
+      const detail = await fetchSurahDetail(surahNumber);
+      if (detail) {
+        setPeekSurahDetail(detail);
+        setTranslationPeekOpen(true);
+      }
+    } catch {
+      toast.error("Could not load translation for this page");
+    }
+  };
 
   const {
     surahs,
@@ -447,23 +468,8 @@ const Quran: React.FC = () => {
     fetchSurahDetail,
     audioEditions,
     isOffline,
-    getCachedSurahCount,
-    downloadAllForOffline,
   } = useQuranData();
   const fetchSurahDetailRef = useRef(fetchSurahDetail);
-  const [savingOffline, setSavingOffline] = useState(false);
-  const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
-
-  const handleSaveAllOffline = async () => {
-    if (savingOffline) return;
-    setSavingOffline(true);
-    setSaveProgress({ current: 0, total: surahs.length });
-    await downloadAllForOffline((current, total) => {
-      setSaveProgress({ current, total });
-    });
-    setSavingOffline(false);
-    toast.success('Quran saved for offline reading 📖');
-  };
 
   useEffect(() => {
     fetchSurahDetailRef.current = fetchSurahDetail;
@@ -487,48 +493,6 @@ const Quran: React.FC = () => {
   const handleLogPage = () => {
     addQuranPages(1);
     toast.success("Logged 1 page of Quran read today! Mashallah.");
-  };
-
-  // Check which surahs are already cached
-  useEffect(() => {
-    const checkCachedSurahs = () => {
-      const cached: number[] = [];
-      for (let i = 1; i <= 114; i++) {
-        const key = `quran_cache_surah_${i}_ar.alafasy`;
-        if (localStorage.getItem(key)) {
-          cached.push(i);
-        }
-      }
-      setDownloadedSurahs(cached);
-    };
-    checkCachedSurahs();
-  }, []);
-
-  const handleDownloadSurah = async (
-    surahNumber: number,
-    e: React.MouseEvent,
-  ) => {
-    e.stopPropagation();
-    if (
-      downloadedSurahs.includes(surahNumber) ||
-      downloadingSurah === surahNumber
-    )
-      return;
-
-    setDownloadingSurah(surahNumber);
-    try {
-      const detail = await fetchSurahDetail(surahNumber, selectedReciter);
-      if (detail) {
-        setDownloadedSurahs((prev) => [...prev, surahNumber]);
-        toast.success(`Surah ${surahNumber} downloaded for offline reading`);
-      } else {
-        toast.error("Failed to download surah");
-      }
-    } catch (err) {
-      toast.error("Failed to download surah");
-    } finally {
-      setDownloadingSurah(null);
-    }
   };
 
   // Popular reciters for easy access
@@ -567,7 +531,25 @@ const Quran: React.FC = () => {
       p.arabicName.includes(searchQuery),
   );
 
-  const handleSurahClick = async (surahNumber: number) => {
+  const handleSurahClick = (surahNumber: number) => {
+    const page = SURAH_START_PAGES[surahNumber] ?? 1;
+    setMushafPage(page);
+    setMushafStandaloneOpen(true);
+    const surah = surahs.find((s) => s.number === surahNumber);
+    if (surah) {
+      localStorage.setItem("myislam_last_read_surah_number", surahNumber.toString());
+      localStorage.setItem("myislam_last_read_surah_name", surah.englishName);
+      localStorage.setItem("myislam_last_read_surah_translation", surah.englishNameTranslation);
+      setLastReadSurah({
+        number: surahNumber,
+        name: surah.englishName,
+        translation: surah.englishNameTranslation,
+      });
+    }
+  };
+
+  const handleOpenVerseReader = async (surahNumber: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setLoadingSurah(true);
     const detail = await fetchSurahDetail(surahNumber, selectedReciter);
     if (detail) {
@@ -578,7 +560,7 @@ const Quran: React.FC = () => {
       setLastReadSurah({
         number: surahNumber,
         name: detail.englishName,
-        translation: detail.englishNameTranslation
+        translation: detail.englishNameTranslation,
       });
     }
     setLoadingSurah(false);
@@ -774,6 +756,61 @@ const Quran: React.FC = () => {
     );
   };
 
+  // Standalone Authentic Madani Mushaf View (604 Pages)
+  if (mushafStandaloneOpen) {
+    return (
+      <MobileLayout showNav={false}>
+        <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background/90 backdrop-blur-md z-30">
+            <button
+              onClick={() => setMushafStandaloneOpen(false)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl hover:bg-muted text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Quran</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gradient-gold">Authentic Madani Mushaf</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20">
+                15-Line Standard
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden relative">
+            <MushafPageView
+              initialPage={mushafPage}
+              onSurahChange={(surahNum) => {
+                const s = surahs.find((item) => item.number === surahNum);
+                if (s) {
+                  setLastReadSurah({
+                    number: s.number,
+                    name: s.englishName,
+                    translation: s.englishNameTranslation,
+                  });
+                }
+              }}
+              onOpenTranslationPeek={(surahNum, p) => handleOpenTranslationPeek(surahNum, p)}
+              onPlaySurahAudio={async (surahNum) => {
+                const s = await fetchSurahDetail(surahNum);
+                if (s) playSurah(s);
+              }}
+              isPlayingAudio={isPlaying}
+            />
+          </div>
+          <MushafTranslationPeek
+            isOpen={translationPeekOpen}
+            onClose={() => setTranslationPeekOpen(false)}
+            page={peekPage}
+            surahDetail={peekSurahDetail}
+            onPlayAyah={(idx) => playAyah(idx)}
+            currentPlayingIndex={currentAyahIndex}
+            isPlaying={isPlaying}
+          />
+        </div>
+      </MobileLayout>
+    );
+  }
+
   // Surah Detail View with Audio
   if (selectedSurah) {
     return (
@@ -850,7 +887,8 @@ const Quran: React.FC = () => {
 
         {/* Normal scroll mode */}
         {!verseMode && (
-          <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
+          <>
+            <header className="sticky top-0 z-10 p-4 flex items-center gap-4 border-b border-primary/10 bg-background/95 backdrop-blur-sm">
             <button
               onClick={() => setSelectedSurah(null)}
               className="w-10 h-10 rounded-2xl flex items-center justify-center gradient-primary shadow-soft"
@@ -993,54 +1031,32 @@ const Quran: React.FC = () => {
             </div>
           </div>
 
-          {/* Arabic-Only Mushaf Mode */}
+          {/* Authentic Madani Mushaf Mode (604 Pages) */}
           {arabicOnlyMode ? (
-            <>
-              {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
-                <div className="p-6 text-center border-b border-primary/10 bg-gradient-to-b from-amber-50/50 to-transparent dark:from-amber-900/10">
-                  <p className="font-arabic text-3xl text-foreground leading-relaxed">
-                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-                  </p>
-                </div>
-              )}
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6 pb-12 bg-gradient-to-b from-amber-50/30 to-transparent dark:from-amber-900/5">
-                  {/* Surah Name Header */}
-                  <div className="text-center mb-8">
-                    <p className="font-arabic text-4xl text-foreground mb-2">
-                      {selectedSurah.name}
-                    </p>
-                    <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent mx-auto" />
-                  </div>
-
-                  {/* Continuous Arabic Text - Like a real Mushaf */}
-                  <div className="font-arabic text-2xl md:text-3xl text-foreground text-right leading-[2.5] tracking-wide">
-                    {selectedSurah.ayahs.map((ayah, index) => (
-                      <span
-                        key={ayah.number}
-                        id={`ayah-${selectedSurah.number}-${ayah.numberInSurah}`}
-                        ref={
-                          isViewingCurrentSurah && currentAyahIndex === index
-                            ? (activeAyahRef as React.RefObject<HTMLSpanElement>)
-                            : null
-                        }
-                        className={`cursor-pointer hover:text-primary transition-colors ${
-                          isViewingCurrentSurah && currentAyahIndex === index && isPlaying
-                            ? "text-primary bg-primary/10 rounded px-1"
-                            : ""
-                        }`}
-                        onClick={() => playAyah(index)}
-                      >
-                        {ayah.text}
-                        <span className="inline-flex items-center justify-center w-8 h-8 mx-1 text-sm bg-primary/10 rounded-full text-primary font-sans">
-                          {ayah.numberInSurah}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
+            <div className="flex-1 flex flex-col h-full min-h-[500px] overflow-hidden relative">
+              <MushafPageView
+                initialPage={SURAH_START_PAGES[selectedSurah.number] ?? 1}
+                initialSurahNumber={selectedSurah.number}
+                onOpenTranslationPeek={(surahNum, p) => handleOpenTranslationPeek(surahNum, p)}
+                onPlaySurahAudio={() => {
+                  if (isPlaying) {
+                    pauseAudio();
+                  } else {
+                    playSurah(selectedSurah);
+                  }
+                }}
+                isPlayingAudio={isPlaying}
+              />
+              <MushafTranslationPeek
+                isOpen={translationPeekOpen}
+                onClose={() => setTranslationPeekOpen(false)}
+                page={peekPage}
+                surahDetail={peekSurahDetail || selectedSurah}
+                onPlayAyah={(idx) => playAyah(idx)}
+                currentPlayingIndex={currentAyahIndex}
+                isPlaying={isPlaying}
+              />
+            </div>
           ) : (
             <>
               {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
@@ -1122,7 +1138,9 @@ const Quran: React.FC = () => {
           >
             <ArrowUpToLine className="w-5 h-5" />
           </button>
-        </div>
+        </>
+      )}
+    </div>
       </MobileLayout>
     );
   }
@@ -1502,6 +1520,40 @@ const Quran: React.FC = () => {
               </div>
             </div>
 
+            {/* Authentic Madani Mushaf Banner */}
+            <div
+              onClick={() => {
+                const saved = localStorage.getItem("mushaf_last_read_page");
+                setMushafPage(saved ? parseInt(saved, 10) : 1);
+                setMushafStandaloneOpen(true);
+              }}
+              className="cursor-pointer group relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent hover:border-amber-500/60 shadow-soft transition-all duration-300 animate-slide-up"
+              style={{ animationDelay: "0.18s" }}
+            >
+              <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/10 blur-xl pointer-events-none" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                      Authentic Mushaf
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      604 Madani Pages
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    The Holy Qur'an (Hard Copy)
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-[280px]">
+                    15-line King Fahd Glorious Printing Complex pages with 4 paper themes & bookmarks.
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:scale-105 active:scale-95 transition-transform flex-shrink-0 ml-3">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
             {loading && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -1518,100 +1570,73 @@ const Quran: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gradient-gold">
-                    All Surahs
+                    All Surahs (١١٤ سورة)
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {downloadedSurahs.length} cached
-                    </span>
-                    <span className="text-xs text-muted-foreground">•</span>
                     <span className="text-xs text-muted-foreground">
                       {filteredSurahs.length} surahs
                     </span>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleSaveAllOffline}
-                  disabled={savingOffline}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 text-white text-sm font-bold shadow-sm active:scale-95 transition-all disabled:opacity-70"
-                >
-                  {savingOffline ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving {saveProgress.current}/{saveProgress.total}...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      Save All for Offline
-                    </>
-                  )}
-                </button>
                 {filteredSurahs.map((surah, index) => (
-                  <button
+                  <div
                     key={surah.number}
                     onClick={() => handleSurahClick(surah.number)}
-                    className="w-full glass rounded-2xl p-4 border border-primary/10 flex items-center gap-4 hover:shadow-soft transition-all duration-300 animate-slide-up"
+                    className="w-full glass rounded-2xl p-4 border border-primary/10 flex items-center gap-4 hover:shadow-soft transition-all duration-300 animate-slide-up group cursor-pointer"
                     style={{
-                      animationDelay: `${0.1 + Math.min(index, 10) * 0.02}s`,
+                      animationDelay: `${0.04 + Math.min(index, 10) * 0.02}s`,
                     }}
                   >
-                    <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft">
+                    <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-soft group-hover:scale-105 transition-transform flex-shrink-0">
                       <span className="text-sm font-bold text-primary-foreground">
                         {surah.number}
                       </span>
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 min-w-0 text-left">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-foreground">
+                        <h4 className="font-semibold text-foreground truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                           {surah.englishName}
                         </h4>
                         <button
-                          onClick={(e) => toggleBookmark(surah.number, e)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBookmark(surah.number, e);
+                          }}
+                          className="p-1 rounded-lg hover:bg-muted"
+                          title="Bookmark"
                         >
                           <Bookmark
-                            className={`w-3 h-3 ${bookmarkedSurahs.includes(surah.number) ? "text-islamic-gold fill-islamic-gold" : "text-muted-foreground"}`}
+                            className={`w-3.5 h-3.5 ${
+                              bookmarkedSurahs.includes(surah.number)
+                                ? "text-islamic-gold fill-islamic-gold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
                           />
                         </button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {surah.numberOfAyahs} verses • {surah.revelationType}
+                      <p className="text-xs text-muted-foreground truncate">
+                        {surah.englishNameTranslation} • {surah.numberOfAyahs} verses
                       </p>
                     </div>
-                    <p className="font-arabic text-lg text-foreground">
-                      {surah.name}
-                    </p>
-                    {/* Download button */}
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-arabic text-xl font-bold text-foreground">
+                        {surah.name}
+                      </p>
+                      <span className="inline-block text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        صفحة {toArabicDigits(SURAH_START_PAGES[surah.number] ?? 1)}
+                      </span>
+                    </div>
+                    {/* Verse reader button */}
                     <button
-                      onClick={(e) => handleDownloadSurah(surah.number, e)}
-                      disabled={
-                        downloadedSurahs.includes(surah.number) ||
-                        downloadingSurah === surah.number
-                      }
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        downloadedSurahs.includes(surah.number)
-                          ? "bg-green-500/20 text-green-600"
-                          : downloadingSurah === surah.number
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary"
-                      }`}
-                      title={
-                        downloadedSurahs.includes(surah.number)
-                          ? "Downloaded for offline"
-                          : "Download for offline"
-                      }
+                      onClick={(e) => handleOpenVerseReader(surah.number, e)}
+                      className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                      title="Read verse-by-verse with translation"
                     >
-                      {downloadingSurah === surah.number ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : downloadedSurahs.includes(surah.number) ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        <Download className="w-4 h-4" />
-                      )}
+                      <BookOpen className="w-4 h-4" />
                     </button>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </button>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                  </div>
                 ))}
               </div>
             )}
