@@ -1040,7 +1040,7 @@ const Quran: React.FC = () => {
                 onOpenTranslationPeek={(surahNum, p) => handleOpenTranslationPeek(surahNum, p)}
                 onPlaySurahAudio={() => {
                   if (isPlaying) {
-                    pauseAudio();
+                    togglePlayPause();
                   } else {
                     playSurah(selectedSurah);
                   }

@@ -16,6 +16,8 @@ export interface Ayah {
   juz: number;
   page: number;
   audio?: string;
+  translation?: string;
+  transliteration?: string;
 }
 
 export interface SurahDetail {
