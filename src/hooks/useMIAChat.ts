@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserName } from '@/lib/miaProactive';
+import { resolveIslamicIntent } from '@/lib/islamicJarvisBrain';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -109,77 +110,85 @@ export const useMIAChat = () => {
     };
 
     try {
-      // Auth is OPTIONAL — MIA works signed out; we only persist when signed in.
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token ?? SUPABASE_ANON;
 
-      const response = await fetch(MIA_CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-          ...(SUPABASE_ANON ? { apikey: SUPABASE_ANON } : {}),
-        },
-        body: JSON.stringify({ messages: [...messages, userMessage], context: buildContext() }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      let response: Response | null = null;
+      try {
+        response = await fetch(MIA_CHAT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            ...(SUPABASE_ANON ? { apikey: SUPABASE_ANON } : {}),
+          },
+          body: JSON.stringify({ messages: [...messages, userMessage], context: buildContext() }),
+        });
+      } catch (netErr) {
+        console.warn('Backend unavailable, using Islamic Jarvis local engine:', netErr);
       }
 
-      if (!response.body) {
-        throw new Error('No response body');
-      }
+      if (response && response.ok && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+          buffer += decoder.decode(value, { stream: true });
 
-        buffer += decoder.decode(value, { stream: true });
+          let newlineIndex: number;
+          while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+            let line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
 
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (line.startsWith(':') || line.trim() === '') continue;
+            if (!line.startsWith('data: ')) continue;
 
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === '[DONE]') break;
 
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) updateAssistant(content);
-          } catch {
-            buffer = line + '\n' + buffer;
-            break;
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) updateAssistant(content);
+            } catch {
+              buffer = line + '\n' + buffer;
+              break;
+            }
           }
         }
-      }
 
-      // Flush remaining buffer
-      if (buffer.trim()) {
-        for (let raw of buffer.split('\n')) {
-          if (!raw) continue;
-          if (raw.endsWith('\r')) raw = raw.slice(0, -1);
-          if (raw.startsWith(':') || raw.trim() === '') continue;
-          if (!raw.startsWith('data: ')) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) updateAssistant(content);
-          } catch { /* ignore */ }
+        // Flush remaining buffer
+        if (buffer.trim()) {
+          for (let raw of buffer.split('\n')) {
+            if (!raw) continue;
+            if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+            if (raw.startsWith(':') || raw.trim() === '') continue;
+            if (!raw.startsWith('data: ')) continue;
+            const jsonStr = raw.slice(6).trim();
+            if (jsonStr === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) updateAssistant(content);
+            } catch { /* ignore */ }
+          }
         }
+      } else {
+        // Fallback to Autonomous Islamic Jarvis Intelligence Engine
+        const jarvisResult = resolveIslamicIntent(input, buildContext() as any);
+        const fullText = jarvisResult.text;
+        const step = 12;
+        for (let i = 0; i < fullText.length; i += step) {
+          const chunk = fullText.slice(i, i + step);
+          updateAssistant(chunk);
+          await new Promise((r) => setTimeout(r, 10));
+        }
+        assistantContent = fullText;
       }
 
       // Persist the complete assistant response
@@ -188,16 +197,14 @@ export const useMIAChat = () => {
       }
     } catch (error) {
       console.error('MIA chat error:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send message',
-        variant: 'destructive',
-      });
-      setMessages(prev => prev.slice(0, -1));
+      // Emergency offline response instead of dropping message
+      const jarvisResult = resolveIslamicIntent(input, buildContext() as any);
+      updateAssistant(jarvisResult.text);
+      persistMessage({ role: 'assistant', content: jarvisResult.text });
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, toast]);
+  }, [messages, isLoading]);
 
   const clearMessages = useCallback(async () => {
     // Delete from database too

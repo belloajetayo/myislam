@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check, Mic, Volume2, VolumeX } from 'lucide-react';
+import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check, Mic, Volume2, VolumeX, Coins, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -41,10 +41,14 @@ type Message = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  "What should I do right now?",
-  "How's my streak — what's my next step?",
-  "What's special about today?",
-  "Suggest an adhkar for now",
+  "🕌 When is my next prayer?",
+  "🤲 Best dua for anxiety & peace of mind",
+  "🪙 Calculate Zakat on $20,000 savings",
+  "📖 What are the sunnahs of Friday (Jumu'ah)?",
+  "⭐ How is my spiritual streak & progress?",
+  "🤲 Sayyid al-Istighfar (Chief of Forgiveness)",
+  "🧭 Where is the Qiblah & nearest mosque?",
+  "✨ Give me a morning adhkar with meaning",
 ];
 
 type QuickAction = {
@@ -83,11 +87,35 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
   {
     key: 'qiblah',
-    label: 'Qiblah',
+    label: 'Qiblah & Mosques',
     icon: Compass,
     route: '/qiblah',
-    match: /\b(qibla|qiblah|kaaba|ka'?bah|direction|compass)\b/i,
+    match: /\b(qibla|qiblah|kaaba|ka'?bah|direction|compass|mosque|masjid)\b/i,
     gradient: 'from-amber-500 to-orange-500',
+  },
+  {
+    key: 'zakat',
+    label: 'Zakat Calculator',
+    icon: Coins,
+    route: '/zakat',
+    match: /\b(zakat|zakah|nisab|charity rate)\b/i,
+    gradient: 'from-yellow-500 to-amber-600',
+  },
+  {
+    key: 'progress',
+    label: 'Tracker & Streak',
+    icon: TrendingUp,
+    route: '/progress',
+    match: /\b(streak|progress|habit|spiritual score)\b/i,
+    gradient: 'from-blue-500 to-indigo-600',
+  },
+  {
+    key: 'hadith',
+    label: 'Authentic Hadith',
+    icon: Sparkles,
+    route: '/quran?tab=hadith',
+    match: /\b(hadith|bukhari|muslim|sunnah|saying of prophet)\b/i,
+    gradient: 'from-purple-500 to-pink-600',
   },
   {
     key: 'fasting',
