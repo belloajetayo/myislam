@@ -1443,8 +1443,7 @@ const Qiblah: React.FC = () => {
             <div
               className="w-full max-w-md mt-3 rounded-2xl overflow-hidden border border-emerald-500/30
                 bg-card/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-top-2 duration-300
-                flex flex-col"
-              style={{ height: '480px' }}
+                flex flex-col h-[530px] max-h-[82vh]"
             >
               <MosqueNearMe userCoords={userLocation} />
             </div>

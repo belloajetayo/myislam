@@ -172,11 +172,11 @@ function parseElements(elements, userLat, userLng, radiusM) {
       if (seen.has(key)) return null;
       seen.add(key);
 
-      return { id: key, name, address, lat, lng, distance: dist };
+      return { id: key, name, address, lat, lng, distance: dist, tags };
     })
     .filter(Boolean)
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, 15);
+    .slice(0, 20);
 }
 
 // ── Cache helpers ─────────────────────────────────────────────────────────────
