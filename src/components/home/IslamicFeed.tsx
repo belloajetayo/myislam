@@ -6,6 +6,11 @@ import { QACard, VideoCard } from "./DiscoverExtras";
 
 const PAGE = 5;
 
+type FeedItem =
+  | { kind: "article"; a: Article; i: number }
+  | { kind: "qa"; q: DiscoverQA }
+  | { kind: "video"; v: DiscoverVideo };
+
 const LOGO_URL = "/__l5e/assets-v1/4e726eb6-b18f-4122-bd0f-db8e93e45e65/myislam-logo.png";
 
 interface Comment {
@@ -144,7 +149,7 @@ const IslamicFeed: React.FC<IslamicFeedProps> = ({ onArticleClick }) => {
           <Newspaper className="w-4 h-4 text-indigo-500" />
           <h3 className="text-sm font-semibold text-foreground">Daily Discover</h3>
         </div>
-        <button onClick={() => load(true)} className="text-muted-foreground hover:text-foreground p-1" aria-label="Refresh">
+        <button onClick={() => { setSeed((x) => x + 1); setVisible(PAGE); load(true); }} className="text-muted-foreground hover:text-foreground p-1" aria-label="Refresh">
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
