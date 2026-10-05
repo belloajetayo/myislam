@@ -307,21 +307,23 @@ const Index: React.FC = () => { // v5
           {!isOpen && (() => {
             const pendingCount = (pending ? 1 : 0) + (prayerCheck ? 1 : 0);
             return (
-              <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-lg shadow-indigo-300/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
-                aria-label={pendingCount > 0 ? `MIA has ${pendingCount} new message${pendingCount > 1 ? 's' : ''}` : 'Open MIA Assistant'}
-              >
-                <Sparkles className="w-6 h-6" />
-                {pendingCount > 0 && (
-                  <>
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 ring-2 ring-white shadow-md flex items-center justify-center text-[11px] font-bold text-white z-10">
-                      {pendingCount}
-                    </span>
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-rose-500 animate-ping opacity-60" />
-                  </>
-                )}
-              </button>
+              <div className="fixed bottom-24 left-0 right-0 z-50 w-full max-w-md mx-auto px-4 pointer-events-none flex justify-end">
+                <button
+                  onClick={() => setIsOpen(true)}
+                  className="pointer-events-auto mr-12 sm:mr-16 w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-400 shadow-xl shadow-indigo-300/50 flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all relative"
+                  aria-label={pendingCount > 0 ? `MIA has ${pendingCount} new message${pendingCount > 1 ? 's' : ''}` : 'Open MIA Assistant'}
+                >
+                  <Sparkles className="w-6 h-6" />
+                  {pendingCount > 0 && (
+                    <>
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-rose-500 ring-2 ring-white shadow-md flex items-center justify-center text-[11px] font-bold text-white z-10">
+                        {pendingCount}
+                      </span>
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-rose-500 animate-ping opacity-60" />
+                    </>
+                  )}
+                </button>
+              </div>
             );
           })()}
 
