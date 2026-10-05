@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, User, Compass, Sparkles } from 'lucide-react';
+import { BookOpen, Droplets, Moon, MapPin, HandHeart, ChevronDown, BookMarked, ScrollText, Star, Calendar, Heart, Users, User, Compass, Sparkles, Headphones } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const primaryShortcuts = [
@@ -11,6 +11,7 @@ const primaryShortcuts = [
 ];
 
 const extraShortcuts = [
+  { icon: Headphones, label: 'Podcasts', color: 'from-violet-500 to-indigo-600', route: '/podcasts' },
   { icon: BookMarked, label: 'Duas', color: 'from-teal-500 to-cyan-600', route: '/duas' },
   { icon: ScrollText, label: 'Hadith', color: 'from-orange-500 to-amber-600', route: '/quran?tab=hadith' },
   { icon: Star, label: 'Prophet', color: 'from-yellow-500 to-orange-500', route: '/quran?tab=prophets' },
