@@ -1,10 +1,21 @@
 // MIA "Jarvis" layer: voice in/out, spoken greeting and instant app commands.
 
 const VOICE_KEY = "mia_voice_enabled";
+const VOICE_GENDER_KEY = "mia_voice_gender"; // 'male' | 'female'
 const GREET_KEY = "mia_last_greet";
+
+export type VoiceGender = "male" | "female";
 
 export const isVoiceEnabled = () => localStorage.getItem(VOICE_KEY) !== "0";
 export const setVoiceEnabled = (on: boolean) => localStorage.setItem(VOICE_KEY, on ? "1" : "0");
+
+export const getVoiceGender = (): VoiceGender => {
+  return (localStorage.getItem(VOICE_GENDER_KEY) as VoiceGender) || "female";
+};
+
+export const setVoiceGender = (gender: VoiceGender) => {
+  localStorage.setItem(VOICE_GENDER_KEY, gender);
+};
 
 export function cleanForSpeech(md: string): string {
   return md
@@ -24,12 +35,29 @@ export function speak(text: string, onEnd?: () => void) {
   synth.cancel();
   const u = new SpeechSynthesisUtterance(cleanForSpeech(text));
   const voices = synth.getVoices();
-  const pick =
-    voices.find((v) => /en-GB/i.test(v.lang) && /female|Samantha|Serena|Google UK English Female/i.test(v.name)) ||
-    voices.find((v) => /^en/i.test(v.lang));
+  const gender = getVoiceGender();
+
+  let pick: SpeechSynthesisVoice | undefined;
+
+  if (gender === "male") {
+    // Prefer warm, British or natural English male voices
+    pick =
+      voices.find((v) => /en-GB/i.test(v.lang) && /male|George|Oliver|Daniel|Google UK English Male/i.test(v.name)) ||
+      voices.find((v) => /^en/i.test(v.lang) && /male|David|James|Alex|Guy|Google US English Male/i.test(v.name)) ||
+      voices.find((v) => /^en/i.test(v.lang) && !/female|samantha|serena|victoria|zira/i.test(v.name));
+    u.pitch = 0.95;
+    u.rate = 0.98;
+  } else {
+    // Female voice
+    pick =
+      voices.find((v) => /en-GB/i.test(v.lang) && /female|Samantha|Serena|Google UK English Female/i.test(v.name)) ||
+      voices.find((v) => /^en/i.test(v.lang) && /female|Samantha|Zira/i.test(v.name)) ||
+      voices.find((v) => /^en/i.test(v.lang));
+    u.pitch = 1.0;
+    u.rate = 1.02;
+  }
+
   if (pick) u.voice = pick;
-  u.rate = 1.02;
-  u.pitch = 1;
   u.onend = () => onEnd?.();
   u.onerror = () => onEnd?.();
   synth.speak(u);

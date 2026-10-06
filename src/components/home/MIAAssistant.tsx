@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { getUserName, setUserName, capitalizePrayer } from '@/lib/miaProactive';
 import {
   buildGreeting, createRecognizer, isVoiceEnabled, parseCommand, setVoiceEnabled,
-  shouldGreet, speak, stopSpeaking,
+  shouldGreet, speak, stopSpeaking, getVoiceGender, setVoiceGender, type VoiceGender,
 } from '@/lib/miaJarvis';
 
 type OrbState = 'idle' | 'listening' | 'speaking' | 'thinking';
@@ -263,12 +263,22 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
 
   // ----- Jarvis: voice, greeting, instant commands -----
   const [voiceOn, setVoiceOn] = React.useState(isVoiceEnabled);
+  const [voiceGender, setVoiceGenderState] = React.useState<VoiceGender>(getVoiceGender);
   const [listening, setListening] = React.useState(false);
   const [speaking, setSpeaking] = React.useState(false);
   const recRef = useRef<ReturnType<typeof createRecognizer>>(null);
   const hasMic = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
   const greeting = React.useMemo(() => buildGreeting(userName), [isOpen, userName]);
   const lastSpokenRef = useRef<number>(-1);
+
+  const toggleVoiceGender = () => {
+    const nextGender: VoiceGender = voiceGender === 'female' ? 'male' : 'female';
+    setVoiceGender(nextGender);
+    setVoiceGenderState(nextGender);
+    if (voiceOn) {
+      say(nextGender === 'male' ? "Switched to male voice." : "Switched to female voice.");
+    }
+  };
 
   const say = React.useCallback((text: string, after?: () => void) => {
     if (!voiceOn) return after?.();
@@ -377,10 +387,18 @@ One concise dua — Arabic transliteration + English meaning, 3–4 lines max.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            {/* Voice Gender Switcher */}
+            <button
+              onClick={toggleVoiceGender}
+              className="px-2.5 h-8 rounded-full bg-white/10 text-white/90 text-xs font-semibold transition hover:bg-white/20 flex items-center gap-1 border border-white/10 shadow-sm"
+              title={`Voice: ${voiceGender === 'male' ? 'Brother (Male)' : 'Sister (Female)'}. Click to switch.`}
+            >
+              <span>{voiceGender === 'male' ? '🧔‍♂️ Male' : '🧕 Female'}</span>
+            </button>
             <button
               onClick={toggleVoice}
-              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20"
+              className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20"
               title={voiceOn ? 'Mute MIA' : 'Let MIA speak'}
             >
               {voiceOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
