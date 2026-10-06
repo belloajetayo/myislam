@@ -2,7 +2,7 @@
 // Reads cached prayer times + Hijri date + progress from localStorage and
 // returns the single most relevant contextual message right now, if any.
 
-export type ProactiveActionKey = "prayer" | "quran" | "dua" | "qiblah" | "fasting";
+export type ProactiveActionKey = "prayer" | "quran" | "dua" | "qiblah" | "fasting" | "tasbih" | "podcasts";
 
 export type ProactiveMessage = {
   id: string;              // stable per-day id so we don't re-notify
@@ -10,6 +10,9 @@ export type ProactiveMessage = {
     | "greeting"
     | "prayer-now"
     | "post-prayer"
+    | "morning-adhkar"
+    | "evening-adhkar"
+    | "sunnah-fast"
     | "white-days"
     | "jumuah"
     | "ramadan"
@@ -196,9 +199,53 @@ function getWellbeingNudge(): ProactiveMessage | null {
   };
 }
 
+function getMorningAdhkarNudge(): ProactiveMessage | null {
+  const h = new Date().getHours();
+  // Morning window: between 5 AM and 9 AM
+  if (h < 5 || h > 9) return null;
+  return {
+    id: `${todayKey()}-morning-adhkar`,
+    kind: "morning-adhkar",
+    title: "Morning Adhkar & Barakah",
+    body: `Good morning! Welcome the dawn with the **Sunnah Morning Adhkar** 🌅\n\n> *"Asbahna wa asbahal-mulku lillah, wal-hamdulillahi..."*\n\nReciting the morning remembrances wraps your entire day in divine protection and draws abundance into your efforts.`,
+    actions: ["dua", "tasbih"],
+  };
+}
+
+function getEveningAdhkarNudge(): ProactiveMessage | null {
+  const h = new Date().getHours();
+  // Evening window: between 16 (4 PM) and 19 (7 PM)
+  if (h < 16 || h > 19) return null;
+  return {
+    id: `${todayKey()}-evening-adhkar`,
+    kind: "evening-adhkar",
+    title: "Evening Adhkar & Protection",
+    body: `The afternoon is drawing to a close 🌆 — safeguard your evening and night with **Evening Adhkar**.\n\nRecite **Sayyid al-Istighfar** and the three Quls (Ikhlas, Falaq, An-Nas) three times to remain shielded from all harm.`,
+    actions: ["dua", "tasbih"],
+  };
+}
+
+function getSunnahFastEveNudge(): ProactiveMessage | null {
+  const d = new Date();
+  const day = d.getDay();
+  const h = d.getHours();
+  // Sunday evening (before Monday fast) or Wednesday evening (before Thursday fast) after 17:00
+  if ((day === 0 || day === 3) && h >= 17) {
+    const fastDay = day === 0 ? "Monday" : "Thursday";
+    return {
+      id: `${todayKey()}-sunnah-fast-${fastDay.toLowerCase()}`,
+      kind: "sunnah-fast",
+      title: `Sunnah Fast Tomorrow (${fastDay})`,
+      body: `Tomorrow is **${fastDay}**! The Prophet Muhammad ﷺ loved to fast on Mondays and Thursdays, saying: *"Deeds are presented to Allah on Mondays and Thursdays, and I love that my deeds be presented while I am fasting."* (Tirmidhi)\n\nSet your alarm for **suhoor** and make the intention tonight. 🌙`,
+      actions: ["fasting"],
+    };
+  }
+  return null;
+}
+
 /**
  * Return the highest-priority pending proactive message right now, or null.
- * Priority: prayer time > Jumu'ah > white days > Ramadan > night > wellbeing.
+ * Priority: prayer time > Jumu'ah > white days > Sunnah fast > Ramadan > morning/evening adhkar > night > wellbeing.
  */
 export function computeProactive(): ProactiveMessage | null {
   const cache = readPrayerCache();
@@ -206,7 +253,10 @@ export function computeProactive(): ProactiveMessage | null {
     getPrayerNudge(cache) ??
     getFridayNudge() ??
     getWhiteDaysNudge() ??
+    getSunnahFastEveNudge() ??
     getRamadanNudge(cache) ??
+    getMorningAdhkarNudge() ??
+    getEveningAdhkarNudge() ??
     getNightNudge() ??
     getWellbeingNudge()
   );
