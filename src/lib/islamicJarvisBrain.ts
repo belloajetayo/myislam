@@ -572,23 +572,135 @@ ${ctx.location ? `Currently tracking location: **${ctx.location.city}, ${ctx.loc
     };
   }
 
-  // 13. 99 NAMES OF ALLAH (ASMA UL-HUSNA)
-  if (/\b(99 names|asma ul husna|names of allah|ar-rahman|al-malik)\b/i.test(q)) {
+  // 14. EMBRACING ISLAM, NEW MUSLIM & SHAHADAH (Wanna-be Muslims & Reverts)
+  if (/\b(convert|revert|become muslim|embrace islam|wanna be muslim|how to enter islam|take shahada|shahadah|new to islam)\b/i.test(q)) {
     return {
-      text: `### ✨ The 99 Most Beautiful Names of Allah (أَسْمَاءُ ٱللَّٰهِ ٱلْحُسْنَىٰ)
+      text: `### 🕊️ Welcome Home to Islam: The Beginning of Your Eternal Journey to Jannah
 
-The Prophet Muhammad ﷺ said: *"Allah has ninety-nine names, one hundred less one. Whoever memorizes and lives by them will enter Paradise."* (Sahih al-Bukhari 2736)
+If your heart is inclining toward Islam, know that **Allah chose you and called your heart back to Him**. You do not need to be perfect; you only need sincere desire to know your Creator.
 
-#### Foundations of Tawhid:
-1. **Ar-Rahman (ٱلرَّحْمَٰنُ)** — The Most Gracious, whose mercy encompasses all creation.
-2. **Ar-Rahim (ٱلرَّحِيمُ)** — The Especially Merciful to the believers.
-3. **Al-Malik (ٱلْمَلِكُ)** — The Sovereign King of the Universe.
-4. **Al-Quddus (ٱلْقُدُّوسُ)** — The Most Sacred, Free of all imperfection.
-5. **As-Salam (ٱلسَّلَامُ)** — The Giver of Peace and Wholeness.
+The Prophet Muhammad ﷺ said: *"Islam wipes out whatever sins came before it."* (Sahih Muslim) — The moment you embrace Islam, your slate is washed completely clean, as pure as the day you were born!
 
-Call upon Allah in your prayers using His names: *"And to Allah belong the best names, so invoke Him by them."* (Surah Al-A'raf 7:180)`,
-      action: { type: 'navigate', payload: '/quran', label: 'Explore Asma ul-Husna' },
-      suggestedFollowUps: ["Dua using names of Allah", "Show Rabbana #1", "Open Duas Library"],
+#### The Testimony of Faith (Ash-Shahadah):
+To enter Islam, sincerely declare with conviction:
+
+<div class="p-4 my-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-right">
+  <p class="font-arabic text-2xl text-foreground leading-loose" dir="rtl">أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ</p>
+</div>
+
+**Transliteration:**
+*"Ash-hadu alla ilaha illallah, wa ash-hadu anna Muhammadan Rasulullah"*
+
+**English Meaning:**
+*"I bear witness that there is no god worthy of worship except Allah, and I bear witness that Muhammad is the Messenger of Allah."*
+
+#### First Steps for You as a New Believer:
+1. **Take it easy (At-Taysir)**: Learn prayer step-by-step. Allah looks at your heart and effort, not perfection.
+2. **You are never alone**: Over 1.9 billion brothers and sisters around the world celebrate your return.
+3. **MIA is here with you**: Ask me any question without fear or judgment.
+
+Would you like me to walk you through how to pray Salah, or learn the foundational beliefs?`,
+      action: { type: 'navigate', payload: '/prayer', label: 'Learn Prayer Step-by-Step' },
+      spokenSummary: `Welcome with open arms. Islam wipes away all past mistakes and begins your journey to Jannah. You can take the Shahadah anytime with sincerity in your heart.`,
+      suggestedFollowUps: [
+        "How do I pray as a beginner?",
+        "What are the 5 Pillars of Islam?",
+        "Dua for guidance & peace",
+        "Open Quran",
+      ],
+    };
+  }
+
+  // 15. JANNAH & ETERNAL BLISS (PUSHING THE SOUL TO PARADISE)
+  if (/\b(jannah|paradise|heaven|eternal life|gardens of bliss|firdaus|push me to jannah|how to enter jannah|day of judgment)\b/i.test(q)) {
+    return {
+      text: `### 🌟 The Beauty of Jannah (جَنَّةُ الْفِرْدَوْس) — The Ultimate Goal
+
+Allah describes the reward He has prepared for those who persevere with patience, faith, and good deeds:
+
+> *"No soul knows what delight of the eyes has been reserved for them as a reward for what they used to do."* — Surah As-Sajdah 32:17
+
+The Prophet Muhammad ﷺ said: *"In Jannah there is what no eye has ever seen, no ear has ever heard, and what has never crossed the human heart."* (Sahih al-Bukhari 3244)
+
+#### What Jannah Truly Means:
+- **No pain, no fatigue, no sorrow**: No depression, no anxiety, no aging, no illness.
+- **Rivers of milk, honey, and pure water**: Palaces of pearls and gardens bathed in divine peace.
+- **Reunited with loved ones**: With the Prophets, the truthful, and righteous family members.
+- **The Greatest Prize of All**: Glimpsing the Face of Allah, the Most Beautiful, the Most Merciful!
+
+#### 🚀 4 Daily Deeds Guaranteed to Secure Your High Place in Jannah:
+1. **Protect your 5 Daily Prayers on time**: The first thing examined on the Day of Judgment.
+2. **Recite Ayat al-Kursi after every obligatory prayer**: The Prophet ﷺ said nothing stands between you and Jannah except death!
+3. **Noble Character & Kindness**: The heaviest thing on the Scale of good deeds.
+4. **Make this Dua daily**: *"Allahumma inni as'alukal-Jannah, wa a'udhu bika minan-Nar"* (O Allah, I ask You for Paradise and seek refuge from the Fire).`,
+      action: { type: 'navigate', payload: '/duas?cat=forgiveness', label: 'Dua for Jannah' },
+      spokenSummary: `Jannah is the eternal home of peace where no eye has seen and no mind has conceived. Guard your prayers and ask Allah for Jannat al-Firdaus daily.`,
+      suggestedFollowUps: [
+        "Dua for Jannat al-Firdaus",
+        "How to avoid Hellfire",
+        "Check my daily prayer progress",
+        "Read Ayat al-Kursi",
+      ],
+    };
+  }
+
+  // 16. GUILT, SINS, OVERCOMING PAST MISTAKES & TAWBAH (NEVER LOSE HOPE)
+  if (/\b(guilt|guilty|i sinned|bad muslim|too late for me|will allah forgive|ashamed|forgive me|forgive my sins|lost my way|relapse)\b/i.test(q)) {
+    return {
+      text: `### 💜 Never Despair of Allah's Mercy — He Awaits Your Return
+
+Listen closely to what Allah, the Lord of all creation, says directly to you right now:
+
+> *"Say, 'O My servants who have transgressed against themselves [by sinning], do not despair of the mercy of Allah. Indeed, Allah forgives all sins. Indeed, it is He who is the Forgiving, the Merciful.'"* — Surah Az-Zumar 39:53
+
+The Prophet Muhammad ﷺ said in a Sacred Hadith (Hadith Qudsi):
+> *"Allah said: 'O son of Adam, so long as you call upon Me and ask of Me, I shall forgive you for what you have done, and I shall not mind. O son of Adam, were your sins to reach the clouds of the sky and were you then to ask forgiveness of Me, I would forgive you!'"* (Sunan at-Tirmidhi 3540)
+
+#### 3 Simple Conditions of Sincere Repentance (Tawbah):
+1. **Stop the sin immediately**.
+2. **Feel sincere regret in your heart** (the regret itself is repentance).
+3. **Resolve never to return to it**. (And if you stumble again, repent again — Allah never grows weary of forgiving!).
+
+<div class="p-4 my-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-right">
+  <p class="font-arabic text-xl text-foreground" dir="rtl">رَبَّنَا ظَلَمْنَا أَنفُسَنَا وَإِن لَّمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ</p>
+</div>
+*"Rabbana zalamna anfusana wa il-lam taghfir lana wa tarhamna lana-kunanna minal-khasirin"*
+
+Wipe away your tears. Take a fresh wudu. Pray two rak'ahs of Tawbah. You are loved by the Most Merciful.`,
+      action: { type: 'navigate', payload: '/duas?cat=forgiveness', label: 'Open Tawbah & Forgiveness Duas' },
+      spokenSummary: `Never lose hope in Allah's mercy. Even if your sins reached the clouds of the sky, Allah forgives all who turn back to Him with a sincere heart.`,
+      suggestedFollowUps: [
+        "Chief prayer for forgiveness",
+        "Dua of Prophet Yunus",
+        "How to pray Salat al-Tawbah",
+        "Show Rabbana #23",
+      ],
+    };
+  }
+
+  // 17. FEELING LONELY, ISOLATED, OR LIVING IN A NON-MUSLIM COUNTRY
+  if (/\b(lonely|alone|isolated|no muslim friends|living in the west|hard to practice|stranger|ghuraba)\b/i.test(q)) {
+    return {
+      text: `### 🌍 To the Believer Feeling Alone in the World: Glad Tidings of Al-Ghuraba
+
+If you feel like a stranger in your environment, school, or workplace, take comfort in the words of your Beloved Prophet ﷺ:
+
+> *"Islam began as something strange, and it will return to being strange as it began, so glad tidings to the strangers (Tooba lil-Ghuraba)!"* — Sahih Muslim 145
+
+#### Remember:
+1. **You are connected to an Ummah of millions**: Right now, in every timezone, someone is prostrating and saying *"Rabbana"* just like you.
+2. **Allah is your Companion (Al-Qarib)**: When you are in sujood, you are closer to the Creator of the galaxies than anything else in existence.
+3. **Every struggle is counted**: Practicing Islam when it is difficult multiplies your reward manifold. The Prophet ﷺ mentioned a time when holding onto your deen is like holding onto hot burning coals — and the reward for doing so is extraordinary!
+
+Keep going, my beloved brother/sister. Your perseverance is beautiful in the sight of Allah.`,
+      action: { type: 'navigate', payload: '/podcasts', label: 'Listen to Uplifting Islamic Lectures' },
+      spokenSummary: `Glad tidings to the strangers. You are never truly alone when Allah is with you, and every bit of patient perseverance is raising your ranks in Jannah.`,
+      suggestedFollowUps: [
+        "Dua for steadfastness (Thabat)",
+        "Find nearest mosque & community",
+        "Listen to uplifting podcasts",
+        "Talk to MIA Heart-to-Heart",
+      ],
     };
   }
 
