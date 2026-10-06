@@ -69,7 +69,7 @@ const Zakat: React.FC = () => {
 
   return (
     <MobileLayout showNav={false}>
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-28">
         {/* Header */}
         <header className="flex items-center gap-4 py-2">
           <button

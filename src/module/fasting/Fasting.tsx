@@ -324,7 +324,7 @@ const Fasting: React.FC = () => {
   // ── Render ──
   return (
     <MobileLayout showNav={false}>
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-28">
         {/* Header */}
         <header className="sticky top-0 z-10 flex items-center gap-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50 -mx-4 px-4 -mt-4 mb-2">
           <button

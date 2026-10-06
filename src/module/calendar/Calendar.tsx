@@ -27,7 +27,7 @@ export const CalendarPage: React.FC = () => {
         {/* Header */}
         <header className="flex items-center gap-4 py-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
             className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/70 dark:bg-white/10 border border-border/60 hover:bg-muted active:scale-95 transition-all shadow-sm"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />

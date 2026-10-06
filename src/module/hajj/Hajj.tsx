@@ -32,7 +32,7 @@ const Hajj: React.FC = () => {
 
   return (
     <MobileLayout showNav={false}>
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-28">
         {/* Header */}
         <header className="flex items-center gap-4 py-2">
             <button 

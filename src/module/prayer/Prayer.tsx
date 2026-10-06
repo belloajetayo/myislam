@@ -186,7 +186,7 @@ const Prayer: React.FC = () => {
 
   return (
     <MobileLayout>
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-28">
         {/* Header */}
         <header className="flex items-center gap-4 py-2 animate-fade-in">
           <button

@@ -1125,7 +1125,7 @@ const Qiblah: React.FC = () => {
         {/* No map background - clean themed background only */}
 
         {/* Content */}
-        <div className="relative z-20 p-4 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
+        <div className="relative z-20 p-4 pb-32 flex flex-col items-center justify-center min-h-[calc(100vh-120px)]">
           {/* Offline indicator */}
           {isOffline && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-full text-xs">
