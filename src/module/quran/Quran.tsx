@@ -43,7 +43,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
-import ClassicMushafView from "@/components/quran/ClassicMushafView";
+import { MushafPageView } from "@/components/quran/MushafPageView";
+import { SURAH_START_PAGES } from "@/data/mushafPageData";
 
 // Hadith Collection
 const hadithCollection = [
@@ -438,7 +439,7 @@ const Quran: React.FC = () => {
   const activeAyahRef = useRef<HTMLElement | null>(null);
   const viewParam = searchParams.get("view");
   const [arabicOnlyMode, setArabicOnlyMode] = useState<boolean>(() => {
-    return viewParam === "mushaf" || true;
+    return viewParam === "mushaf";
   });
 
 
@@ -946,17 +947,19 @@ const Quran: React.FC = () => {
             </div>
           </div>
 
-          {/* Authentic Mushaf Page View (Matching Screenshot) */}
+          {/* Authentic Madani Mushaf page view */}
           {arabicOnlyMode ? (
-            <ClassicMushafView
-              surah={selectedSurah}
-              isPlaying={isPlaying}
-              currentAyahIndex={currentAyahIndex}
-              onPlayAyah={(idx) => playAyah(idx)}
-              onTogglePlayPause={handleTogglePlayPause}
-              onNextSurah={goToNextSurah}
-              onPrevSurah={goToPreviousSurah}
-              activeAyahRef={activeAyahRef}
+            <MushafPageView
+              initialPage={SURAH_START_PAGES[selectedSurah.number] ?? 1}
+              initialSurahNumber={selectedSurah.number}
+              onPlaySurahAudio={() => {
+                if (isPlaying) {
+                  togglePlayPause();
+                } else {
+                  playSurah(selectedSurah);
+                }
+              }}
+              isPlayingAudio={isPlaying}
             />
           ) : (
             <>

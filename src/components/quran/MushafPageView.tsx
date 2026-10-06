@@ -154,9 +154,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
     return (localStorage.getItem("mushaf_theme") as MushafTheme) || "madani";
   });
   const [quality, setQuality] = useState<"1024" | "1920">("1024");
-  const [isSpreadView, setIsSpreadView] = useState<boolean>(() => {
-    return window.innerWidth >= 1024;
-  });
+  const [isSpreadView, setIsSpreadView] = useState<boolean>(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [showControls, setShowControls] = useState<boolean>(true);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState<boolean>(false);
