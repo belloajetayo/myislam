@@ -7,6 +7,9 @@
 // - Dynamic app integration (Prayer times, Streak, Audio, Duas, Compass, Tasbih)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+import { RABBANA_DUAS } from '@/data/rabbanaDuas';
+import { ALL_DUAS_DATA } from '@/data/duasData';
+
 export interface IslamicBrainContext {
   userName?: string | null;
   streakDays?: number;
@@ -215,7 +218,67 @@ Would you like to find a nearby mosque to pray in congregation?`,
     }
   }
 
-  // 4. DUAS FOR ANXIETY, STRESS, SICKNESS, SLEEP, MORNING
+  // 4. 40 RABBANA DUAS & COMPREHENSIVE DUA SEARCH
+  const rabbanaNumMatch = q.match(/\b(rabbana|dua)\s*#?\s*([0-9]{1,2})\b/i);
+  if (rabbanaNumMatch) {
+    const num = parseInt(rabbanaNumMatch[2], 10);
+    if (num >= 1 && num <= 40) {
+      const rd = RABBANA_DUAS[num - 1];
+      if (rd) {
+        return {
+          text: `### 🤲 40 Rabbana Du'a #${num}
+**${rd.context || rd.source}**
+
+<div class="p-4 my-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-right">
+  <p class="font-arabic text-2xl text-foreground leading-loose" dir="rtl">${rd.arabic}</p>
+</div>
+
+**Transliteration:**
+*"${rd.transliteration}"*
+
+**English Translation:**
+*"${rd.translation}"*
+
+**Spiritual Virtues & Benefit:**
+${rd.benefit}
+
+*(Source: ${rd.source})*`,
+          action: { type: 'navigate', payload: '/duas?cat=rabbana', label: 'View All 40 Rabbana Duas' },
+          spokenSummary: `Here is Rabbana dua number ${num} from ${rd.source}. ${rd.translation}`,
+          suggestedFollowUps: [
+            num < 40 ? `Show Rabbana #${num + 1}` : "Show Rabbana #1",
+            "Browse all 40 Rabbana Duas",
+            "Dua for forgiveness",
+          ],
+        };
+      }
+    }
+  }
+
+  if (/\b(40 rabbana|rabbana duas?|rabbana)\b/i.test(q)) {
+    const r1 = RABBANA_DUAS[0];
+    const r3 = RABBANA_DUAS[2];
+    return {
+      text: `### 📖 The 40 Rabbana Duas from the Holy Qur'an
+These 40 sacred supplications each start with *"Rabbana"* (Our Lord) and were taught directly by Allah in the Qur'an or voiced by the Prophets.
+
+#### Featured Supplications:
+1. **Rabbana #1 (Deed Acceptance)** — *${r1.transliteration}*
+   > *"${r1.translation}"* — ${r1.source}
+   *${r1.benefit}*
+
+2. **Rabbana #3 (World & Hereafter Good)** — *${r3.transliteration}*
+   > *"${r3.translation}"* — ${r3.source}
+   *${r3.benefit}*
+
+You can ask me for any specific dua like *"Show Rabbana #5"*, *"Dua for parents"*, or explore the entire collection in the Duas section!`,
+      action: { type: 'navigate', payload: '/duas?cat=rabbana', label: 'Open 40 Rabbana Library' },
+      spokenSummary: `The Holy Quran contains 40 sacred Rabbana duas with immense spiritual virtues. Would you like me to open the 40 Rabbana library?`,
+      suggestedFollowUps: ["Show Rabbana #1", "Show Rabbana #3", "Dua for anxiety", "Dua for parents"],
+    };
+  }
+
+  // 4B. TOPIC DUA LOOKUPS (Parents, Children, Exams, Sickness, Forgiveness, Anxiety)
   if (/\b(anxiety|stress|sad|depress|worr|fear|overwhelm|hardship|panic)\b/i.test(q)) {
     const d = AUTHENTIC_DUAS.anxiety;
     return {
@@ -242,6 +305,85 @@ Take a slow breath. Allah is closer to you than your jugular vein. You are never
       action: { type: 'navigate', payload: '/duas', label: 'Open Duas Library' },
       spokenSummary: `Here is the Prophet's authentic supplication for anxiety. Allahumma inni a'udhu bika min al-hammi wal-hazan. Verily in the remembrance of Allah do hearts find rest.`,
       suggestedFollowUps: ["Dua of Prophet Yunus", "Dua for forgiveness", "Open Tasbih to do Dhikr"],
+    };
+  }
+
+  // Parents dua
+  if (/\b(parents?|mother|father|mom|dad)\b/i.test(q)) {
+    return {
+      text: `### 🤲 Prophetic & Quranic Du'a for Parents
+
+Allah commands us in the Holy Qur'an to pray for our parents with utmost humility and love:
+
+<div class="p-4 my-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-right">
+  <p class="font-arabic text-2xl text-foreground leading-loose" dir="rtl">رَّبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا</p>
+</div>
+
+**Transliteration:**
+*"Rabbi-rhamhuma kama rabbayani sagheera"*
+
+**Translation:**
+*"My Lord, have mercy upon them both as they brought me up when I was small."* — Surah Al-Isra 17:24
+
+**Virtue & Benefit:**
+Reciting this fulfills filial gratitude (Birr al-Walidayn), elevates your parents' status in Jannah, and brings perpetual barakah into your own life and household.`,
+      action: { type: 'navigate', payload: '/duas?cat=family-marriage', label: 'Open Family Duas' },
+      spokenSummary: `Here is the Quranic prayer for parents: Rabbi-rhamhuma kama rabbayani sagheera. My Lord, have mercy upon them as they brought me up when I was small.`,
+      suggestedFollowUps: ["Dua for children & spouse", "Dua for forgiveness", "Show Rabbana #2"],
+    };
+  }
+
+  // Ruqyah / Sickness
+  if (/\b(sick|ill(ness)?|pain|headache|fever|disease|cure|shifa|heal(ing)?)\b/i.test(q)) {
+    return {
+      text: `### 🌿 Dua for Shifa (Healing & Cure from Sickness)
+
+When visiting the sick or experiencing pain, the Prophet ﷺ would place his hand over the area of pain and say:
+
+<div class="p-4 my-3 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-right">
+  <p class="font-arabic text-2xl text-foreground leading-loose" dir="rtl">اللَّهُمَّ رَبَّ النَّاسِ أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا</p>
+</div>
+
+**Transliteration:**
+*"Allahumma Rabban-nas, adh-hibil-ba's, ishfi Antash-Shafi, la shifa'a illa shifa'uk, shifa'an la yughadiru saqama"*
+
+**Translation:**
+*"O Allah, Lord of mankind, remove the disease and grant cure. You are the Healer, there is no healing except Your healing, a cure that leaves behind no illness."*
+
+*(Source: Sahih al-Bukhari 5743, Sahih Muslim 2191)*
+
+**Recommended Practice:**
+Place your right hand where it hurts, recite **Bismillah 3 times**, then say 7 times: *"A'udhu bi-'izzatillahi wa qudratihi min sharri ma ajidu wa uhadhir"* *(Sahih Muslim)*.`,
+      action: { type: 'navigate', payload: '/duas?cat=ruquiya', label: 'Open Healing & Ruqyah Duas' },
+      spokenSummary: `Here is the authentic Prophetic prayer for healing and cure. Allahumma Rabban-nas adh-hibil-ba's, ishfi Antash-Shafi.`,
+      suggestedFollowUps: ["Read Ayat al-Kursi", "Dua for anxiety", "Open Duas Library"],
+    };
+  }
+
+  // Exams / Studies / Knowledge
+  if (/\b(exam|study|studying|test|knowledge|memory|forget|interview)\b/i.test(q)) {
+    return {
+      text: `### 🎓 Du'a for Success in Studies, Exams & Knowledge
+
+1. **Supplication for Ease & Eloquence (Du'a of Musa AS):**
+<div class="p-4 my-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-right">
+  <p class="font-arabic text-2xl text-foreground leading-loose" dir="rtl">رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِّن لِّسَانِي يَفْقَهُوا قَوْلِي</p>
+</div>
+
+**Transliteration:**
+*"Rabbish-rah li sadri, wa yassir li amri, wahlul 'uqdatan min lisani, yafqahu qawli"*
+
+**Translation:**
+*"My Lord, expand for me my chest, and ease for me my task, and untie the knot from my tongue that they may understand my speech."* — Surah Taha 20:25-28
+
+2. **Dua for Increase in Knowledge:**
+> *"Rabbi zidni 'ilma"* (رَّبِّ زِدْنِي عِلْمًا) — *"My Lord, increase me in knowledge."* (Surah Taha 20:114)
+
+**Prophetic Habit:**
+Before writing your exam, say: *"Allahumma la sahla illa ma ja'altahu sahla, wa Anta taj'alul-hazna idha shi'ta sahla"* (O Allah, nothing is easy except what You make easy, and You make hardship easy if You will).`,
+      action: { type: 'navigate', payload: '/duas?cat=knowledge-exams', label: 'Open Studies & Exams Duas' },
+      spokenSummary: `Here is the famous dua of Prophet Musa for exams and memory: Rabbish-rah li sadri wa yassir li amri.`,
+      suggestedFollowUps: ["Dua for peace of mind", "Dua of Prophet Yunus", "Open Duas Library"],
     };
   }
 
@@ -370,6 +512,83 @@ Hajj is the **Fifth Pillar of Islam**, obligatory once in a lifetime for every M
 Explore our interactive 3D visual guide with full checkpoint checklists and authentic supplications.`,
       action: { type: 'navigate', payload: '/hajj', label: 'Open Hajj & Umrah Guide' },
       suggestedFollowUps: ["Talbiyah prayer", "What violates Ihram?", "Open Hajj Guide"],
+    };
+  }
+
+  // 10. DIGITAL TASBIH & DHIKR
+  if (/\b(tasbih|tasbeeh|dhikr|subhanallah|alhamdulillah|allahu akbar|astaghfirullah|counter)\b/i.test(q)) {
+    return {
+      text: `### 📿 Digital Tasbih & Prophetic Adhkar
+
+The Prophet Muhammad ﷺ said: *"Two words are light on the tongue, heavy in the Balance, and beloved to the Most Merciful: SubhanAllahi wa bihamdihi, SubhanAllahil-'Azim."* (Sahih al-Bukhari 6406)
+
+#### Core Daily Dhikr Counts:
+- **SubhanAllah (33x)**: Glory be to Allah
+- **Alhamdulillah (33x)**: All praise is due to Allah
+- **Allahu Akbar (33x)**: Allah is the Greatest
+- **Seal with 100th**: *La ilaha illallahu wahdahu la sharika lahu, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadir* (All sins forgiven even if like the foam of the sea).
+
+Launch our tactile Digital Tasbih with haptic feedback, sound chimes, and lap tracking!`,
+      action: { type: 'navigate', payload: '/tasbih', label: 'Open Digital Tasbih' },
+      spokenSummary: `Remembering Allah brings tranquility to hearts. Would you like me to open the Digital Tasbih counter for your dhikr session?`,
+      suggestedFollowUps: ["Open Digital Tasbih", "Chief prayer for forgiveness", "Dua for after prayer"],
+    };
+  }
+
+  // 11. PODCASTS, LECTURES & 24/7 ISLAMIC RADIO
+  if (/\b(podcast|radio|listen|lecture|nasheed|audio|quran audio|makkah live|madinah live)\b/i.test(q)) {
+    return {
+      text: `### 🎙️ Podcasts & 24/7 Islamic Radio Streams
+
+Immerse your day in sacred sounds and knowledge with our comprehensive audio hub:
+
+#### 📻 Live Continuous Radio:
+- **Holy Qur'an Radio (Cairo)** — Continuous 24/7 legendary recitations.
+- **Makkah & Madinah Live Audio** — Live Taraweeh and daily prayers from the two holy Harams.
+- **Islamic Knowledge Radio** — Uplifting lectures in English and Arabic.
+
+#### 🎙️ Featured Islamic Podcasts:
+- Comprehensive iTunes directory of top international Muslim scholars and Quran audio channels with playback speed control and lock-screen background playback.`,
+      action: { type: 'navigate', payload: '/podcasts', label: 'Open Podcasts & Radio' },
+      spokenSummary: `Our audio player features live 24/7 Quran radio from Cairo, Makkah, and top Islamic podcasts. Would you like me to open the audio hub?`,
+      suggestedFollowUps: ["Open Podcasts & Radio", "Play Surah Al-Baqarah", "Read Quran"],
+    };
+  }
+
+  // 12. MOSQUES NEAR ME & QIBLAH DIRECTION
+  if (/\b(mosque|masjid|qibla|qiblah|kaaba direction|compass|where to pray)\b/i.test(q)) {
+    return {
+      text: `### 🧭 Mosques Near You & Qiblah Compass
+
+Need to find a place for congregational prayer or align yourself with the Ka'bah?
+
+- **Real-Time Qiblah Compass**: Live gyroscope sensor orientation with gold pointer pointing straight to Makkah.
+- **Mosques Near Me**: Working Google Maps integration showing local masjids, driving and walking distances in minutes, and Jumu'ah availability.
+
+${ctx.location ? `Currently tracking location: **${ctx.location.city}, ${ctx.location.country}**` : ''}`,
+      action: { type: 'navigate', payload: '/qiblah', label: 'Open Qiblah & Mosques Map' },
+      spokenSummary: `You can view live mosques near your location on Google Maps and find the precise Qiblah direction in the Qiblah section.`,
+      suggestedFollowUps: ["Open Qiblah & Mosques", "When is next prayer?", "Rules of Jumu'ah"],
+    };
+  }
+
+  // 13. 99 NAMES OF ALLAH (ASMA UL-HUSNA)
+  if (/\b(99 names|asma ul husna|names of allah|ar-rahman|al-malik)\b/i.test(q)) {
+    return {
+      text: `### ✨ The 99 Most Beautiful Names of Allah (أَسْمَاءُ ٱللَّٰهِ ٱلْحُسْنَىٰ)
+
+The Prophet Muhammad ﷺ said: *"Allah has ninety-nine names, one hundred less one. Whoever memorizes and lives by them will enter Paradise."* (Sahih al-Bukhari 2736)
+
+#### Foundations of Tawhid:
+1. **Ar-Rahman (ٱلرَّحْمَٰنُ)** — The Most Gracious, whose mercy encompasses all creation.
+2. **Ar-Rahim (ٱلرَّحِيمُ)** — The Especially Merciful to the believers.
+3. **Al-Malik (ٱلْمَلِكُ)** — The Sovereign King of the Universe.
+4. **Al-Quddus (ٱلْقُدُّوسُ)** — The Most Sacred, Free of all imperfection.
+5. **As-Salam (ٱلسَّلَامُ)** — The Giver of Peace and Wholeness.
+
+Call upon Allah in your prayers using His names: *"And to Allah belong the best names, so invoke Him by them."* (Surah Al-A'raf 7:180)`,
+      action: { type: 'navigate', payload: '/quran', label: 'Explore Asma ul-Husna' },
+      suggestedFollowUps: ["Dua using names of Allah", "Show Rabbana #1", "Open Duas Library"],
     };
   }
 

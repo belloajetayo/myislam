@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check, Mic, Volume2, VolumeX, Coins, TrendingUp, Sparkles } from 'lucide-react';
+import { Send, Trash2, X, Clock, BookOpen, Heart, Compass, ArrowRight, Utensils, HeartHandshake, Check, Mic, Volume2, VolumeX, Coins, TrendingUp, Sparkles, Headphones, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -42,13 +42,13 @@ type Message = {
 
 const SUGGESTED_QUESTIONS = [
   "🕌 When is my next prayer?",
+  "📖 Recite 40 Rabbana Dua #1",
   "🤲 Best dua for anxiety & peace of mind",
   "🪙 Calculate Zakat on $20,000 savings",
-  "📖 What are the sunnahs of Friday (Jumu'ah)?",
-  "⭐ How is my spiritual streak & progress?",
-  "🤲 Sayyid al-Istighfar (Chief of Forgiveness)",
+  "🎙️ Play Cairo 24/7 Quran Radio",
+  "📿 Start Digital Tasbih session",
   "🧭 Where is the Qiblah & nearest mosque?",
-  "✨ Give me a morning adhkar with meaning",
+  "🤲 Sayyid al-Istighfar (Chief of Forgiveness)",
 ];
 
 type QuickAction = {
@@ -124,6 +124,22 @@ const QUICK_ACTIONS: QuickAction[] = [
     route: '/fasting',
     match: /\b(fast(ing)?|sawm|suhoor|iftar|ramadan|white days|ayy?am al-b[iī]d)\b/i,
     gradient: 'from-sky-500 to-cyan-500',
+  },
+  {
+    key: 'tasbih',
+    label: 'Digital Tasbih',
+    icon: Disc,
+    route: '/tasbih',
+    match: /\b(tasbih|tasbeeh|dhikr|counter|subhanallah|astaghfirullah)\b/i,
+    gradient: 'from-teal-500 to-emerald-600',
+  },
+  {
+    key: 'podcasts',
+    label: 'Podcasts & Radio',
+    icon: Headphones,
+    route: '/podcasts',
+    match: /\b(podcast|radio|nasheed|lecture|audio|radio streams?)\b/i,
+    gradient: 'from-indigo-600 to-violet-600',
   },
 ];
 
