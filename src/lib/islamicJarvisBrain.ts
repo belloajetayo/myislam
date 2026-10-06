@@ -9,6 +9,7 @@
 
 import { RABBANA_DUAS } from '@/data/rabbanaDuas';
 import { ALL_DUAS_DATA } from '@/data/duasData';
+import { searchEncyclopedia, ISLAMIC_ENCYCLOPEDIA } from '@/data/islamicEncyclopedia';
 
 export interface IslamicBrainContext {
   userName?: string | null;
@@ -704,7 +705,33 @@ Keep going, my beloved brother/sister. Your perseverance is beautiful in the sig
     };
   }
 
-  // 10. DEFAULT / DEEP COMPANION FALLBACK
+  // 18. COMPREHENSIVE ISLAMIC ENCYCLOPEDIA QUERY RESOLVER
+  const encyclopediaHits = searchEncyclopedia(query);
+  if (encyclopediaHits.length > 0) {
+    const entry = encyclopediaHits[0];
+    const stepsMarkdown = entry.practicalSteps && entry.practicalSteps.length > 0
+      ? `\n\n#### 💡 Practical Sunnah Action Steps:\n${entry.practicalSteps.map(s => `- ${s}`).join('\n')}`
+      : '';
+    const refsMarkdown = entry.references && entry.references.length > 0
+      ? `\n\n*(Authentic Sources: ${entry.references.join(', ')})*`
+      : '';
+
+    return {
+      text: `### 📚 ${entry.title}
+${entry.arabic ? `<div class="p-3 my-2 rounded-xl bg-amber-500/10 text-right font-arabic text-xl" dir="rtl">${entry.arabic}</div>\n` : ''}${entry.transliteration ? `*${entry.transliteration}*\n\n` : ''}**Summary:**
+${entry.summary}
+
+#### In-Depth Knowledge:
+${entry.details}${stepsMarkdown}${refsMarkdown}`,
+      spokenSummary: `${entry.title}. ${entry.summary}`,
+      suggestedFollowUps: [
+        "Tell me more about this",
+        "Show related Duas",
+        "How do I apply this today?",
+        "Ask another Islamic question"
+      ],
+    };
+  }
   return {
     text: `### 🌿 Bismillah ar-Rahman ar-Rahim
 
