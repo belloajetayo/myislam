@@ -435,7 +435,6 @@ const Quran: React.FC = () => {
     36, 67, 112,
   ]);
 
-  const [showTransliteration, setShowTransliteration] = useState(true);
   const activeAyahRef = useRef<HTMLElement | null>(null);
   const viewParam = searchParams.get("view");
   const [arabicOnlyMode, setArabicOnlyMode] = useState<boolean>(() => {
@@ -925,18 +924,6 @@ const Quran: React.FC = () => {
                 <BookText className="w-3 h-3" />
                 Mushaf
               </button>
-              {!arabicOnlyMode && (
-                <button
-                  onClick={() => setShowTransliteration(!showTransliteration)}
-                  className={`text-xs px-3 py-1 rounded-full transition-colors ${
-                    showTransliteration
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
-                  Transliteration
-                </button>
-              )}
               <button
                 onClick={handleLogPage}
                 className="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 hover:bg-emerald-500/20 transition-colors"
@@ -1017,12 +1004,11 @@ const Quran: React.FC = () => {
                           {ayah.text}
                         </p>
                       </div>
-                      {showTransliteration &&
-                        selectedSurah.transliteration[index] && (
+                      {selectedSurah.transliteration[index] && (
                           <p className="text-sm text-primary/80 pl-11 leading-relaxed mb-2 italic">
                             {selectedSurah.transliteration[index].text}
                           </p>
-                        )}
+                      )}
                       {selectedSurah.translation[index] && (
                         <p className="text-sm text-muted-foreground pl-11 leading-relaxed">
                           {selectedSurah.translation[index].text}
