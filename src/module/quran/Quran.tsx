@@ -730,7 +730,10 @@ const Quran: React.FC = () => {
   if (selectedSurah) {
     return (
       <MobileLayout showNav={false}>
-        <div className="flex flex-col h-full" {...surahSwipeHandlers}>
+        <div
+          className={`flex flex-col ${arabicOnlyMode ? "h-dvh overflow-hidden" : "h-full"}`}
+          {...surahSwipeHandlers}
+        >
         {/* Verse-by-verse mode */}
         {verseMode && selectedSurah && (
           <div
@@ -936,18 +939,20 @@ const Quran: React.FC = () => {
 
           {/* Authentic Madani Mushaf page view */}
           {arabicOnlyMode ? (
-            <MushafPageView
-              initialPage={SURAH_START_PAGES[selectedSurah.number] ?? 1}
-              initialSurahNumber={selectedSurah.number}
-              onPlaySurahAudio={() => {
-                if (isPlaying) {
-                  togglePlayPause();
-                } else {
-                  playSurah(selectedSurah);
-                }
-              }}
-              isPlayingAudio={isPlaying}
-            />
+            <div className="flex-1 min-h-0">
+              <MushafPageView
+                initialPage={SURAH_START_PAGES[selectedSurah.number] ?? 1}
+                initialSurahNumber={selectedSurah.number}
+                onPlaySurahAudio={() => {
+                  if (isPlaying) {
+                    togglePlayPause();
+                  } else {
+                    playSurah(selectedSurah);
+                  }
+                }}
+                isPlayingAudio={isPlaying}
+              />
+            </div>
           ) : (
             <>
               {selectedSurah.number !== 1 && selectedSurah.number !== 9 && (
