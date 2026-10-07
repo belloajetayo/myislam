@@ -650,13 +650,17 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
                 {/* Left Page (Even Page in Arabic Mushaf) */}
                 <div
-                  className="relative flex-1 max-h-[84vh] overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: activeTheme.pageBg }}
+                  className="relative overflow-hidden flex items-center justify-center"
+                  style={{
+                    width: spreadW,
+                    height: spreadH,
+                    backgroundColor: activeTheme.pageBg,
+                  }}
                 >
                   <img
                     src={getMushafPageImageUrl(leftPage, quality)}
                     alt={`Madani Mushaf Page ${leftPage}`}
-                    className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
+                    className={`w-full h-full object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
                     decoding="async"
                   />
@@ -685,8 +689,12 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
                 {/* Right Page (Odd Page in Arabic Mushaf) */}
                 <div
-                  className="relative flex-1 max-h-[84vh] overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: activeTheme.pageBg }}
+                  className="relative overflow-hidden flex items-center justify-center"
+                  style={{
+                    width: spreadW,
+                    height: spreadH,
+                    backgroundColor: activeTheme.pageBg,
+                  }}
                 >
                   {/* Subtle inner curvature shadow into spine */}
                   <div
@@ -699,7 +707,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                   <img
                     src={getMushafPageImageUrl(rightPage, quality)}
                     alt={`Madani Mushaf Page ${rightPage}`}
-                    className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
+                    className={`w-full h-full object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
                     decoding="async"
                   />
@@ -721,8 +729,12 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
             ) : (
               /* SINGLE PAGE VIEW (Mobile & Responsive Portrait) */
               <div
-                className="relative max-h-[85vh] w-auto rounded-xl overflow-hidden shadow-2xl flex items-center justify-center"
-                style={{ backgroundColor: activeTheme.pageBg }}
+                className="relative rounded-xl overflow-hidden shadow-2xl flex items-center justify-center"
+                style={{
+                  width: singleW,
+                  height: singleH,
+                  backgroundColor: activeTheme.pageBg,
+                }}
               >
                 {/* Physical Spine Gutter on Bound Edge (RTL: odd pages bound on left, even pages bound on right) */}
                 <div
@@ -740,7 +752,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                 <img
                   src={getMushafPageImageUrl(currentPage, quality)}
                   alt={`Madani Mushaf Page ${currentPage}`}
-                  className={`max-h-[80vh] sm:max-h-[83vh] w-auto object-contain pointer-events-none select-none transition-all duration-200 ${activeTheme.filterClass}`}
+                  className={`w-full h-full object-contain pointer-events-none select-none transition-all duration-200 ${activeTheme.filterClass}`}
                   loading="eager"
                   decoding="async"
                   onLoad={() => setIsLoadingPage(false)}
