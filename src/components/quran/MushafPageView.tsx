@@ -394,7 +394,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
   if (showCover) {
     return (
       <div
-        className="w-full h-screen flex flex-col items-center justify-center relative overflow-hidden"
+        className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
         style={{ background: activeTheme.bg }}
       >
         <HardcopyCover
@@ -408,7 +408,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col h-screen w-full select-none overflow-hidden"
+      className="relative flex flex-col h-full w-full select-none overflow-hidden"
       style={{ background: activeTheme.bg }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -591,7 +591,8 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
       {/* ── MAIN REALISTIC HARD COPY DISPLAY STAGE ── */}
       <div
-        className="flex-1 relative flex items-center justify-center p-2 sm:p-5 overflow-hidden"
+        ref={stageRef}
+        className="flex-1 min-h-0 relative flex items-center justify-center p-2 sm:p-5 overflow-hidden"
         onClick={() => setShowControls((prev) => !prev)}
       >
         {/* PHYSICAL SILK RIBBON BOOKMARK */}
