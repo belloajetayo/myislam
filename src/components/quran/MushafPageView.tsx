@@ -168,6 +168,24 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
   const [isLoadingPage, setIsLoadingPage] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  // Measure the display stage so the page image always fits the visible area
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const update = () =>
+      setStageSize({ width: el.clientWidth, height: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   // Sync initial page
   useEffect(() => {
@@ -356,6 +374,21 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
     3,
     Math.round((currentPage / TOTAL_MUSHAF_PAGES) * 16)
   );
+
+  // Fit the page image exactly into the visible stage (both dimensions)
+  const PAGE_ASPECT = 1024 / 1656; // Madani page width / height
+  const availH = Math.max(0, stageSize.height - 24);
+  const availW = Math.max(0, stageSize.width - 24);
+  const singleH = Math.min(availH, availW / PAGE_ASPECT);
+  const singleW = singleH * PAGE_ASPECT;
+  const spreadReserved =
+    24 +
+    (stageSize.width >= 768
+      ? pageStackLeftThickness + pageStackRightThickness
+      : 0);
+  const spreadAvailW = Math.max(0, stageSize.width - spreadReserved);
+  const spreadH = Math.min(availH, spreadAvailW / 2 / PAGE_ASPECT);
+  const spreadW = spreadH * PAGE_ASPECT;
 
   // If user requested Cover mode
   if (showCover) {
