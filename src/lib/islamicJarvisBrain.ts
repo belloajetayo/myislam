@@ -98,29 +98,101 @@ export function resolveIslamicIntent(query: string, ctx: IslamicBrainContext): J
   const userName = ctx.userName ? ctx.userName : "";
   const greetingName = userName ? `, ${userName}` : "";
 
-  // 1. GREETING & STATUS CHECK-IN
-  if (/^(as-?salaamu?|salaam|peace be upon you|hello|hi mia|hey mia|hey|good morning|good evening)/i.test(q)) {
+  // 1. GREETING & CASUAL SMALL TALK ("hi", "how are you", "what's up", "salaam")
+  if (/^(as-?salaamu?|salaam|peace be upon you|hello|hi mia|hey mia|hey|good morning|good afternoon|good evening|yo|sup)\b/i.test(q)) {
     const nextP = getNextPrayerInfo(ctx);
     const streak = ctx.streakDays ?? 0;
-    const streakMsg = streak > 0 ? ` MashaAllah on your **${streak}-day streak**!` : "";
+
+    let naturalFollowUp = "";
+    if (nextP) {
+      naturalFollowUp = ` By the way, **${nextP.name}** is coming up in about ${nextP.countdown} (${nextP.time}) — plenty of time to get ready.`;
+    } else if (streak > 0) {
+      naturalFollowUp = ` So proud of your **${streak}-day streak**, keep that barakah going!`;
+    }
 
     return {
-      text: `Wa Alaykum As-Salaam wa Rahmatullah wa Barakatuh${greetingName}! 🌙
+      text: `Wa Alaykum As-Salaam wa Rahmatullah${greetingName}! 🌙
 
-I am **MIA**, your personal Islamic assistant. How may I serve your deen today?
+It is so good to hear from you today. How is your heart doing?${naturalFollowUp}
 
-${nextP ? `• **Next Prayer**: ${nextP.name} at ${nextP.time} (${nextP.countdown})\n` : ""}• **Spiritual Streak**: ${streak} active days${streakMsg}
-• **Today**: ${ctx.weekday || 'Today'}, ${ctx.hijriDate ? `${ctx.hijriDate.day} ${ctx.hijriDate.month.en} ${ctx.hijriDate.year} AH` : 'Blessed day'}
-
-What would you like to explore? You can ask me about **prayer times**, **Qur'an ayahs**, **duas for distress**, **fiqh rulings**, or tell me to log your salah.`,
-      spokenSummary: `Wa Alaykum As-Salaam${greetingName}. I am MIA, your Islamic assistant. ${nextP ? `Next prayer is ${nextP.name} in ${nextP.countdown}.` : ''} How may I assist you today?`,
+Whether you want to learn something, talk through what's on your mind, listen to some Qur'an, or just need a gentle reminder, I'm right here with you. What can we do together today?`,
+      spokenSummary: `Wa Alaykum As-Salaam${greetingName}! It is so wonderful to hear from you today. How is your heart doing? What can we do together today?`,
       suggestedFollowUps: [
+        "How are you doing, MIA?",
         "What should I do right now?",
-        "When is the next prayer?",
-        "Suggest a dua for today",
-        "Check my streak",
+        "When is my next prayer?",
+        "Give me a short uplifting reminder",
       ],
     };
+  }
+
+  // 1B. "HOW ARE YOU" / "HOW DO YOU FEEL" / PERSONAL CHAT
+  if (/\b(how are you|how('?s| is) it going|how do you feel|are you okay|what are you doing)\b/i.test(q)) {
+    return {
+      text: `Alhamdulillah, I am doing wonderfully${greetingName}! 🌸
+
+Thank you so much for asking about me — that means a lot! More importantly, **how are *you* doing today?** 
+
+How has your day been treating you? If you're feeling energetic, let's learn something inspiring or read some Qur'an. And if it's been a long or heavy day, take a deep breath — I'm right here to help you unwind and find peace in Allah's remembrance.`,
+      spokenSummary: `Alhamdulillah, I am doing wonderfully${greetingName}! Thank you for asking. More importantly, how are you doing today?`,
+      suggestedFollowUps: [
+        "I'm feeling good, alhamdulillah!",
+        "It's been a tough day",
+        "Suggest a quick 2-minute dhikr",
+        "Tell me a short Hadith",
+      ],
+    };
+  }
+
+  // 1C. "THANK YOU" / "JAZAKALLAH" / APPRECIATION
+  if (/\b(thank you|thanks|jazakallah|jazakallahu khayran|appreciate it|love you|you('re| are) the best|awesome)\b/i.test(q)) {
+    return {
+      text: `Wa iyyakum${greetingName}! May Allah bless you abundantly! 🤲✨
+
+You are so very welcome. Being here to support your journey and walk with you toward Jannah is my greatest joy. 
+
+Whenever you need anything — whether big questions or a quick comforting word — you know where to find me. May Allah fill your day with light and ease!`,
+      spokenSummary: `Wa iyyakum${greetingName}! May Allah bless you abundantly. I am always right here for you.`,
+      suggestedFollowUps: [
+        "Ameen, thank you!",
+        "Give me a dua for today",
+        "When is the next prayer?",
+      ],
+    };
+  }
+
+  // 1D. EMOTIONAL FEELINGS / CASUAL SHARING ("I'm tired", "I'm happy", "I'm bored", "I had a long day")
+  if (/\b(i'?m tired|exhausted|long day|i had a tough day|feeling down|feeling happy|i'?m happy|bored|can we talk)\b/i.test(q)) {
+    const isTired = /tired|exhausted|long day|tough/i.test(q);
+    const isHappy = /happy|great|good/i.test(q);
+
+    if (isHappy) {
+      return {
+        text: `Alhamdulillah! That puts a genuine smile on my heart${greetingName}! 😄✨
+
+When life feels good, let your heart whisper **"Alhamdulillah 'ala kulli hal"** (All praise is due to Allah in every condition) and let that gratitude multiply the blessing.
+
+What brought you joy today?`,
+        spokenSummary: `Alhamdulillah! That makes me so happy to hear${greetingName}. May Allah keep blessing your days with joy.`,
+        suggestedFollowUps: ["Check my streak", "Listen to some Quran", "Suggest a gratitude dua"],
+      };
+    }
+
+    if (isTired) {
+      return {
+        text: `Bismillah... take a deep, slow breath and relax your shoulders${greetingName}. 💜
+
+You've worked hard today. Did you know that in Islam, even the fatigue and tiredness a believer feels expiates sins and raises your rank in Jannah?
+
+Don't be hard on yourself right now. Grab a sip of water, make a relaxed wudu if you can, and rest your heart. If you want, I can open some soft Quran recitation for you, or we can just chat. What sounds soothing to you right now?`,
+        spokenSummary: `Take a deep breath and rest your heart${greetingName}. Even your tiredness is rewarded by Allah. I'm right here with you.`,
+        suggestedFollowUps: [
+          "Play some relaxing Quran audio",
+          "Give me an easy bedtime dua",
+          "Dua for relief from fatigue",
+        ],
+      };
+    }
   }
 
   // 2. LOGGING PRAYER / "I JUST PRAYED" / STREAK UPDATE
@@ -732,26 +804,19 @@ ${entry.details}${stepsMarkdown}${refsMarkdown}`,
       ],
     };
   }
+  // 19. NATURAL CONVERSATIONAL COMPANION FALLBACK
   return {
-    text: `### 🌿 Bismillah ar-Rahman ar-Rahim
+    text: `That is a lovely thought${greetingName}. 🌸
 
-Thank you for your question${greetingName}.
+Islam teaches us that every sincere reflection, every good deed, and every honest conversation carries barakah when we begin with *Bismillah*.
 
-Islam is a complete way of life centered on **sincere devotion to Allah (Ikhlas)**, **following the Sunnah of the Prophet Muhammad ﷺ**, and **serving humanity with noble character (Husn al-Khuluq)**.
-
-> *"And whoever fears Allah — He will make for him a way out, and will provide for him from where he does not expect."* — Surah At-Talaq 65:2-3
-
-#### How can I assist you right now?
-- **Prayer & Qiblah**: Get exact times, Adhan, and mosque navigation.
-- **Qur'an & Tajweed**: Read or listen to all 114 Surahs with translation.
-- **Duas & Adhkar**: Find authentic supplications for any emotional or spiritual state.
-- **Islamic Rulings**: Discover fiqh guidance across the major schools of thought.`,
-    spokenSummary: `I am here to support your daily Islamic journey. You can ask me about prayer times, Quran verses, authentic duas, or app navigation.`,
+Tell me a bit more about what you're thinking, or what's on your mind right now. We can look into what the Qur'an and Sunnah say about it, explore inspiring stories of the Prophets, find a dua for it, or just chat it through. I'm listening!`,
+    spokenSummary: `That is a lovely thought${greetingName}. Tell me a bit more about what is on your mind, I'm listening and right here with you.`,
     suggestedFollowUps: [
+      "Tell me a short inspiring Islamic story",
+      "Give me a dua for today",
       "When is the next prayer?",
-      "Dua for peace of mind",
-      "Read Surah Al-Mulk",
-      "Check my streak",
+      "Talk to MIA Heart-to-Heart",
     ],
   };
 }
