@@ -168,6 +168,24 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
   const [isLoadingPage, setIsLoadingPage] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  // Measure the display stage so the page image always fits the visible area
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const update = () =>
+      setStageSize({ width: el.clientWidth, height: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   // Sync initial page
   useEffect(() => {
@@ -357,11 +375,26 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
     Math.round((currentPage / TOTAL_MUSHAF_PAGES) * 16)
   );
 
+  // Fit the page image exactly into the visible stage (both dimensions)
+  const PAGE_ASPECT = 1024 / 1656; // Madani page width / height
+  const availH = Math.max(0, stageSize.height - 24);
+  const availW = Math.max(0, stageSize.width - 24);
+  const singleH = Math.min(availH, availW / PAGE_ASPECT);
+  const singleW = singleH * PAGE_ASPECT;
+  const spreadReserved =
+    24 +
+    (stageSize.width >= 768
+      ? pageStackLeftThickness + pageStackRightThickness
+      : 0);
+  const spreadAvailW = Math.max(0, stageSize.width - spreadReserved);
+  const spreadH = Math.min(availH, spreadAvailW / 2 / PAGE_ASPECT);
+  const spreadW = spreadH * PAGE_ASPECT;
+
   // If user requested Cover mode
   if (showCover) {
     return (
       <div
-        className="w-full h-screen flex flex-col items-center justify-center relative overflow-hidden"
+        className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
         style={{ background: activeTheme.bg }}
       >
         <HardcopyCover
@@ -375,7 +408,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col h-screen w-full select-none overflow-hidden"
+      className="relative flex flex-col h-full w-full select-none overflow-hidden"
       style={{ background: activeTheme.bg }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -558,7 +591,8 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
       {/* ── MAIN REALISTIC HARD COPY DISPLAY STAGE ── */}
       <div
-        className="flex-1 relative flex items-center justify-center p-2 sm:p-5 overflow-hidden"
+        ref={stageRef}
+        className="flex-1 min-h-0 relative flex items-center justify-center p-2 sm:p-5 overflow-hidden"
         onClick={() => setShowControls((prev) => !prev)}
       >
         {/* PHYSICAL SILK RIBBON BOOKMARK */}
@@ -616,13 +650,17 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
                 {/* Left Page (Even Page in Arabic Mushaf) */}
                 <div
-                  className="relative flex-1 max-h-[84vh] overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: activeTheme.pageBg }}
+                  className="relative overflow-hidden flex items-center justify-center"
+                  style={{
+                    width: spreadW,
+                    height: spreadH,
+                    backgroundColor: activeTheme.pageBg,
+                  }}
                 >
                   <img
                     src={getMushafPageImageUrl(leftPage, quality)}
                     alt={`Madani Mushaf Page ${leftPage}`}
-                    className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
+                    className={`w-full h-full object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
                     decoding="async"
                   />
@@ -651,8 +689,12 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
 
                 {/* Right Page (Odd Page in Arabic Mushaf) */}
                 <div
-                  className="relative flex-1 max-h-[84vh] overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: activeTheme.pageBg }}
+                  className="relative overflow-hidden flex items-center justify-center"
+                  style={{
+                    width: spreadW,
+                    height: spreadH,
+                    backgroundColor: activeTheme.pageBg,
+                  }}
                 >
                   {/* Subtle inner curvature shadow into spine */}
                   <div
@@ -665,7 +707,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                   <img
                     src={getMushafPageImageUrl(rightPage, quality)}
                     alt={`Madani Mushaf Page ${rightPage}`}
-                    className={`max-h-[82vh] w-auto object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
+                    className={`w-full h-full object-contain transition-all duration-200 select-none ${activeTheme.filterClass}`}
                     loading="eager"
                     decoding="async"
                   />
@@ -687,8 +729,12 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
             ) : (
               /* SINGLE PAGE VIEW (Mobile & Responsive Portrait) */
               <div
-                className="relative max-h-[85vh] w-auto rounded-xl overflow-hidden shadow-2xl flex items-center justify-center"
-                style={{ backgroundColor: activeTheme.pageBg }}
+                className="relative rounded-xl overflow-hidden shadow-2xl flex items-center justify-center"
+                style={{
+                  width: singleW,
+                  height: singleH,
+                  backgroundColor: activeTheme.pageBg,
+                }}
               >
                 {/* Physical Spine Gutter on Bound Edge (RTL: odd pages bound on left, even pages bound on right) */}
                 <div
@@ -706,7 +752,7 @@ export const MushafPageView: React.FC<MushafPageViewProps> = ({
                 <img
                   src={getMushafPageImageUrl(currentPage, quality)}
                   alt={`Madani Mushaf Page ${currentPage}`}
-                  className={`max-h-[80vh] sm:max-h-[83vh] w-auto object-contain pointer-events-none select-none transition-all duration-200 ${activeTheme.filterClass}`}
+                  className={`w-full h-full object-contain pointer-events-none select-none transition-all duration-200 ${activeTheme.filterClass}`}
                   loading="eager"
                   decoding="async"
                   onLoad={() => setIsLoadingPage(false)}
