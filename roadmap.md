@@ -1,0 +1,4 @@
+- [ ] Add prayer completion timestamps and make MIA prayer nudges respect the user's prayer schedule and logged prayers.
+- [ ] Simplify the Zakat calculator around net zakatable wealth and expose it from MIA.
+- [ ] Check MIA speech, Qur'an audio, and podcast YouTube playback for Firefox/mobile issues; fix browser-compatibility defects.
+- [ ] Restyle the Qur'an reading experience toward familiar Muslim Pro / Muslim Pocket app patterns while preserving reader and Mushaf modes.
