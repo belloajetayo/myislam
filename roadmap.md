@@ -2,3 +2,5 @@
 - [ ] Simplify the Zakat calculator around net zakatable wealth and expose it from MIA.
 - [ ] Check MIA speech, Qur'an audio, and podcast YouTube playback for Firefox/mobile issues; fix browser-compatibility defects.
 - [ ] Restyle the Qur'an reading experience toward familiar Muslim Pro / Muslim Pocket app patterns while preserving reader and Mushaf modes.
+- [ ] Fit MIA within the screen without the bottom navigation covering it, and keep Qur'an back navigation sticky.
+- [ ] Keep Mushaf mode off by default and make its on/off control clear to readers.
